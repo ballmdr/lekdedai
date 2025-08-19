@@ -1,0 +1,39 @@
+# Core
+Django==4.2.11
+wagtail==5.2.3
+pillow==10.4.0
+# Database
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+
+# Server
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# API
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+
+# AI/ML
+scikit-learn==1.5.2
+pandas==2.2.1
+numpy==1.26.4
+joblib==1.3.2
+spacy==3.7.4
+nltk==3.8.1
+
+# Thai NLP
+pythainlp==4.0.2
+
+# Utilities
+python-dotenv==1.0.1
+requests==2.31.0
+beautifulsoup4==4.11.1
+lxml==5.1.0
+
+# Cache
+redis==5.0.2
+django-redis==5.4.0
+
+# Development
+django-debug-toolbar==4.3.0

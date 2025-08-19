@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LekDedAI - เลขเด็ดจาก AI{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <a href="/" class="text-2xl font-bold text-purple-600">🎯 LekDedAI</a>
+                <div class="flex space-x-4">
+                    <a href="/" class="hover:text-purple-600">หน้าแรก</a>
+                    <a href="/ai/" class="hover:text-purple-600">เลขเด็ด AI</a>
+                    <a href="/dreams/" class="hover:text-purple-600">ตีความฝัน</a>
+                    <a href="/lotto_stats/" class="hover:text-purple-600">สถิติหวย</a>
+                    <a href="/news/" class="hover:text-purple-600">ข่าวสาร</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 LekDedAI. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

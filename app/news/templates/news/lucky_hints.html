@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}เลขเด็ดทั้งหมด - LekDedAI{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-center mb-8">🎯 เลขเด็ดจากทุกแหล่ง</h1>
+    
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div class="flex flex-wrap gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">ประเภทแหล่งที่มา</label>
+                <select onchange="filterBySource(this.value)" 
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="">ทั้งหมด</option>
+                    <option value="temple" {% if source_type == 'temple' %}selected{% endif %}>วัด/ศาลเจ้า</option>
+                    <option value="tree" {% if source_type == 'tree' %}selected{% endif %}>ต้นไม้ศักดิ์สิทธิ์</option>
+                    <option value="dream" {% if source_type == 'dream' %}selected{% endif %}>ความฝัน</option>
+                    <option value="natural" {% if source_type == 'natural' %}selected{% endif %}>ปรากฏการณ์ธรรมชาติ</option>
+                    <option value="accident" {% if source_type == 'accident' %}selected{% endif %}>อุบัติเหตุ</option>
+                    <option value="other" {% if source_type == 'other' %}selected{% endif %}>อื่นๆ</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-2">ช่วงเวลา</label>
+                <select onchange="filterByDays(this.value)" 
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="7" {% if days == '7' %}selected{% endif %}>7 วันล่าสุด</option>
+                    <option value="30" {% if days == '30' %}selected{% endif %}>30 วันล่าสุด</option>
+                    <option value="90" {% if days == '90' %}selected{% endif %}>90 วันล่าสุด</option>
+                    <option value="365" {% if days == '365' %}selected{% endif %}>ทั้งหมด</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lucky Hints by Date -->
+    {% for date, hints in hints_by_date.items %}
+    <div class="mb-8">
+        <h2 class="text-xl font-bold mb-4 text-gray-700">
+            📅 {{ date|date:"l j F Y" }}
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for hint in hints %}
+            <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg shadow-lg p-6 hover:shadow-xl transition">
+                <div class="flex items-start justify-between mb-3">
+                    <h3 class="font-bold text-lg">{{ hint.source_name }}</h3>
+                    <span class="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded">
+                        {{ hint.get_source_type_display }}
+                    </span>
+                </div>
+                
+                <div class="text-center my-4">
+                    <p class="text-3xl font-bold text-red-600">{{ hint.lucky_numbers }}</p>
+                </div>
+                
+                {% if hint.location %}
+                <p class="text-sm text-gray-600 mb-2">
+                    📍 {{ hint.location }}
+                </p>
+                {% endif %}
+                
+                {% if hint.reason %}
+                <p class="text-sm text-gray-700 mb-3">{{ hint.reason|truncatewords:20 }}</p>
+                {% endif %}
+                
+                <div class="flex items-center justify-between border-t pt-3">
+                    <div class="text-sm">
+                        <span class="text-gray-500">ความน่าเชื่อถือ:</span>
+                        <div class="inline-flex items-center ml-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                                <div class="bg-orange-500 h-2 rounded-full" 
+                                     style="width: {{ hint.reliability_score }}%"></div>
+                            </div>
+                            <span class="ml-2 font-semibold">{{ hint.reliability_score }}%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if hint.related_article %}
+                <div class="mt-3 pt-3 border-t">
+                    <a href="{{ hint.related_article.get_absolute_url }}" 
+                       class="text-sm text-purple-600 hover:underline">
+                        📰 อ่านข่าวที่เกี่ยวข้อง →
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-8">
+        <p class="text-gray-500">ไม่พบเลขเด็ดในช่วงเวลาที่เลือก</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function filterBySource(source) {
+    const url = new URL(window.location);
+    if (source) {
+        url.searchParams.set('source', source);
+    } else {
+        url.searchParams.delete('source');
+    }
+    window.location = url;
+}
+
+function filterByDays(days) {
+    const url = new URL(window.location);
+    url.searchParams.set('days', days);
+    window.location = url;
+}
+</script>
+{% endblock %}

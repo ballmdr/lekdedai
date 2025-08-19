@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}สถิติหวย - LekDedAI{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-center mb-8">📊 สถิติหวยย้อนหลัง</h1>
+    
+    <!-- สรุปสถิติ -->
+    {% if stats_summary %}
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h2 class="text-2xl font-bold mb-4">📈 สรุปภาพรวม</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="text-center">
+                <p class="text-gray-600">ข้อมูลทั้งหมด</p>
+                <p class="text-3xl font-bold text-purple-600">{{ stats_summary.total_draws }} งวด</p>
+            </div>
+            <div class="text-center">
+                <p class="text-gray-600">เลข 2 ตัวที่ออกบ่อยที่สุด</p>
+                <p class="text-3xl font-bold text-red-600">{{ stats_summary.most_common_all_time.2d.number }}</p>
+                <p class="text-sm text-gray-500">{{ stats_summary.most_common_all_time.2d.count }} ครั้ง</p>
+            </div>
+            <div class="text-center">
+                <p class="text-gray-600">ช่วงข้อมูล</p>
+                <p class="text-sm">{{ stats_summary.date_range.from }}</p>
+                <p class="text-sm">ถึง {{ stats_summary.date_range.to }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- เลขที่ออกบ่อย -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold mb-4">🔥 เลขฮอต (ออกบ่อย)</h2>
+            <canvas id="hotNumbersChart" class="mb-4"></canvas>
+            
+            <div class="grid grid-cols-5 gap-2">
+                {% for num in hot_numbers %}
+                <div class="bg-red-100 text-center p-3 rounded">
+                    <div class="font-bold text-xl text-red-600">{{ num.number }}</div>
+                    <div class="text-xs text-gray-600">{{ num.count }} ครั้ง</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- เลขที่ไม่ออกนาน -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold mb-4">❄️ เลขเย็น (ไม่ออกนาน)</h2>
+            <canvas id="coldNumbersChart" class="mb-4"></canvas>
+            
+            <div class="grid grid-cols-5 gap-2">
+                {% for num in cold_numbers %}
+                <div class="bg-blue-100 text-center p-3 rounded">
+                    <div class="font-bold text-xl text-blue-600">{{ num.number }}</div>
+                    <div class="text-xs text-gray-600">{{ num.days }} วัน</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- สถิติรายเดือน -->
+        <div class="bg-white rounded-lg shadow-lg p-6 lg:col-span-2">
+            <h2 class="text-2xl font-bold mb-4">📅 สถิติการออกรายเดือน</h2>
+            <canvas id="monthlyStatsChart"></canvas>
+        </div>
+        
+        <!-- ตารางผลหวยย้อนหลัง -->
+        <div class="bg-white rounded-lg shadow-lg p-6 lg:col-span-2">
+            <h2 class="text-2xl font-bold mb-4">📋 ผลหวยย้อนหลัง 10 งวด</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-2 text-left">งวดวันที่</th>
+                            <th class="px-4 py-2 text-center">รางวัลที่ 1</th>
+                            <th class="px-4 py-2 text-center">2 ตัว</th>
+                            <th class="px-4 py-2 text-center">3 ตัวหน้า</th>
+                            <th class="px-4 py-2 text-center">3 ตัวหลัง</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for draw in recent_draws %}
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-2">{{ draw.draw_date|date:"j M Y" }}</td>
+                            <td class="px-4 py-2 text-center font-bold text-purple-600">{{ draw.first_prize }}</td>
+                            <td class="px-4 py-2 text-center font-semibold">{{ draw.two_digit }}</td>
+                            <td class="px-4 py-2 text-center text-sm">{{ draw.three_digit_front }}</td>
+                            <td class="px-4 py-2 text-center text-sm">{{ draw.three_digit_back }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-gray-500">ยังไม่มีข้อมูล</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ค้นหาเลข -->
+    <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-2xl font-bold mb-4">🔍 ค้นหาสถิติเลข</h2>
+        <div class="flex gap-4">
+            <input 
+                type="text" 
+                id="searchNumber" 
+                placeholder="ใส่เลข 2-3 หลัก" 
+                maxlength="3"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+            <button 
+                onclick="searchNumber()"
+                class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+            >
+                ค้นหา
+            </button>
+        </div>
+        
+        <div id="searchResult" class="mt-4 hidden">
+            <!-- ผลการค้นหาจะแสดงที่นี่ -->
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Hot Numbers Chart
+const hotCtx = document.getElementById('hotNumbersChart').getContext('2d');
+new Chart(hotCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ hot_numbers_labels|safe }},
+        datasets: [{
+            label: 'จำนวนครั้งที่ออก',
+            data: {{ hot_numbers_data|safe }},
+            backgroundColor: 'rgba(239, 68, 68, 0.5)',
+            borderColor: 'rgb(239, 68, 68)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Cold Numbers Chart
+const coldCtx = document.getElementById('coldNumbersChart').getContext('2d');
+new Chart(coldCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ cold_numbers_labels|safe }},
+        datasets: [{
+            label: 'จำนวนวันที่ไม่ออก',
+            data: {{ cold_numbers_data|safe }},
+            backgroundColor: 'rgba(59, 130, 246, 0.5)',
+            borderColor: 'rgb(59, 130, 246)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Monthly Stats Chart
+const monthlyCtx = document.getElementById('monthlyStatsChart').getContext('2d');
+new Chart(monthlyCtx, {
+    type: 'line',
+    data: {
+        labels: {{ monthly_labels|safe }},
+        datasets: [{
+            label: 'จำนวนครั้งที่เลขฮอตออก',
+            data: {{ monthly_data|safe }},
+            borderColor: 'rgb(147, 51, 234)',
+            backgroundColor: 'rgba(147, 51, 234, 0.1)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// ฟังก์ชันค้นหาเลข
+async function searchNumber() {
+    const number = document.getElementById('searchNumber').value;
+    const resultDiv = document.getElementById('searchResult');
+    
+    if (number.length < 2 || number.length > 3) {
+        alert('กรุณาใส่เลข 2-3 หลัก');
+        return;
+    }
+    
+    resultDiv.innerHTML = '<p class="text-gray-600">กำลังค้นหา...</p>';
+    resultDiv.classList.remove('hidden');
+    
+    try {
+        const response = await fetch(`/lotto_stats/api/number/${number}/`);
+        const data = await response.json();
+        
+        if (data.error) {
+            resultDiv.innerHTML = `<p class="text-red-600">เกิดข้อผิดพลาด: ${data.error}</p>`;
+            return;
+        }
+        
+        // แสดงผลการค้นหา
+        let html = `
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h3 class="text-lg font-bold mb-2">สถิติเลข ${data.number}</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <p class="text-sm text-gray-600">ออกทั้งหมด</p>
+                        <p class="text-xl font-bold">${data.statistics.total_appearances} ครั้ง</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">ออกล่าสุด</p>
+                        <p class="text-xl font-bold">${data.statistics.last_appeared || '-'}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">ไม่ออกมา</p>
+                        <p class="text-xl font-bold">${data.statistics.days_since_last} วัน</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">ระยะห่างเฉลี่ย</p>
+                        <p class="text-xl font-bold">${data.statistics.average_gap} วัน</p>
+                    </div>
+                </div>
+        `;
+        
+        if (data.recent_appearances && data.recent_appearances.length > 0) {
+            html += `
+                <h4 class="font-semibold mb-2">การออกล่าสุด</h4>
+                <div class="space-y-1">
+            `;
+            
+            data.recent_appearances.forEach(item => {
+                html += `
+                    <div class="flex justify-between text-sm">
+                        <span>${item.date}</span>
+                        <span class="text-gray-600">${item.type}</span>
+                        <span class="font-mono">${item.first_prize}</span>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        resultDiv.innerHTML = html;
+        
+    } catch (error) {
+        resultDiv.innerHTML = `<p class="text-red-600">เกิดข้อผิดพลาด: ${error.message}</p>`;
+    }
+}
+
+// Enter key support
+document.getElementById('searchNumber').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchNumber();
+    }
+});
+</script>
+{% endblock %}

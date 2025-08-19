@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}เลขเด็ด AI - LekDedAI{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-center mb-8">🎯 เลขเด็ด AI</h1>
+    
+    <!-- Today's Prediction -->
+    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-xl p-8 text-white mb-8">
+        <div class="text-center">
+            <h2 class="text-2xl font-bold mb-2">การทำนายประจำวันที่</h2>
+            <p class="text-3xl mb-4">{{ prediction.prediction_date|date:"j F Y" }}</p>
+            
+            <div class="bg-white/20 rounded-lg p-6 backdrop-blur-sm">
+                <h3 class="text-xl font-semibold mb-4">🔮 เลขเด็ด 2 ตัว</h3>
+                <div class="grid grid-cols-5 md:grid-cols-10 gap-3 mb-6">
+                    {% for num in prediction.get_two_digit_list %}
+                    <div class="bg-white text-purple-600 rounded-lg p-3 font-bold text-xl transform hover:scale-110 transition">
+                        {{ num }}
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">🎰 เลขเด็ด 3 ตัว</h3>
+                <div class="grid grid-cols-3 md:grid-cols-5 gap-3">
+                    {% for num in prediction.get_three_digit_list %}
+                    <div class="bg-white text-purple-600 rounded-lg p-3 font-bold text-xl transform hover:scale-110 transition">
+                        {{ num }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <div class="flex items-center justify-center mb-2">
+                    <span class="text-lg">ความมั่นใจ AI:</span>
+                    <div class="ml-4 w-48 bg-white/30 rounded-full h-4">
+                        <div class="bg-yellow-400 h-4 rounded-full" style="width: {{ prediction.overall_confidence }}%"></div>
+                    </div>
+                    <span class="ml-2 text-xl font-bold">{{ prediction.overall_confidence }}%</span>
+                </div>
+                
+                <p class="text-sm opacity-90">
+                    วิเคราะห์โดย {{ prediction.ai_model.name }} v{{ prediction.ai_model.version }}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Reasoning -->
+    {% if prediction.prediction_details.reasoning %}
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-bold mb-4">🤖 เหตุผลการทำนาย</h3>
+        <ul class="space-y-2">
+            {% for reason in prediction.prediction_details.reasoning %}
+            <li class="flex items-start">
+                <span class="text-purple-600 mr-2">▸</span>
+                <span>{{ reason }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <!-- Factors Used -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-bold mb-4">📊 ปัจจัยที่ใช้ในการวิเคราะห์</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {% for factor in factors %}
+            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-2xl mb-2">
+                    {% if factor.code == 'date_pattern' %}📅
+                    {% elif factor.code == 'historical_hot' %}🔥
+                    {% elif factor.code == 'historical_cold' %}❄️
+                    {% elif factor.code == 'lunar_phase' %}🌙
+                    {% elif factor.code == 'special_events' %}🎉
+                    {% else %}📈{% endif %}
+                </div>
+                <p class="font-semibold">{{ factor.name }}</p>
+                <p class="text-sm text-gray-600">น้ำหนัก: {{ factor.weight }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- User Feedback -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-bold mb-4">💬 ความคิดเห็นผู้ใช้</h3>
+        
+        <!-- Add Feedback Form -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h4 class="font-semibold mb-3">ให้คะแนนการทำนาย</h4>
+            <div class="flex items-center gap-4 mb-3">
+                <div class="flex gap-1" id="ratingStars">
+                    {% for i in "12345" %}
+                    <button onclick="setRating({{ i }})" class="text-2xl text-gray-300 hover:text-yellow-500 transition">
+                        ⭐
+                    </button>
+                    {% endfor %}
+                </div>
+                <span id="ratingText" class="text-sm text-gray-600"></span>
+            </div>
+            <textarea id="feedbackComment" 
+                      placeholder="แสดงความคิดเห็น (ไม่บังคับ)" 
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 mb-3"
+                      rows="3"></textarea>
+            <div class="flex items-center gap-4">
+                <label class="flex items-center">
+                    <input type="checkbox" id="isWinner" class="mr-2">
+                    <span>ฉันถูกรางวัล!</span>
+                </label>
+                <button onclick="submitFeedback()" 
+                        class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                    ส่งความเห็น
+                </button>
+            </div>
+        </div>
+        
+        <!-- Feedback List -->
+        <div class="space-y-4">
+            {% for feedback in feedbacks %}
+            <div class="border-b pb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold">
+                            {{ feedback.user.username|default:"ผู้ใช้" }}
+                        </span>
+                        <div class="flex text-yellow-500">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= feedback.rating %}
+                                    ⭐
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% if feedback.is_winner %}
+                        <span class="bg-green-100 text-green-600 px-2 py-1 rounded text-sm">
+                            🎉 ถูกรางวัล!
+                        </span>
+                        {% endif %}
+                    </div>
+                    <span class="text-sm text-gray-500">
+                        {{ feedback.created_at|date:"j M Y H:i" }}
+                    </span>
+                </div>
+                {% if feedback.comment %}
+                <p class="text-gray-700">{{ feedback.comment }}</p>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p class="text-center text-gray-500">ยังไม่มีความคิดเห็น</p>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Past Predictions -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-bold mb-4">📅 การทำนายย้อนหลัง</h3>
+        <div class="space-y-3">
+            {% for past in past_predictions %}
+            <a href="{% url 'ai_engine:prediction_detail' past.id %}" 
+               class="block p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="font-semibold">{{ past.prediction_date|date:"j F Y" }}</p>
+                        <p class="text-sm text-gray-600">
+                            2 ตัว: {{ past.two_digit_numbers|truncatechars:30 }}
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">ความมั่นใจ</p>
+                        <p class="text-lg font-bold text-purple-600">{{ past.overall_confidence }}%</p>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-6">
+            <a href="{% url 'ai_engine:history' %}" 
+               class="text-purple-600 hover:underline">
+                ดูประวัติทั้งหมด →
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedRating = 0;
+
+function setRating(rating) {
+    selectedRating = rating;
+    const stars = document.querySelectorAll('#ratingStars button');
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.remove('text-gray-300');
+            star.classList.add('text-yellow-500');
+        } else {
+            star.classList.remove('text-yellow-500');
+            star.classList.add('text-gray-300');
+        }
+    });
+    
+    const texts = ['', 'แย่มาก', 'แย่', 'ปานกลาง', 'ดี', 'ดีมาก'];
+    document.getElementById('ratingText').textContent = texts[rating];
+}
+
+async function submitFeedback() {
+    if (selectedRating === 0) {
+        alert('กรุณาให้คะแนนก่อนส่งความเห็น');
+        return;
+    }
+    
+    const comment = document.getElementById('feedbackComment').value;
+    const isWinner = document.getElementById('isWinner').checked;
+    
+    try {
+        const response = await fetch(`/ai/prediction/{{ prediction.id }}/feedback/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                rating: selectedRating,
+                comment: comment,
+                is_winner: isWinner
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            alert('ขอบคุณสำหรับความคิดเห็น!');
+            location.reload();
+        }
+    } catch (error) {
+        alert('เกิดข้อผิดพลาด: ' + error.message);
+    }
+}
+</script>
+{% endblock %}
