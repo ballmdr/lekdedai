@@ -17,7 +17,6 @@ def analyze_dream(request):
     try:
         data = json.loads(request.body)
         dream_text = data.get('dream_text', '').strip()
-        dream_date = data.get('dream_date', None)
         
         if not dream_text:
             return JsonResponse({
@@ -35,7 +34,6 @@ def analyze_dream(request):
             keywords_found=', '.join(result['keywords']),
             suggested_numbers=', '.join(result['numbers']),
             interpretation=result['interpretation'],
-            dream_date=dream_date,
             ip_address=get_client_ip(request)
         )
         

@@ -5,18 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LekDedAI - เลขเด็ดจาก AI{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .lucky-number {
+            background: linear-gradient(135deg, #8A2BE2 0%, #FF6B6B 100%);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .countdown-timer {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .feature-card-1 { background: linear-gradient(135deg, #8A2BE2 0%, #9370DB 100%); }
+        .feature-card-2 { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); }
+        .feature-card-3 { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+        .feature-card-4 { background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%); }
+    </style>
 </head>
 <body class="bg-gray-50">
-    <nav class="bg-white shadow-lg">
+    <!-- Header Navigation Bar -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
-                <a href="/" class="text-2xl font-bold text-purple-600">🎯 LekDedAI</a>
-                <div class="flex space-x-4">
-                    <a href="/" class="hover:text-purple-600">หน้าแรก</a>
-                    <a href="/ai/" class="hover:text-purple-600">เลขเด็ด AI</a>
-                    <a href="/dreams/" class="hover:text-purple-600">ตีความฝัน</a>
-                    <a href="/lotto_stats/" class="hover:text-purple-600">สถิติหวย</a>
-                    <a href="/news/" class="hover:text-purple-600">ข่าวสาร</a>
+                <a href="/" class="text-2xl font-bold text-purple-600 flex items-center space-x-2">
+                    <span class="text-3xl">🔮</span>
+                    <span>LekDedAI</span>
+                </a>
+                <div class="hidden md:flex space-x-6">
+                    <a href="/" class="hover:text-purple-600 transition-colors font-medium">หน้าแรก</a>
+                    <a href="/ai/" class="hover:text-purple-600 transition-colors font-medium">เลขเด็ด AI</a>
+                    <a href="/dreams/" class="hover:text-purple-600 transition-colors font-medium">ตีความฝัน</a>
+                    <a href="/lotto_stats/" class="hover:text-purple-600 transition-colors font-medium">สถิติหวย</a>
+                    <a href="/news/" class="hover:text-purple-600 transition-colors font-medium">ข่าวสาร</a>
+                </div>
+                <!-- Mobile menu button -->
+                <button class="md:hidden text-gray-600 hover:text-purple-600" id="mobile-menu-btn">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+            <!-- Mobile menu -->
+            <div class="md:hidden hidden mt-4 pb-4" id="mobile-menu">
+                <div class="flex flex-col space-y-3">
+                    <a href="/" class="hover:text-purple-600 transition-colors">หน้าแรก</a>
+                    <a href="/ai/" class="hover:text-purple-600 transition-colors">เลขเด็ด AI</a>
+                    <a href="/dreams/" class="hover:text-purple-600 transition-colors">ตีความฝัน</a>
+                    <a href="/lotto_stats/" class="hover:text-purple-600 transition-colors">สถิติหวย</a>
+                    <a href="/news/" class="hover:text-purple-600 transition-colors">ข่าวสาร</a>
                 </div>
             </div>
         </div>
@@ -26,10 +84,67 @@
         {% block content %}{% endblock %}
     </main>
     
-    <footer class="bg-gray-800 text-white py-8 mt-16">
-        <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2025 LekDedAI. All rights reserved.</p>
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 mt-16">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">🔮 LekDedAI</h3>
+                    <p class="text-gray-300">แพลตฟอร์ม AI สำหรับวิเคราะห์เลขเด็ดและตีความฝัน</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">ลิงก์สำคัญ</h4>
+                    <ul class="space-y-2">
+                        <li><a href="/" class="text-gray-300 hover:text-white transition-colors">หน้าแรก</a></li>
+                        <li><a href="/ai/" class="text-gray-300 hover:text-white transition-colors">เลขเด็ด AI</a></li>
+                        <li><a href="/dreams/" class="text-gray-300 hover:text-white transition-colors">ตีความฝัน</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">ติดต่อเรา</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white transition-colors">เกี่ยวกับเรา</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition-colors">ติดต่อเรา</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white transition-colors">นโยบายความเป็นส่วนตัว</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+                <p class="text-gray-300">&copy; 2025 LekDedAI. All rights reserved.</p>
+            </div>
         </div>
     </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Countdown timer functionality
+        function updateCountdown() {
+            const now = new Date();
+            const targetDate = new Date('2025-01-01T00:00:00'); // งวดถัดไป
+            
+            const timeDiff = targetDate - now;
+            
+            if (timeDiff > 0) {
+                const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+                
+                const countdownElement = document.getElementById('countdown-timer');
+                if (countdownElement) {
+                    countdownElement.innerHTML = `${days} วัน ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+        
+        // Update countdown every second
+        setInterval(updateCountdown, 1000);
+        updateCountdown(); // Initial call
+    </script>
 </body>
 </html>

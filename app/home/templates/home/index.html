@@ -1,34 +1,234 @@
 {% extends "base.html" %}
 
+{% block title %}LekDedAI - เลขเด็ดจาก AI{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="text-center">
-        <h1 class="text-4xl font-bold mb-4">ยินดีต้อนรับสู่ LekDedAI</h1>
-        <p class="text-xl text-gray-600 mb-8">เลขเด็ดจาก AI วิเคราะห์แม่นยำ</p>
+<!-- Hero Section -->
+<section class="gradient-bg text-white py-20">
+    <div class="container mx-auto px-4 text-center">
+        <h1 class="text-4xl md:text-6xl font-bold mb-8">
+            เลขเด็ด AI ประจำงวด 1 มกราคม 2568
+        </h1>
         
-        <div class="bg-white rounded-lg shadow-lg p-8 max-w-2xl mx-auto">
-            <h2 class="text-2xl font-bold mb-4">🚀 กำลังพัฒนา</h2>
-            <p class="text-gray-600">ระบบกำลังอยู่ในช่วงการพัฒนา จะเปิดให้บริการเร็วๆ นี้</p>
+        <!-- Lucky Numbers Display -->
+        <div class="flex justify-center items-center space-x-6 mb-8 flex-wrap">
+            <div class="lucky-number text-white text-4xl md:text-6xl font-bold rounded-full w-24 h-24 md:w-32 md:h-32 flex items-center justify-center shadow-2xl">
+                78
+            </div>
+            <div class="lucky-number text-white text-4xl md:text-6xl font-bold rounded-full w-24 h-24 md:w-32 md:h-32 flex items-center justify-center shadow-2xl">
+                51
+            </div>
+            <div class="lucky-number text-white text-4xl md:text-6xl font-bold rounded-full w-24 h-24 md:w-32 md:h-32 flex items-center justify-center shadow-2xl">
+                492
+            </div>
+        </div>
+        
+        <p class="text-xl md:text-2xl mb-8 text-gray-100">
+            วิเคราะห์จากสถิติย้อนหลังและแนวโน้มด้วย Machine Learning
+        </p>
+        
+        <a href="/ai/" class="inline-block bg-yellow-400 text-gray-900 text-xl font-bold px-8 py-4 rounded-full hover:bg-yellow-300 transition-all transform hover:scale-105 shadow-2xl mb-8">
+            ดูเลขเด็ด AI ทั้งหมด
+        </a>
+        
+        <!-- Countdown Timer -->
+        <div class="countdown-timer inline-block px-6 py-3 rounded-full">
+            <p class="text-sm font-medium mb-2">เหลือเวลาก่อนประกาศผล:</p>
+            <div id="countdown-timer" class="text-2xl font-bold">5 วัน 10:30:15</div>
+        </div>
+    </div>
+</section>
+
+<!-- Interactive Tools Section -->
+<section class="py-16 bg-gray-100">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Lottery Checker -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 card-hover">
+                <h3 class="text-2xl font-bold mb-6 text-center text-purple-600">
+                    <i class="fas fa-search mr-3"></i>
+                    ตรวจผลสลากกินแบ่งรัฐบาลล่าสุด
+                </h3>
+                <div class="flex space-x-3">
+                    <input 
+                        type="text" 
+                        placeholder="กรอกเลข 6 หลักของคุณที่นี่" 
+                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 text-lg"
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                    >
+                    <button class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold">
+                        ตรวจรางวัล
+                    </button>
+                </div>
+            </div>
             
-            <div class="mt-8 grid grid-cols-2 gap-4">
-                <div class="bg-purple-100 p-4 rounded">
-                    <h3 class="font-bold">🎯 เลขเด็ด AI</h3>
-                    <p class="text-sm">วิเคราะห์ด้วย Machine Learning</p>
-                </div>
-                <div class="bg-blue-100 p-4 rounded">
-                    <h3 class="font-bold">💭 ตีความฝัน</h3>
-                    <p class="text-sm">แปลงความฝันเป็นเลข</p>
-                </div>
-                <div class="bg-green-100 p-4 rounded">
-                    <h3 class="font-bold">📊 สถิติหวย</h3>
-                    <p class="text-sm">วิเคราะห์แนวโน้ม</p>
-                </div>
-                <div class="bg-yellow-100 p-4 rounded">
-                    <h3 class="font-bold">🎰 ตรวจหวย</h3>
-                    <p class="text-sm">ตรวจผลรางวัลทันที</p>
+            <!-- Dream Interpretation -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 card-hover">
+                <h3 class="text-2xl font-bold mb-6 text-center text-blue-600">
+                    <i class="fas fa-moon mr-3"></i>
+                    ตีความฝันให้เป็นเลข
+                </h3>
+                <div class="flex space-x-3">
+                    <input 
+                        type="text" 
+                        placeholder="คุณฝันว่าอะไร? เช่น 'ฝันเห็นช้าง'" 
+                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg"
+                    >
+                    <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                        ค้นหาคำทำนาย
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>
+
+<!-- Core Features Section -->
+<section class="py-16">
+    <div class="container mx-auto px-4">
+        <h2 class="text-4xl font-bold text-center mb-16">ฟีเจอร์หลักของเรา</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <!-- Feature Card 1 -->
+            <div class="feature-card-1 text-white rounded-2xl p-8 text-center card-hover">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-3">เลขเด็ด AI</h3>
+                <p class="text-gray-100">วิเคราะห์ด้วย Machine Learning</p>
+            </div>
+            
+            <!-- Feature Card 2 -->
+            <div class="feature-card-2 text-white rounded-2xl p-8 text-center card-hover">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-moon"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-3">ตีความฝัน</h3>
+                <p class="text-gray-100">แปลความฝันเป็นเลขนำโชค</p>
+            </div>
+            
+            <!-- Feature Card 3 -->
+            <div class="feature-card-3 text-white rounded-2xl p-8 text-center card-hover">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-3">สถิติหวย</h3>
+                <p class="text-gray-100">วิเคราะห์ข้อมูลสถิติย้อนหลัง</p>
+            </div>
+            
+            <!-- Feature Card 4 -->
+            <div class="feature-card-4 text-white rounded-2xl p-8 text-center card-hover">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-3">ตรวจหวย</h3>
+                <p class="text-gray-100">ตรวจผลสลากกินแบ่งรัฐบาล</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+        <h2 class="text-4xl font-bold text-center mb-16">LekDedAI ทำงานอย่างไร?</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Step 1 -->
+            <div class="text-center">
+                <div class="bg-purple-600 text-white text-4xl rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-3">1. รวบรวมสถิติ</h3>
+                <p class="text-gray-600">รวบรวมข้อมูลผลสลากย้อนหลังมากกว่า 10 ปี</p>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="text-center">
+                <div class="bg-blue-600 text-white text-4xl rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-3">2. วิเคราะห์ด้วย AI</h3>
+                <p class="text-gray-600">ค้นหาแพทเทิร์นและความน่าจะเป็นที่ซ่อนอยู่</p>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="text-center">
+                <div class="bg-green-600 text-white text-4xl rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-3">3. สร้างชุดเลขเด็ด</h3>
+                <p class="text-gray-600">นำเสนอชุดเลขที่มีโอกาสสูงสุดสำหรับงวดถัดไป</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- News & Content Section -->
+<section class="py-16">
+    <div class="container mx-auto px-4">
+        <h2 class="text-4xl font-bold text-center mb-16">ข่าวสารและบทความน่าสนใจ</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Article Card 1 -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden card-hover">
+                <div class="h-48 bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
+                    <i class="fas fa-newspaper text-6xl text-white opacity-80"></i>
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">ส่องเลขเด็ดทะเบียนรถนายกฯ ประจำงวดนี้</h3>
+                    <p class="text-gray-600 mb-4">วิเคราะห์เลขเด็ดจากทะเบียนรถของบุคคลสำคัญที่มักให้โชค</p>
+                    <a href="/news/" class="text-purple-600 font-semibold hover:text-purple-700 transition-colors">
+                        อ่านเพิ่มเติม →
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Article Card 2 -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden card-hover">
+                <div class="h-48 bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center">
+                    <i class="fas fa-moon text-6xl text-white opacity-80"></i>
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">รวม 10 ความฝันยอดฮิตที่มักให้โชค</h3>
+                    <p class="text-gray-600 mb-4">ความฝันที่พบบ่อยและมักนำโชคมาให้ผู้ฝัน</p>
+                    <a href="/dreams/" class="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
+                        อ่านเพิ่มเติม →
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Article Card 3 -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden card-hover">
+                <div class="h-48 bg-gradient-to-br from-green-400 to-emerald-400 flex items-center justify-center">
+                    <i class="fas fa-chart-line text-6xl text-white opacity-80"></i>
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">สถิติเลขเบิ้ล-เลขหาม ที่น่าจับตามอง</h3>
+                    <p class="text-gray-600 mb-4">วิเคราะห์สถิติเลขที่ออกบ่อยและเลขที่หายไปนาน</p>
+                    <a href="/lotto_stats/" class="text-green-600 font-semibold hover:text-green-700 transition-colors">
+                        อ่านเพิ่มเติม →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+    <div class="container mx-auto px-4 text-center">
+        <h2 class="text-4xl font-bold mb-6">พร้อมที่จะได้เลขเด็ดแล้วหรือยัง?</h2>
+        <p class="text-xl mb-8 text-gray-100">เริ่มต้นใช้งาน LekDedAI วันนี้ และเพิ่มโอกาสในการถูกรางวัล</p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/ai/" class="bg-yellow-400 text-gray-900 px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-300 transition-all transform hover:scale-105">
+                ดูเลขเด็ด AI
+            </a>
+            <a href="/dreams/" class="bg-white text-purple-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105">
+                ตีความฝัน
+            </a>
+        </div>
+    </div>
+</section>
 {% endblock %}

@@ -58,7 +58,6 @@ class DreamInterpretation(models.Model):
     interpretation = models.TextField("คำทำนาย", blank=True)
     
     # ข้อมูลเพิ่มเติม
-    dream_date = models.DateField("วันที่ฝัน", null=True, blank=True)
     ip_address = models.GenericIPAddressField("IP Address", null=True, blank=True)
     
     class Meta:

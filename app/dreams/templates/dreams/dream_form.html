@@ -24,18 +24,6 @@
                     ></textarea>
                 </div>
                 
-                <div class="mb-6">
-                    <label for="dream_date" class="block font-semibold mb-2">
-                        วันที่ฝัน (ถ้าจำได้)
-                    </label>
-                    <input
-                        type="date"
-                        id="dream_date"
-                        name="dream_date"
-                        class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    >
-                </div>
-                
                 <button
                     type="submit"
                     class="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition"
@@ -114,7 +102,6 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
     e.preventDefault();
     
     const dreamText = document.getElementById('dream_text').value;
-    const dreamDate = document.getElementById('dream_date').value;
     
     // Show loading
     document.getElementById('loading').classList.remove('hidden');
@@ -129,8 +116,7 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
                 'X-CSRFToken': getCookie('csrftoken')
             },
             body: JSON.stringify({
-                dream_text: dreamText,
-                dream_date: dreamDate
+                dream_text: dreamText
             })
         });
         
