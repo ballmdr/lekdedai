@@ -10,6 +10,7 @@ urlpatterns = [
     path('lotto_stats/', include('lotto_stats.urls')),
     path('news/', include('news.urls')),
     path('ai/', include('ai_engine.urls')),
+    path('lottery_checker/', include('lottery_checker.urls')),
 ]
 
 if settings.DEBUG:

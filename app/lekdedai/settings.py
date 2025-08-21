@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'lotto_stats',
     'news',
     'ai_engine',
+    'lottery_checker',
 ]
 # เพิ่มการตั้งค่า Media files
 MEDIA_URL = '/media/'

@@ -1,0 +1,488 @@
+    <style>
+        
+        .container {
+            max-width: 480px !important;
+            width: 100% !important;
+            margin: auto;
+            padding: 2rem;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        h2.lotto, h3.lotto {
+            color: #1a237e;
+            text-align: center;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        h2.lotto {
+            font-size: 2.2em;
+            margin-bottom: 1rem;
+        }
+
+        .results-container {
+            max-width: 800px;
+            margin: auto;
+            padding: 2rem;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        input.lotto, select.lotto, button.lotto {
+            width: 100%;
+            padding: 15px;
+            margin: 8px 0;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: 'Sarabun', sans-serif;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        
+        input.lotto, select.lotto {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #e0e0e0;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        button.lotto {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #1a237e;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 18px;
+            border: none;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        button:hover {
+            background: linear-gradient(45deg, #FFA500, #FF6347);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 165, 0, 0.4);
+        }
+        
+        .prize-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .prize-box {
+            flex: 1 1 auto;
+            min-width: 160px;
+            border: none;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-radius: 15px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        .prize-box:hover {
+            transform: translateY(-5px);
+        }
+        
+        .prize-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+        }
+        
+        .prize-number {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin: 15px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-style: normal;
+        }
+        
+        .first-prize { 
+            color: #d32f2f; 
+            font-size: 2.2em;
+            font-style: normal;
+        }
+        
+        .other-prize { 
+            color: #1976d2; 
+            font-size: 1.6em;
+            font-style: normal;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        label.lotto {
+            font-weight: 600;
+            color: #1a237e;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        #lottoResult {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 1rem;
+            border-left: 4px solid #FFD700;
+        }
+        
+        
+        .prize-numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            justify-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .prize-numbers-grid span {
+            font-size: 1.0em;
+            font-weight: 600;
+            border: 2px solid #e0e0e0;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-style: normal;
+        }
+        
+        .prize-numbers-grid span:hover {
+            border-color: #FFD700;
+            background: linear-gradient(135deg, #fffbf0 0%, #fff8e1 100%);
+        }
+        
+        .prize-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .prize-row span {
+            font-size: 1.2em;
+            font-weight: 600;
+            border: 2px solid #e0e0e0;
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-style: normal;
+        }
+        
+        .prize-row span:hover {
+            border-color: #FFD700;
+            background: linear-gradient(135deg, #fffbf0 0%, #fff8e1 100%);
+        }
+    </style>
+<div class="container" id="lotto-checker">
+  <label class="lotto">กรอกเลขสลาก (สูงสุด 10 หมายเลข, คั่นด้วยคอมมา):</label>
+  <input class="lotto" type="text" id="lottoInput" placeholder="เช่น 123456,654321">
+  <label class="lotto" style="margin-top:10px;display:block;">เลือกวันที่ออกรางวัล:</label>
+  <select class="lotto" id="lottoDate">
+    <option value="2025-08-01">1 ส.ค. 2568</option>
+    <option value="2025-07-16">16 ก.ค. 2568</option>
+    <option value="2025-07-01">1 ก.ค. 2568</option>
+    <option value="2025-06-16">16 มิ.ย. 2568</option>
+    <option value="2025-06-01">1 มิ.ย. 2568</option>
+    <option value="2025-05-16">16 พ.ค. 2568</option>
+    <option value="2025-05-02">2 พ.ค. 2568</option>
+    <option value="2025-04-16">16 เม.ย. 2568</option>
+    <option value="2025-04-01">1 เม.ย. 2568</option>
+    <option value="2025-03-16">16 มี.ค. 2568</option>
+    <option value="2025-03-01">1 มี.ค. 2568</option>
+    <option value="2025-02-16">16 ก.พ. 2568</option>
+    <option value="2025-02-01">1 ก.พ. 2568</option>
+    <option value="2025-01-17">17 ม.ค. 2568</option>
+    <option value="2025-01-02">2 ม.ค. 2568</option>
+  </select>
+
+  <button class="lotto" onclick="checkLottoAndLoadFullResults()">ตรวจหวย</button>
+  <div id="lottoResult" style="margin-top:1rem;"></div>
+</div>
+
+<div class="results-container" id="lotto-full-display">
+  <h2 class="lotto">ผลสลากกินแบ่งรัฐบาล</h2>
+  <div id="latestLottoResult" class="loading">กำลังโหลดข้อมูลรางวัล...</div>
+</div>
+
+<script>
+// ฟังก์ชันสำหรับแปลงวันที่เป็นภาษาไทย
+function formatThaiDate(selectedDate) {
+    const monthNamesThai = [
+        "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+        "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+    ];
+    
+    // แปลงจาก YYYY-MM-DD
+    const dateParts = selectedDate.split('-');
+    const year = parseInt(dateParts[0]);
+    const month = parseInt(dateParts[1]);
+    const date = parseInt(dateParts[2]);
+    
+    const thaiMonth = monthNamesThai[month - 1];
+    const thaiYear = year + 543;
+    
+    return `${date} ${thaiMonth} ${thaiYear}`;
+}
+
+// ฟังก์ชันหลักเมื่อกดปุ่ม "ตรวจหวย"
+async function checkLottoAndLoadFullResults() {
+  const selectedDate = document.getElementById("lottoDate").value;
+  
+  // 1. เรียกฟังก์ชันตรวจหวยรายเลข
+  await checkLotto(selectedDate);
+
+  // 2. เรียกฟังก์ชันแสดงผลรางวัลทั้งหมด
+  await loadLottoResultsForDate(selectedDate);
+}
+
+// ฟังก์ชันสำหรับดึงข้อมูลรางวัลทั้งหมดตามวันที่ที่เลือก
+async function loadLottoResultsForDate(selectedDateFull) {
+  const displayDiv = document.getElementById("latestLottoResult");
+  displayDiv.innerHTML = "กำลังโหลดข้อมูลรางวัล...";
+
+  // แยก date, month, year จาก selectedDateFull (e.g., "YYYY-MM-DD")
+  const dateParts = selectedDateFull.split('-');
+  const year = dateParts[0];
+  const month = dateParts[1];
+  const date = dateParts[2];
+
+  const payload = {
+    date: date,
+    month: month,
+    year: year
+  };
+
+  try {
+    const res = await fetch("https://www.machiseo.com/viu/lotto-full-proxy.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    console.log("Full Lotto Results API Response:", data);
+
+    if (!data || !data.response || !data.response.result) {
+      displayDiv.innerHTML = "<span style='color:red;'>ไม่สามารถโหลดข้อมูลรางวัลได้</span>";
+      return;
+    }
+    
+    const resultData = data.response.result;
+    const lottoData = resultData.data;
+    
+    // ใช้ฟังก์ชันแปลงวันที่แทนการพึ่งพาข้อมูลจาก API
+    const formattedDate = formatThaiDate(selectedDateFull);
+    const period = resultData.period && resultData.period.length > 0 ? resultData.period[0] : 'N/A';
+
+    let htmlContent = `<h3 class="lotto">งวดวันที่ ${formattedDate} (งวดที่ ${period})</h3>`;
+
+    // รางวัลที่ 1
+    const firstPrizeNumber = lottoData.first?.number[0]?.value || 'N/A';
+    
+    // เลขหน้า 3 ตัว และเลขท้าย 3 ตัว
+    let front3Numbers = 'N/A';
+    let last3Numbers = 'N/A';
+    let last2Number = 'N/A';
+
+    // ตรวจสอบข้อมูลที่มีอยู่
+    if (lottoData.last3f?.number) {
+        front3Numbers = lottoData.last3f.number.map(item => item.value).join(' ');
+    }
+    
+    if (lottoData.last3b?.number) {
+        last3Numbers = lottoData.last3b.number.map(item => item.value).join(' ');
+    }
+    
+    if (lottoData.last2?.number) {
+        last2Number = lottoData.last2.number[0].value;
+    }
+
+    // รางวัลข้างเคียง
+    let near1Numbers = [];
+    if (lottoData.near1?.number) {
+        near1Numbers = lottoData.near1.number.map(item => item.value);
+    }
+
+    htmlContent += `
+      <div class="prize-grid">
+        <div class="prize-box">
+          <h4>รางวัลที่ 1 <br> <span style="font-size:0.8em;">1 รางวัลๆ 6,000,000 บาท</span></h4>
+          <div class="prize-number first-prize">${firstPrizeNumber}</div>
+        </div>
+        <div class="prize-box">
+          <h4>เลขหน้า 3 ตัว <br> <span style="font-size:0.8em;">2 รางวัลๆ 4,000 บาท</span></h4>
+          <div class="prize-number other-prize">${front3Numbers}</div>
+        </div>
+        <div class="prize-box">
+          <h4>เลขท้าย 3 ตัว <br> <span style="font-size:0.8em;">2 รางวัลๆ 4,000 บาท</span></h4>
+          <div class="prize-number other-prize">${last3Numbers}</div>
+        </div>
+        <div class="prize-box">
+          <h4>เลขท้าย 2 ตัว <br> <span style="font-size:0.8em;">1 รางวัลๆ 2,000 บาท</span></h4>
+          <div class="prize-number other-prize">${last2Number}</div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-bottom: 20px;">
+        <div class="prize-box" style="display:inline-block; margin:5px;">
+          <h4>รางวัลข้างเคียงรางวัลที่ 1 <br> <span style="font-size:0.8em;">2 รางวัลๆ 100,000 บาท</span></h4>
+          <div class="prize-number other-prize">${near1Numbers.join(' ')}</div>
+        </div>
+      </div>
+    `;
+
+    // รางวัลที่ 2
+    htmlContent += `
+      <h4 style="text-align:center; margin-top:30px; color:#1a237e; font-weight:700;">ผลสลากกินแบ่งรัฐบาล รางวัลที่ 2 <br> <span style="font-size:0.8em;">5 รางวัลๆ 200,000 บาท</span></h4>
+      <div class="prize-row">
+    `;
+    (lottoData.second?.number || []).forEach(item => {
+      htmlContent += `<span>${item.value}</span>`;
+    });
+    htmlContent += `</div>`;
+
+    // รางวัลที่ 3
+    htmlContent += `
+      <h4 style="text-align:center; margin-top:30px; color:#1a237e; font-weight:700;">ผลสลากกินแบ่งรัฐบาล รางวัลที่ 3 <br> <span style="font-size:0.8em;">10 รางวัลๆ 80,000 บาท</span></h4>
+      <div class="prize-row">
+    `;
+    (lottoData.third?.number || []).forEach(item => {
+      htmlContent += `<span>${item.value}</span>`;
+    });
+    htmlContent += `</div>`;
+
+    // รางวัลที่ 4
+    htmlContent += `
+      <h4 style="text-align:center; margin-top:30px; color:#1a237e; font-weight:700;">ผลสลากกินแบ่งรัฐบาล รางวัลที่ 4 <br> <span style="font-size:0.8em;">50 รางวัลๆ 40,000 บาท</span></h4>
+      <div class="prize-numbers-grid">
+    `;
+    (lottoData.fourth?.number || []).forEach(item => {
+      htmlContent += `<span>${item.value}</span>`;
+    });
+    htmlContent += `</div>`;
+
+    // รางวัลที่ 5
+    htmlContent += `
+      <h4 style="text-align:center; margin-top:30px; color:#1a237e; font-weight:700;">ผลสลากกินแบ่งรัฐบาล รางวัลที่ 5 <br> <span style="font-size:0.8em;">100 รางวัลๆ 20,000 บาท</span></h4>
+      <div class="prize-numbers-grid">
+    `;
+    (lottoData.fifth?.number || []).forEach(item => {
+      htmlContent += `<span>${item.value}</span>`;
+    });
+    htmlContent += `</div>`;
+
+    displayDiv.innerHTML = htmlContent;
+
+  } catch (err) {
+    console.error("Error loading full lotto results:", err);
+    displayDiv.innerHTML = "<span style='color:red;'>เกิดข้อผิดพลาดในการดึงข้อมูลรางวัล</span>";
+  }
+}
+
+// ฟังก์ชันตรวจหวยรายเลข
+async function checkLotto(selectedDate) {
+  const input = document.getElementById("lottoInput").value.trim();
+  const resultDiv = document.getElementById("lottoResult");
+
+  resultDiv.innerHTML = "กำลังตรวจสอบ...";
+
+  const numbers = input.split(",").map(n => n.trim()).filter(n => /^\d{6}$/.test(n)).slice(0, 10);
+
+  if (numbers.length === 0) {
+    resultDiv.innerHTML = "<span style='color:red;'>กรุณากรอกเลข 6 หลัก อย่างน้อย 1 หมายเลข</span>";
+    return;
+  }
+
+  const payload = {
+    number: numbers.map(num => ({ lottery_num: num })),
+    period_date: selectedDate
+  };
+
+  try {
+    const res = await fetch("https://www.machiseo.com/viu/check-proxy.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    console.log("Full API Response:", data);
+
+    const lottoResults = data?.response?.result;
+
+    if (!lottoResults || !Array.isArray(lottoResults) || lottoResults.length === 0) {
+      resultDiv.innerHTML = "<span style='color:gray;'>ไม่พบข้อมูลรางวัลสำหรับวันที่นี้ หรือไม่ถูกรางวัล</span>";
+      return;
+    }
+
+    const formattedDate = formatThaiDate(selectedDate);
+    let html = `<strong>ผลการตรวจสอบงวดวันที่ ${formattedDate}</strong><ul>`;
+    for (const item of lottoResults) {
+      const rewards = item.status_data && Array.isArray(item.status_data) && item.status_data.length > 0
+        ? item.status_data.map(r => r.reward).join(", ")
+        : "ไม่ถูกรางวัล";
+      html += `<li><strong>${item.number}</strong>: <span style="color:${item.statusType === 1 ? 'green' : 'gray'};">${rewards}</span></li>`;
+    }
+    html += "</ul>";
+    resultDiv.innerHTML = html;
+
+    console.log("API response processed", data);
+  } catch (err) {
+    console.error("Error during API call:", err);
+    resultDiv.innerHTML = "<span style='color:red;'>เกิดข้อผิดพลาดในการเชื่อมต่อกับ API หรือมีบางอย่างผิดพลาด</span>";
+  }
+}
+
+// เมื่อหน้าเว็บโหลดเสร็จ
+document.addEventListener('DOMContentLoaded', () => {
+  const initialSelectedDate = document.getElementById("lottoDate").value;
+  loadLottoResultsForDate(initialSelectedDate);
+});
+</script>
+
+<script type="text/javascript">var _Hasync= _Hasync|| [];
+_Hasync.push(['Histats.start', '1,4966706,4,0,0,0,00010000']);
+_Hasync.push(['Histats.fasi', '1']);
+_Hasync.push(['Histats.track_hits', '']);
+(function() {
+var hs = document.createElement('script'); hs.type = 'text/javascript'; hs.async = true;
+hs.src = ('//s10.histats.com/js15_as.js');
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(hs);
+})();</script>
+<noscript><a href="/" target="_blank"><img  src="//sstatic1.histats.com/0.gif?4966706&101" alt="" border="0"></a></noscript>
+<!-- Histats.com  END  -->

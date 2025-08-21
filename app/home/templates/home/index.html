@@ -49,16 +49,42 @@
                     <i class="fas fa-search mr-3"></i>
                     ตรวจผลสลากกินแบ่งรัฐบาลล่าสุด
                 </h3>
-                <div class="flex space-x-3">
+                <div class="flex space-x-3 mb-4">
                     <input 
                         type="text" 
+                        id="lotteryInput"
                         placeholder="กรอกเลข 6 หลักของคุณที่นี่" 
                         class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 text-lg"
                         maxlength="6"
                         pattern="[0-9]{6}"
                     >
-                    <button class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold">
+                    <button 
+                        onclick="checkLottery()"
+                        id="lotteryBtn"
+                        class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                    >
                         ตรวจรางวัล
+                    </button>
+                </div>
+                
+                <!-- Loading -->
+                <div id="lotteryLoading" class="hidden text-center py-4">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                    <p class="mt-2 text-gray-600">กำลังตรวจสอบ...</p>
+                </div>
+                
+                <!-- Results -->
+                <div id="lotteryResults" class="hidden">
+                    <div class="bg-purple-50 rounded-lg p-4 mb-4">
+                        <h4 class="font-semibold text-purple-800 mb-2">ผลการตรวจสอบ:</h4>
+                        <div id="lotteryResultText" class="text-purple-700"></div>
+                    </div>
+                    
+                    <button 
+                        onclick="resetLotteryForm()"
+                        class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                        ตรวจใหม่
                     </button>
                 </div>
             </div>
@@ -69,14 +95,45 @@
                     <i class="fas fa-moon mr-3"></i>
                     ตีความฝันให้เป็นเลข
                 </h3>
-                <div class="flex space-x-3">
+                <div class="flex space-x-3 mb-4">
                     <input 
                         type="text" 
+                        id="dreamInput"
                         placeholder="คุณฝันว่าอะไร? เช่น 'ฝันเห็นช้าง'" 
                         class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg"
                     >
-                    <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                    <button 
+                        onclick="interpretDream()"
+                        id="dreamBtn"
+                        class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                    >
                         ค้นหาคำทำนาย
+                    </button>
+                </div>
+                
+                <!-- Loading -->
+                <div id="dreamLoading" class="hidden text-center py-4">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p class="mt-2 text-gray-600">กำลังวิเคราะห์ความฝัน...</p>
+                </div>
+                
+                <!-- Results -->
+                <div id="dreamResults" class="hidden">
+                    <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                        <h4 class="font-semibold text-blue-800 mb-2">คำทำนาย:</h4>
+                        <p id="dreamInterpretation" class="text-blue-700"></p>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <h4 class="font-semibold text-gray-800 mb-3">เลขมงคลจากความฝัน:</h4>
+                        <div id="dreamNumbers" class="grid grid-cols-3 gap-3"></div>
+                    </div>
+                    
+                    <button 
+                        onclick="resetDreamForm()"
+                        class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                        ตีความใหม่
                     </button>
                 </div>
             </div>
@@ -228,7 +285,177 @@
             <a href="/dreams/" class="bg-white text-purple-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105">
                 ตีความฝัน
             </a>
+            <a href="/lottery_checker/" class="bg-green-500 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-green-600 transition-all transform hover:scale-105">
+                ตรวจหวย
+            </a>
         </div>
     </div>
 </section>
+
+<script>
+// Dream Interpretation Functions
+async function interpretDream() {
+    const dreamInput = document.getElementById('dreamInput');
+    const dreamBtn = document.getElementById('dreamBtn');
+    const dreamLoading = document.getElementById('dreamLoading');
+    const dreamResults = document.getElementById('dreamResults');
+    
+    const dreamText = dreamInput.value.trim();
+    
+    if (!dreamText) {
+        alert('กรุณากรอกความฝันของคุณ');
+        return;
+    }
+    
+    // Show loading
+    dreamLoading.classList.remove('hidden');
+    dreamBtn.disabled = true;
+    dreamResults.classList.add('hidden');
+    
+    try {
+        const response = await fetch('/dreams/analyze/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                dream_text: dreamText
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show results
+            document.getElementById('dreamInterpretation').textContent = data.result.interpretation;
+            
+            // Show numbers
+            const numbersContainer = document.getElementById('dreamNumbers');
+            numbersContainer.innerHTML = '';
+            
+            data.result.numbers.forEach(number => {
+                const div = document.createElement('div');
+                div.className = 'bg-white border-2 border-blue-300 rounded-lg p-3 text-center';
+                div.innerHTML = `<span class="text-xl font-bold text-blue-600">${number}</span>`;
+                numbersContainer.appendChild(div);
+            });
+            
+            dreamResults.classList.remove('hidden');
+        } else {
+            alert(data.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+        }
+    } catch (error) {
+        alert('เกิดข้อผิดพลาด: ' + error.message);
+    } finally {
+        dreamLoading.classList.add('hidden');
+        dreamBtn.disabled = false;
+    }
+}
+
+function resetDreamForm() {
+    document.getElementById('dreamInput').value = '';
+    document.getElementById('dreamResults').classList.add('hidden');
+    document.getElementById('dreamLoading').classList.add('hidden');
+    document.getElementById('dreamBtn').disabled = false;
+}
+
+// Lottery Checker Functions
+async function checkLottery() {
+    const lotteryInput = document.getElementById('lotteryInput');
+    const lotteryBtn = document.getElementById('lotteryBtn');
+    const lotteryLoading = document.getElementById('lotteryLoading');
+    const lotteryResults = document.getElementById('lotteryResults');
+    const lotteryResultText = document.getElementById('lotteryResultText');
+
+    const lotteryNumber = lotteryInput.value.trim();
+
+    if (!lotteryNumber) {
+        alert('กรุณากรอกเลขสลากที่ต้องการตรวจ');
+        return;
+    }
+
+    // Show loading
+    lotteryLoading.classList.remove('hidden');
+    lotteryBtn.disabled = true;
+    lotteryResults.classList.add('hidden');
+    lotteryResultText.textContent = ''; // Clear previous results
+
+    try {
+        const response = await fetch('/lottery_checker/api/check/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lottery_number: lotteryNumber
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Show results
+            lotteryResultText.textContent = data.result.message;
+            lotteryResults.classList.remove('hidden');
+        } else {
+            lotteryResultText.textContent = data.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+            lotteryResults.classList.remove('hidden');
+        }
+    } catch (error) {
+        lotteryResultText.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
+        lotteryResults.classList.remove('hidden');
+    } finally {
+        lotteryLoading.classList.add('hidden');
+        lotteryBtn.disabled = false;
+    }
+}
+
+function resetLotteryForm() {
+    document.getElementById('lotteryInput').value = '';
+    document.getElementById('lotteryResults').classList.add('hidden');
+    document.getElementById('lotteryLoading').classList.add('hidden');
+    document.getElementById('lotteryResultText').textContent = '';
+    document.getElementById('lotteryBtn').disabled = false;
+}
+
+// Utility function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Enter key support for dream input
+document.addEventListener('DOMContentLoaded', function() {
+    const dreamInput = document.getElementById('dreamInput');
+    if (dreamInput) {
+        dreamInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                interpretDream();
+            }
+        });
+    }
+    
+    // Enter key support for lottery input
+    const lotteryInput = document.getElementById('lotteryInput');
+    if (lotteryInput) {
+        lotteryInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkLottery();
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
