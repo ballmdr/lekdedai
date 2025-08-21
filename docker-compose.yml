@@ -11,6 +11,11 @@ services:
       - ./postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lekdedai_user -d lekdedai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   web:
     build: .
@@ -26,4 +31,5 @@ services:
       - SECRET_KEY=your-secret-key-here
       - DATABASE_URL=postgres://lekdedai_user:lekdedai_pass123@db:5432/lekdedai
     depends_on:
-      - db
+      db:
+        condition: service_healthy
