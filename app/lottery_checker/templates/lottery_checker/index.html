@@ -23,6 +23,7 @@
                     id="lottoInput" 
                     placeholder="เช่น 123456, 654321, 789012" 
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-300 text-lg"
+                    onkeypress="handleEnterKey(event)"
                 >
             </div>
 
@@ -448,6 +449,20 @@ async function checkLotto(selectedDate) {
             </div>
         `;
     }
+}
+
+// ฟังก์ชันสำหรับจัดการการกด Enter ในช่องกรอกเลขหวย
+function handleEnterKey(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // ป้องกันการ submit form
+        checkLottoAndLoadFullResults();
+    }
+}
+
+// ฟังก์ชันเมื่อมีการเปลี่ยนวันที่
+function onDateChange() {
+    const selectedDate = document.getElementById("lottoDate").value;
+    loadLottoResultsForDate(selectedDate);
 }
 
 // เมื่อหน้าเว็บโหลดเสร็จ
