@@ -35,21 +35,11 @@
                     id="lottoDate" 
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-300 text-lg"
                 >
-                    <option value="2025-08-01">1 สิงหาคม 2568</option>
-                    <option value="2025-07-16">16 กรกฎาคม 2568</option>
-                    <option value="2025-07-01">1 กรกฎาคม 2568</option>
-                    <option value="2025-06-16">16 มิถุนายน 2568</option>
-                    <option value="2025-06-01">1 มิถุนายน 2568</option>
-                    <option value="2025-05-16">16 พฤษภาคม 2568</option>
-                    <option value="2025-05-02">2 พฤษภาคม 2568</option>
-                    <option value="2025-04-16">16 เมษายน 2568</option>
-                    <option value="2025-04-01">1 เมษายน 2568</option>
-                    <option value="2025-03-16">16 มีนาคม 2568</option>
-                    <option value="2025-03-01">1 มีนาคม 2568</option>
-                    <option value="2025-02-16">16 กุมภาพันธ์ 2568</option>
-                    <option value="2025-02-01">1 กุมภาพันธ์ 2568</option>
-                    <option value="2025-01-17">17 มกราคม 2568</option>
-                    <option value="2025-01-02">2 มกราคม 2568</option>
+                    {% for option in draw_date_options %}
+                        <option value="{{ option.value }}" {% if option.is_special %}class="special-date"{% endif %}>
+                            {{ option.label }}
+                        </option>
+                    {% endfor %}
                 </select>
             </div>
 

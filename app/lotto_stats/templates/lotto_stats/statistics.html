@@ -6,6 +6,89 @@
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-4xl font-bold text-center mb-8">📊 สถิติหวยย้อนหลัง</h1>
     
+    <!-- สถานะการซิงค์ข้อมูล -->
+    {% if sync_status %}
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">🔄 สถานะการซิงค์ข้อมูล</h2>
+            <div class="flex gap-2">
+                <button 
+                    onclick="syncRecentData()"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                    🔄 ซิงค์ข้อมูลล่าสุด
+                </button>
+                <button 
+                    onclick="showSyncDateModal()"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                >
+                    📅 ซิงค์วันที่เฉพาะ
+                </button>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- lotto_stats -->
+            <div class="border rounded-lg p-4">
+                <h3 class="font-bold text-lg mb-2 text-purple-600">📊 lotto_stats</h3>
+                <div class="space-y-2 text-sm">
+                    <p><span class="font-semibold">จำนวนข้อมูล:</span> {{ sync_status.lotto_stats.total_records }} รายการ</p>
+                    <p><span class="font-semibold">ข้อมูลล่าสุด:</span> 
+                        {% if sync_status.lotto_stats.latest_date %}
+                            {{ sync_status.lotto_stats.latest_date|date:"j M Y" }}
+                        {% else %}
+                            ไม่มีข้อมูล
+                        {% endif %}
+                    </p>
+                    <p><span class="font-semibold">ข้อมูลเก่าสุด:</span> 
+                        {% if sync_status.lotto_stats.oldest_date %}
+                            {{ sync_status.lotto_stats.oldest_date|date:"j M Y" }}
+                        {% else %}
+                            ไม่มีข้อมูล
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- lottery_checker -->
+            <div class="border rounded-lg p-4">
+                <h3 class="font-bold text-lg mb-2 text-blue-600">🎯 lottery_checker</h3>
+                <div class="space-y-2 text-sm">
+                    <p><span class="font-semibold">จำนวนข้อมูล:</span> {{ sync_status.lottery_checker.total_records }} รายการ</p>
+                    <p><span class="font-semibold">ข้อมูลล่าสุด:</span> 
+                        {% if sync_status.lottery_checker.latest_date %}
+                            {{ sync_status.lottery_checker.latest_date|date:"j M Y" }}
+                        {% else %}
+                            ไม่มีข้อมูล
+                        {% endif %}
+                    </p>
+                    <p><span class="font-semibold">ข้อมูลเก่าสุด:</span> 
+                        {% if sync_status.lottery_checker.oldest_date %}
+                            {{ sync_status.lottery_checker.oldest_date|date:"j M Y" }}
+                        {% else %}
+                            ไม่มีข้อมูล
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- สถานะการซิงค์ -->
+        <div class="mt-4 p-3 rounded-lg {% if sync_status.is_synced %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+            <p class="font-semibold">
+                {% if sync_status.is_synced %}
+                    ✅ ข้อมูลซิงค์กันแล้ว
+                {% else %}
+                    ⚠️ ข้อมูลยังไม่ซิงค์กัน
+                {% endif %}
+            </p>
+            {% if sync_status.last_sync %}
+                <p class="text-sm mt-1">อัปเดตล่าสุด: {{ sync_status.last_sync|date:"j M Y H:i" }}</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- สรุปสถิติ -->
     {% if stats_summary %}
     <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
@@ -121,6 +204,43 @@
         
         <div id="searchResult" class="mt-4 hidden">
             <!-- ผลการค้นหาจะแสดงที่นี่ -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal สำหรับซิงค์วันที่เฉพาะ -->
+<div id="syncDateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">📅 ซิงค์ข้อมูลวันที่เฉพาะ</h3>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">วันที่ (YYYY-MM-DD)</label>
+                <input 
+                    type="date" 
+                    id="syncDateInput"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+            </div>
+            <div class="mb-4">
+                <label class="flex items-center">
+                    <input type="checkbox" id="forceUpdateCheck" class="mr-2">
+                    <span class="text-sm">บังคับอัปเดตข้อมูลที่มีอยู่แล้ว</span>
+                </label>
+            </div>
+            <div class="flex gap-2">
+                <button 
+                    onclick="syncSpecificDate()"
+                    class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                >
+                    ซิงค์
+                </button>
+                <button 
+                    onclick="hideSyncDateModal()"
+                    class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                >
+                    ยกเลิก
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -284,6 +404,86 @@ async function searchNumber() {
         
     } catch (error) {
         resultDiv.innerHTML = `<p class="text-red-600">เกิดข้อผิดพลาด: ${error.message}</p>`;
+    }
+}
+
+// ฟังก์ชันซิงค์ข้อมูลล่าสุด
+async function syncRecentData() {
+    try {
+        const response = await fetch('/lotto_stats/api/sync/data/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                days_back: 7,
+                force_update: false
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ ${result.message}`);
+            // รีเฟรชหน้าเพื่อแสดงข้อมูลใหม่
+            location.reload();
+        } else {
+            alert(`❌ เกิดข้อผิดพลาด: ${result.error}`);
+        }
+        
+    } catch (error) {
+        alert(`❌ เกิดข้อผิดพลาด: ${error.message}`);
+    }
+}
+
+// ฟังก์ชันแสดง Modal ซิงค์วันที่เฉพาะ
+function showSyncDateModal() {
+    document.getElementById('syncDateModal').classList.remove('hidden');
+    // ตั้งค่าวันที่เริ่มต้นเป็นวันนี้
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('syncDateInput').value = today;
+}
+
+// ฟังก์ชันซ่อน Modal
+function hideSyncDateModal() {
+    document.getElementById('syncDateModal').classList.add('hidden');
+}
+
+// ฟังก์ชันซิงค์วันที่เฉพาะ
+async function syncSpecificDate() {
+    const date = document.getElementById('syncDateInput').value;
+    const forceUpdate = document.getElementById('forceUpdateCheck').checked;
+    
+    if (!date) {
+        alert('กรุณาเลือกวันที่');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/lotto_stats/api/sync/date/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                date: date,
+                force_update: forceUpdate
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ ${result.message}`);
+            hideSyncDateModal();
+            // รีเฟรชหน้าเพื่อแสดงข้อมูลใหม่
+            location.reload();
+        } else {
+            alert(`❌ เกิดข้อผิดพลาด: ${result.error}`);
+        }
+        
+    } catch (error) {
+        alert(`❌ เกิดข้อผิดพลาด: ${error.message}`);
     }
 }
 

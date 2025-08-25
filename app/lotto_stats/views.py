@@ -5,9 +5,13 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from collections import Counter
 import json
+import logging
 
 from .models import LotteryDraw, NumberStatistics, HotColdNumber
 from .stats_calculator import StatsCalculator
+from .lotto_sync_service import LottoSyncService
+
+logger = logging.getLogger(__name__)
 
 def statistics_page(request):
     """หน้าแสดงสถิติหวย"""
@@ -39,6 +43,10 @@ def statistics_page(request):
     # สถิติเพิ่มเติม
     stats_summary = calculator.get_statistics_summary()
     
+    # สถานะการซิงค์ข้อมูล
+    sync_service = LottoSyncService()
+    sync_status = sync_service.get_sync_status()
+    
     context = {
         'recent_draws': recent_draws,
         'hot_numbers': hot_numbers[:5],
@@ -50,6 +58,7 @@ def statistics_page(request):
         'monthly_labels': monthly_labels,
         'monthly_data': monthly_data,
         'stats_summary': stats_summary,
+        'sync_status': sync_status,
     }
     
     return render(request, 'lotto_stats/statistics.html', context)
@@ -103,3 +112,116 @@ def api_number_detail(request, number):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+def api_sync_status(request):
+    """API สำหรับดูสถานะการซิงค์ข้อมูล"""
+    try:
+        sync_service = LottoSyncService()
+        status = sync_service.get_sync_status()
+        
+        # ตรวจสอบว่า status เป็น dict หรือไม่
+        if not isinstance(status, dict):
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid response format from sync service'
+            }, status=500)
+        
+        return JsonResponse({
+            'success': True,
+            'status': status
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in api_sync_status: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+def api_sync_data(request):
+    """API สำหรับซิงค์ข้อมูลจาก lottery_checker"""
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'error': 'Method not allowed'
+        }, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        days_back = data.get('days_back', 7)
+        force_update = data.get('force_update', False)
+        
+        sync_service = LottoSyncService()
+        result = sync_service.sync_recent_data(days_back, force_update)
+        
+        # ตรวจสอบว่า result เป็น dict หรือไม่
+        if not isinstance(result, dict):
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid response format from sync service'
+            }, status=500)
+        
+        # ตรวจสอบว่า result มี key ที่จำเป็นหรือไม่
+        if 'success' not in result:
+            result['success'] = True  # ถ้าไม่มี success ให้เพิ่มเข้าไป
+        
+        return JsonResponse(result)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error in api_sync_data: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+def api_sync_specific_date(request):
+    """API สำหรับซิงค์ข้อมูลวันที่เฉพาะ"""
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'error': 'Method not allowed'
+        }, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        date_str = data.get('date')  # Format: 'YYYY-MM-DD'
+        force_update = data.get('force_update', False)
+        
+        if not date_str:
+            return JsonResponse({
+                'success': False,
+                'error': 'กรุณาระบุวันที่'
+            }, status=400)
+        
+        sync_service = LottoSyncService()
+        result = sync_service.sync_specific_date(date_str, force_update)
+        
+        # ตรวจสอบว่า result เป็น dict หรือไม่
+        if not isinstance(result, dict):
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid response format from sync service'
+            }, status=500)
+        
+        # ตรวจสอบว่า result มี key ที่จำเป็นหรือไม่
+        if 'success' not in result:
+            result['success'] = True  # ถ้าไม่มี success ให้เพิ่มเข้าไป
+        
+        return JsonResponse(result)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error in api_sync_specific_date: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

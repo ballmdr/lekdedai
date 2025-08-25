@@ -9,6 +9,7 @@ import logging
 
 from .models import LottoResult
 from .lotto_service import LottoService
+from utils.lottery_dates import LOTTERY_DATES
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +18,12 @@ def index(request):
     # ดึงข้อมูลหวยล่าสุด 5 วัน
     latest_results = LottoResult.objects.all()[:5]
     
+    # ดึงตัวเลือกวันที่หวยออกสำหรับ dropdown
+    draw_date_options = LOTTERY_DATES.get_dropdown_options(limit=50)
+    
     context = {
         'latest_results': latest_results,
+        'draw_date_options': draw_date_options,
         'title': 'ตรวจสอบหวย'
     }
     

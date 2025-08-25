@@ -1,0 +1,20 @@
+# Dependencies สำหรับ lotto_stats
+# ต้องมี lottery_checker ก่อน
+
+# Django (ควรมีอยู่แล้วในโปรเจคหลัก)
+Django>=4.2.0
+
+# สำหรับการคำนวณสถิติ
+numpy>=1.21.0
+pandas>=1.3.0
+
+# สำหรับการแสดงผลกราฟ (ถ้าใช้)
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# สำหรับการจัดการข้อมูล
+python-dateutil>=2.8.0
+
+# สำหรับการทดสอบ
+pytest>=6.0.0
+pytest-django>=4.5.0
