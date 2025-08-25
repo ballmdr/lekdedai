@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def statistics_page(request):
     """หน้าแสดงสถิติหวย"""
     # ดึงข้อมูล 10 งวดล่าสุด
-    recent_draws = LotteryDraw.objects.all()[:10]
+    recent_draws = LotteryDraw.objects.order_by('-draw_date')[:10]
     
     # คำนวณสถิติ
     calculator = StatsCalculator()

@@ -3,9 +3,10 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import json
 import logging
+import time
 
 from .models import LottoResult
 from .lotto_service import LottoService
@@ -265,3 +266,117 @@ def refresh_lotto_data_api(request):
             'error': 'Internal server error',
             'success': False
         }, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def bulk_fetch_api(request):
+    """API สำหรับดึงข้อมูลจาก GLO API ตั้งแต่ 1 มกราคม 2567 (2024)"""
+    try:
+        data = json.loads(request.body)
+        start_date_str = data.get('start_date', '2024-01-01')
+        end_date_str = data.get('end_date', None)
+        force_update = data.get('force_update', False)
+        delay_seconds = data.get('delay_seconds', 1)  # หน่วงเวลาระหว่างการเรียก API
+        
+        # แปลงวันที่
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        else:
+            end_date = date.today()
+        
+        service = LottoService()
+        valid_dates = []
+        fetched_count = 0
+        error_count = 0
+        results = []
+        
+        current_date = start_date
+        
+        while current_date <= end_date:
+            try:
+                # ตรวจสอบว่ามีข้อมูลอยู่แล้วหรือไม่
+                existing = LottoResult.objects.filter(draw_date=current_date).exists()
+                
+                if not existing or force_update:
+                    logger.info(f"Fetching data for {current_date}")
+                    
+                    # เรียก API ดึงข้อมูล
+                    result = service.get_or_fetch_result(
+                        current_date.day, 
+                        current_date.month, 
+                        current_date.year
+                    )
+                    
+                    # ตรวจสอบว่าได้ข้อมูลรางวัลจริงหรือไม่
+                    if result.get('success') and result.get('data'):
+                        result_data = result['data']
+                        has_lottery_data = _has_valid_lottery_data(result_data)
+                        
+                        if has_lottery_data:
+                            valid_dates.append(current_date.strftime('%Y-%m-%d'))
+                            fetched_count += 1
+                            results.append(f"✅ {current_date}: พบข้อมูลรางวัล")
+                        else:
+                            results.append(f"⚠️ {current_date}: ไม่มีข้อมูลรางวัล")
+                    else:
+                        error_count += 1
+                        results.append(f"❌ {current_date}: {result.get('error', 'ไม่สามารถดึงข้อมูลได้')}")
+                    
+                    # หน่วงเวลาเพื่อไม่ให้ request มากเกินไป
+                    if delay_seconds > 0:
+                        time.sleep(delay_seconds)
+                else:
+                    results.append(f"⏭️ {current_date}: มีข้อมูลอยู่แล้ว")
+                
+            except Exception as e:
+                error_count += 1
+                results.append(f"❌ {current_date}: เกิดข้อผิดพลาด - {str(e)}")
+                logger.error(f"Error fetching {current_date}: {e}")
+            
+            # เลื่อนไปวันถัดไป
+            current_date += timedelta(days=1)
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'ดึงข้อมูลเสร็จสิ้น: {fetched_count} สำเร็จ, {error_count} ไม่สำเร็จ',
+            'fetched_count': fetched_count,
+            'error_count': error_count,
+            'valid_dates': valid_dates,
+            'total_days': (end_date - start_date).days + 1,
+            'results': results[:50]  # จำกัดผลลัพธ์เพื่อไม่ให้ response ใหญ่เกินไป
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'error': 'Invalid JSON',
+            'success': False
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error in bulk_fetch_api: {e}")
+        return JsonResponse({
+            'error': str(e),
+            'success': False
+        }, status=500)
+
+def _has_valid_lottery_data(result_data):
+    """ตรวจสอบว่าข้อมูลมีรางวัลจริงหรือไม่"""
+    if not isinstance(result_data, dict):
+        return False
+    
+    # ตรวจสอบรูปแบบต่างๆ
+    if 'response' in result_data and result_data['response']:
+        response_data = result_data['response']
+        if isinstance(response_data, dict) and 'result' in response_data:
+            result = response_data['result']
+            if isinstance(result, dict) and 'data' in result and result['data']:
+                data = result['data']
+                if isinstance(data, dict) and 'first' in data and data['first']:
+                    first_data = data['first']
+                    if isinstance(first_data, dict) and 'number' in first_data:
+                        numbers = first_data['number']
+                        if isinstance(numbers, list) and len(numbers) > 0:
+                            return True
+    
+    return False

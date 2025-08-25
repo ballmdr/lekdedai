@@ -12,4 +12,5 @@ urlpatterns = [
     path('api/lotto/statistics/', views.statistics_api, name='statistics_api'),
     path('api/lotto/check/', views.check_number, name='check_number'),
     path('api/lotto/refresh/', views.refresh_lotto_data_api, name='refresh_lotto_data_api'),
+    path('api/lotto/bulk-fetch/', views.bulk_fetch_api, name='bulk_fetch_api'),
 ]

@@ -253,8 +253,17 @@ class LottoSyncService:
             return True
         if 'response' in result_data and result_data['response']:
             response_data = result_data['response']
-            if isinstance(response_data, dict) and 'first' in response_data:
-                return True
+            if isinstance(response_data, dict):
+                # ตรวจสอบใน response.result.data
+                if 'result' in response_data and response_data['result']:
+                    result = response_data['result']
+                    if isinstance(result, dict) and 'data' in result and result['data']:
+                        data = result['data']
+                        if isinstance(data, dict) and 'first' in data and data['first']:
+                            return True
+                # ตรวจสอบใน response โดยตรง
+                if 'first' in response_data:
+                    return True
         if 'data' in result_data and result_data['data']:
             data = result_data['data']
             if isinstance(data, dict) and 'first' in data:
@@ -275,7 +284,25 @@ class LottoSyncService:
             elif isinstance(first_data, str):
                 return first_data
         
-        # รูปแบบที่ 2: first อยู่ใน response
+        # รูปแบบที่ 2: first อยู่ใน response.result.data (GLO API format)
+        if 'response' in result_data and result_data['response']:
+            response_data = result_data['response']
+            if isinstance(response_data, dict) and 'result' in response_data:
+                result = response_data['result']
+                if isinstance(result, dict) and 'data' in result:
+                    data = result['data']
+                    if isinstance(data, dict) and 'first' in data:
+                        first_data = data['first']
+                        if isinstance(first_data, dict) and 'number' in first_data:
+                            numbers = first_data['number']
+                            if isinstance(numbers, list) and numbers:
+                                return numbers[0].get('value', '')
+                            elif isinstance(numbers, str):
+                                return numbers
+                        elif isinstance(first_data, str):
+                            return first_data
+        
+        # รูปแบบที่ 3: first อยู่ใน response โดยตรง
         if 'response' in result_data and result_data['response']:
             response_data = result_data['response']
             if isinstance(response_data, dict) and 'first' in response_data:
@@ -289,7 +316,7 @@ class LottoSyncService:
                 elif isinstance(first_data, str):
                     return first_data
         
-        # รูปแบบที่ 3: first อยู่ใน data
+        # รูปแบบที่ 4: first อยู่ใน data
         if 'data' in result_data and result_data['data']:
             data = result_data['data']
             if isinstance(data, dict) and 'first' in data:
@@ -336,14 +363,25 @@ class LottoSyncService:
             prize_data = result_data[prize_type]
             numbers.extend(self._parse_prize_data(prize_data))
         
-        # รูปแบบที่ 2: อยู่ใน response
+        # รูปแบบที่ 2: อยู่ใน response.result.data (GLO API format)
+        if 'response' in result_data and result_data['response']:
+            response_data = result_data['response']
+            if isinstance(response_data, dict) and 'result' in response_data:
+                result = response_data['result']
+                if isinstance(result, dict) and 'data' in result:
+                    data = result['data']
+                    if isinstance(data, dict) and prize_type in data:
+                        prize_data = data[prize_type]
+                        numbers.extend(self._parse_prize_data(prize_data))
+        
+        # รูปแบบที่ 3: อยู่ใน response โดยตรง
         if 'response' in result_data and result_data['response']:
             response_data = result_data['response']
             if isinstance(response_data, dict) and prize_type in response_data:
                 prize_data = response_data[prize_type]
                 numbers.extend(self._parse_prize_data(prize_data))
         
-        # รูปแบบที่ 3: อยู่ใน data
+        # รูปแบบที่ 4: อยู่ใน data
         if 'data' in result_data and result_data['data']:
             data = result_data['data']
             if isinstance(data, dict) and prize_type in data:

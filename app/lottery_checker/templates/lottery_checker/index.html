@@ -4,6 +4,7 @@
 {% block title %}ตรวจหวย - LekDedAI{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="container mx-auto px-4">
         <!-- Header Section -->
@@ -68,21 +69,27 @@
                 </div>
             </div>
             
-            <!-- ปุ่มอัปเดตข้อมูลจากกองสลาก -->
-            <div class="text-center mt-8 pt-8 border-t border-gray-200">
-                <button 
-                    onclick="refreshDataFromGLO()" 
-                    class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                >
-                    🔄 อัปเดตข้อมูลจากกองสลาก
-                </button>
-                <p class="text-sm text-gray-500 mt-3">กดเพื่อโหลดข้อมูลล่าสุดจาก API กองสลาก</p>
-            </div>
         </div>
     </div>
 </div>
 
 <script>
+// Get CSRF token
+function getCSRFToken() {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (token) return token;
+    
+    // Try to get from cookie
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    return null;
+}
+
 // ฟังก์ชันสำหรับแปลงวันที่เป็นภาษาไทย
 function formatThaiDate(selectedDate) {
     const monthNamesThai = [
@@ -137,7 +144,8 @@ async function loadLottoResultsForDate(selectedDateFull) {
         const res = await fetch("/lottery_checker/api/lotto/result/", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()
             },
             body: JSON.stringify(payload)
         });
@@ -384,7 +392,8 @@ async function checkLotto(selectedDate) {
         const res = await fetch("/lottery_checker/api/lotto/result/", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()
             },
             body: JSON.stringify({
                 date: date,
@@ -599,7 +608,8 @@ async function refreshDataFromGLO() {
         const res = await fetch("/lottery_checker/api/lotto/refresh/", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()
             },
             body: JSON.stringify({
                 date: date,

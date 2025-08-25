@@ -9,6 +9,12 @@ class LottoResult(models.Model):
     source = models.CharField("แหล่งข้อมูล", max_length=50, default="GLO API")
     created_at = models.DateTimeField("วันที่สร้าง", auto_now_add=True)
     updated_at = models.DateTimeField("วันที่อัปเดต", auto_now=True)
+    api_url = models.CharField("URL ของ API", max_length=200, blank=True, null=True)
+    draw_period = models.CharField("งวดที่", max_length=20, blank=True, null=True)
+    is_valid = models.BooleanField("ข้อมูลถูกต้อง", default=True, db_index=True)
+    last_checked = models.DateTimeField("ตรวจสอบล่าสุด", auto_now=True)
+    raw_api_response = models.JSONField("ข้อมูลดิบจาก API", default=dict)
+    validation_errors = models.TextField("ข้อผิดพลาดในการตรวจสอบ", default="", blank=True)
     
     class Meta:
         verbose_name = "ผลรางวัลหวย"
