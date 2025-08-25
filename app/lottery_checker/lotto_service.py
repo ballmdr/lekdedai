@@ -219,3 +219,106 @@ class LottoService:
                 "success": False,
                 "error": str(e)
             }
+
+    def refresh_data_from_api(self, date, month, year) -> Dict[str, Any]:
+        """อัปเดตข้อมูลจาก API กองสลากใหม่ (บังคับดึงใหม่)"""
+        try:
+            # แปลงเป็น integer ถ้าเป็น string
+            try:
+                date = int(date)
+                month = int(month)
+                year = int(year)
+            except (ValueError, TypeError):
+                return {
+                    "success": False,
+                    "error": f"ค่า date, month, year ต้องเป็นตัวเลข: date={date}, month={month}, year={year}"
+                }
+            
+            # สร้างวันที่
+            draw_date = datetime(year, month, date).date()
+            
+            logger.info(f"🔄 บังคับดึงข้อมูลใหม่จาก GLO API สำหรับวันที่ {draw_date.strftime('%d/%m/%Y')}")
+            
+            # ดึงข้อมูลใหม่จาก API
+            api_result = self.fetch_from_api(date, month, year)
+            
+            if not api_result:
+                return {
+                    "success": False,
+                    "error": "ไม่สามารถดึงข้อมูลจาก API ได้"
+                }
+            
+            # บันทึกลงฐานข้อมูล (อัปเดตหรือสร้างใหม่)
+            db_saved = self.save_to_database(api_result, draw_date)
+            
+            if db_saved:
+                logger.info(f"✅ อัปเดตข้อมูลจาก API สำเร็จสำหรับวันที่ {draw_date.strftime('%d/%m/%Y')}")
+                return {
+                    "success": True,
+                    "source": "api_refresh",
+                    "data": api_result,
+                    "message": "อัปเดตข้อมูลจาก API กองสลากใหม่แล้ว",
+                    "database_saved": True,
+                    "draw_date": draw_date,
+                    "updated_at": timezone.now()
+                }
+            else:
+                logger.error(f"❌ ไม่สามารถบันทึกลงฐานข้อมูลได้สำหรับวันที่ {draw_date.strftime('%d/%m/%Y')}")
+                return {
+                    "success": False,
+                    "error": "ไม่สามารถบันทึกลงฐานข้อมูลได้"
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ เกิดข้อผิดพลาดใน refresh_data_from_api: {e}")
+            return {
+                "success": False,
+                "error": f"เกิดข้อผิดพลาด: {str(e)}"
+            }
+
+    def validate_lotto_data(self, lotto_data: Dict[str, Any]) -> Dict[str, Any]:
+        """ตรวจสอบความถูกต้องของข้อมูลหวย"""
+        try:
+            if not isinstance(lotto_data, dict):
+                return {
+                    "is_valid": False,
+                    "error": "ข้อมูลไม่ใช่รูปแบบที่ถูกต้อง"
+                }
+            
+            # ตรวจสอบว่ามีข้อมูลรางวัลที่จำเป็นหรือไม่
+            required_fields = ['first', 'second', 'third', 'fourth', 'fifth']
+            missing_fields = []
+            
+            for field in required_fields:
+                if field not in lotto_data:
+                    missing_fields.append(field)
+                elif not isinstance(lotto_data[field], dict) or 'number' not in lotto_data[field]:
+                    missing_fields.append(field)
+            
+            if missing_fields:
+                return {
+                    "is_valid": False,
+                    "error": f"ข้อมูลไม่ครบถ้วน: ขาด {', '.join(missing_fields)}",
+                    "missing_fields": missing_fields
+                }
+            
+            # ตรวจสอบว่าข้อมูลไม่ว่างเปล่า
+            for field in required_fields:
+                if not lotto_data[field]['number'] or len(lotto_data[field]['number']) == 0:
+                    return {
+                        "is_valid": False,
+                        "error": f"ข้อมูล {field} ว่างเปล่า",
+                        "empty_field": field
+                    }
+            
+            return {
+                "is_valid": True,
+                "message": "ข้อมูลถูกต้อง"
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ เกิดข้อผิดพลาดในการตรวจสอบข้อมูล: {e}")
+            return {
+                "is_valid": False,
+                "error": f"เกิดข้อผิดพลาดในการตรวจสอบ: {str(e)}"
+            }

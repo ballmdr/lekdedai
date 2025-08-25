@@ -214,3 +214,49 @@ def check_number(request):
         'error': 'Method not allowed',
         'success': False
     }, status=405)
+
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def refresh_lotto_data_api(request):
+    """API endpoint สำหรับอัปเดตข้อมูลหวยจาก API กองสลากใหม่"""
+    
+    # Handle CORS preflight
+    if request.method == "OPTIONS":
+        response = JsonResponse({})
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
+    
+    try:
+        # Parse JSON data
+        data = json.loads(request.body)
+        date = data.get('date')
+        month = data.get('month')
+        year = data.get('year')
+        
+        if not all([date, month, year]):
+            return JsonResponse({
+                'error': 'กรุณาระบุ date, month, และ year',
+                'success': False
+            }, status=400)
+        
+        # ใช้ LottoService เพื่ออัปเดตข้อมูล
+        service = LottoService()
+        result = service.refresh_data_from_api(date, month, year)
+        
+        response = JsonResponse(result)
+        response["Access-Control-Allow-Origin"] = "*"
+        return response
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'error': 'Invalid JSON',
+            'success': False
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error in refresh_lotto_data_api: {e}")
+        return JsonResponse({
+            'error': 'Internal server error',
+            'success': False
+        }, status=500)
