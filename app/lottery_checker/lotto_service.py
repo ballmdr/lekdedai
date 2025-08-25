@@ -144,7 +144,11 @@ class LottoService:
                 LottoResult.objects.create(
                     draw_date=draw_date,
                     result_data=lotto_data,
-                    source="GLO API"
+                    source="GLO API",
+                    is_valid=True,
+                    last_checked=timezone.now(),
+                    raw_api_response=lotto_data,
+                    validation_errors=""
                 )
             
             return True

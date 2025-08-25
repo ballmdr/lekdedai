@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}สถิติหวย - LekDedAI{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-4xl font-bold text-center mb-8">📊 สถิติหวยย้อนหลัง</h1>
+    
     
     <!-- สรุปสถิติ -->
     {% if stats_summary %}
@@ -125,7 +128,25 @@
     </div>
 </div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Get CSRF token
+function getCSRFToken() {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (token) return token;
+    
+    // Try to get from cookie
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    return null;
+}
+</script>
 <script>
 // Hot Numbers Chart
 const hotCtx = document.getElementById('hotNumbersChart').getContext('2d');
@@ -286,6 +307,8 @@ async function searchNumber() {
         resultDiv.innerHTML = `<p class="text-red-600">เกิดข้อผิดพลาด: ${error.message}</p>`;
     }
 }
+
+// ฟังก์ชันซิงค์ข้อมูลล่าสุด
 
 // Enter key support
 document.getElementById('searchNumber').addEventListener('keypress', function(e) {

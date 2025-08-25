@@ -4,6 +4,7 @@
 {% block title %}ตรวจหวย - LekDedAI{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="container mx-auto px-4">
         <!-- Header Section -->
@@ -35,21 +36,11 @@
                     id="lottoDate" 
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-300 text-lg"
                 >
-                    <option value="2025-08-01">1 สิงหาคม 2568</option>
-                    <option value="2025-07-16">16 กรกฎาคม 2568</option>
-                    <option value="2025-07-01">1 กรกฎาคม 2568</option>
-                    <option value="2025-06-16">16 มิถุนายน 2568</option>
-                    <option value="2025-06-01">1 มิถุนายน 2568</option>
-                    <option value="2025-05-16">16 พฤษภาคม 2568</option>
-                    <option value="2025-05-02">2 พฤษภาคม 2568</option>
-                    <option value="2025-04-16">16 เมษายน 2568</option>
-                    <option value="2025-04-01">1 เมษายน 2568</option>
-                    <option value="2025-03-16">16 มีนาคม 2568</option>
-                    <option value="2025-03-01">1 มีนาคม 2568</option>
-                    <option value="2025-02-16">16 กุมภาพันธ์ 2568</option>
-                    <option value="2025-02-01">1 กุมภาพันธ์ 2568</option>
-                    <option value="2025-01-17">17 มกราคม 2568</option>
-                    <option value="2025-01-02">2 มกราคม 2568</option>
+                    {% for option in draw_date_options %}
+                        <option value="{{ option.value }}" {% if option.is_special %}class="special-date"{% endif %}>
+                            {{ option.label }}
+                        </option>
+                    {% endfor %}
                 </select>
             </div>
 
@@ -78,21 +69,27 @@
                 </div>
             </div>
             
-            <!-- ปุ่มอัปเดตข้อมูลจากกองสลาก -->
-            <div class="text-center mt-8 pt-8 border-t border-gray-200">
-                <button 
-                    onclick="refreshDataFromGLO()" 
-                    class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                >
-                    🔄 อัปเดตข้อมูลจากกองสลาก
-                </button>
-                <p class="text-sm text-gray-500 mt-3">กดเพื่อโหลดข้อมูลล่าสุดจาก API กองสลาก</p>
-            </div>
         </div>
     </div>
 </div>
 
 <script>
+// Get CSRF token
+function getCSRFToken() {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (token) return token;
+    
+    // Try to get from cookie
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    return null;
+}
+
 // ฟังก์ชันสำหรับแปลงวันที่เป็นภาษาไทย
 function formatThaiDate(selectedDate) {
     const monthNamesThai = [
@@ -147,7 +144,8 @@ async function loadLottoResultsForDate(selectedDateFull) {
         const res = await fetch("/lottery_checker/api/lotto/result/", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()
             },
             body: JSON.stringify(payload)
         });
@@ -394,7 +392,8 @@ async function checkLotto(selectedDate) {
         const res = await fetch("/lottery_checker/api/lotto/result/", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()
             },
             body: JSON.stringify({
                 date: date,
@@ -609,7 +608,8 @@ async function refreshDataFromGLO() {
         const res = await fetch("/lottery_checker/api/lotto/refresh/", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()
             },
             body: JSON.stringify({
                 date: date,
