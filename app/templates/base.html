@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LekDedAI - เลขเด็ดจาก AI{% endblock %}</title>
+    {% block meta %}{% endblock %}
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
         
@@ -61,6 +63,7 @@
                     <a href="/dreams/" class="hover:text-purple-600 transition-colors font-medium">ตีความฝัน</a>
                     <a href="/lottery_checker/" class="hover:text-purple-600 transition-colors font-medium">ตรวจหวย</a>
                     <a href="/lotto_stats/" class="hover:text-purple-600 transition-colors font-medium">สถิติหวย</a>
+                    <a href="/lucky-spots/" class="hover:text-purple-600 transition-colors font-medium">พิกัดเลขเด็ด</a>
                     <a href="/news/" class="hover:text-purple-600 transition-colors font-medium">ข่าวสาร</a>
                 </div>
                 <!-- Mobile menu button -->
@@ -76,6 +79,7 @@
                     <a href="/dreams/" class="hover:text-purple-600 transition-colors">ตีความฝัน</a>
                     <a href="/lottery_checker/" class="hover:text-purple-600 transition-colors">ตรวจหวย</a>
                     <a href="/lotto_stats/" class="hover:text-purple-600 transition-colors">สถิติหวย</a>
+                    <a href="/lucky-spots/" class="hover:text-purple-600 transition-colors">พิกัดเลขเด็ด</a>
                     <a href="/news/" class="hover:text-purple-600 transition-colors">ข่าวสาร</a>
                 </div>
             </div>
@@ -101,6 +105,7 @@
                         <li><a href="/ai/" class="text-gray-300 hover:text-white transition-colors">เลขเด็ด AI</a></li>
                         <li><a href="/dreams/" class="text-gray-300 hover:text-white transition-colors">ตีความฝัน</a></li>
                         <li><a href="/lottery_checker/" class="text-gray-300 hover:text-white transition-colors">ตรวจหวย</a></li>
+                        <li><a href="/lucky-spots/" class="text-gray-300 hover:text-white transition-colors">พิกัดเลขเด็ด</a></li>
                     </ul>
                 </div>
                 <div>
@@ -149,5 +154,6 @@
         setInterval(updateCountdown, 1000);
         updateCountdown(); // Initial call
     </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

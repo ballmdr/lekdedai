@@ -24,7 +24,7 @@
             <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ article.title }}</h1>
             
             <div class="flex items-center gap-4 text-gray-600">
-                <span>โดย {{ article.author.get_full_name|default:article.author.username|default:"ผู้สื่อข่าว" }}</span>
+                <span>โดย {% if article.author %}{{ article.author.get_full_name|default:article.author.username }}{% else %}ผู้สื่อข่าว{% endif %}</span>
                 <span>•</span>
                 <span>{{ article.published_date|date:"j F Y, H:i" }}</span>
                 <span>•</span>

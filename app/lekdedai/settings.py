@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'news',
     'ai_engine',
     'lottery_checker',
+    'lucky_spots',
 ]
 # เพิ่มการตั้งค่า Media files
 MEDIA_URL = '/media/'
