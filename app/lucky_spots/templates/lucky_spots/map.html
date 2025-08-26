@@ -1,0 +1,435 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+<style>
+    #map {
+        height: 600px;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .search-filters {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .filter-group {
+        margin-bottom: 15px;
+    }
+    
+    .filter-group label {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+        display: block;
+    }
+    
+    .filter-group input,
+    .filter-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .btn-search {
+        background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-search:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .btn-clear {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 6px;
+        margin-left: 10px;
+        cursor: pointer;
+    }
+    
+    .custom-popup {
+        max-width: 300px;
+    }
+    
+    .popup-image {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+    
+    .popup-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .popup-province {
+        color: #666;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+    
+    .popup-lucky-numbers {
+        background: #f8f9fa;
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+    
+    .popup-lucky-numbers .title {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    .popup-lucky-numbers .numbers {
+        font-weight: bold;
+        color: #FF6B6B;
+    }
+    
+    .popup-btn {
+        background: #007bff;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 12px;
+        display: inline-block;
+    }
+    
+    .stats-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .stats-number {
+        font-size: 2em;
+        font-weight: bold;
+        color: #FF6B6B;
+    }
+    
+    .stats-label {
+        color: #666;
+        font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+        #map {
+            height: 400px;
+        }
+        
+        .search-filters {
+            padding: 15px;
+        }
+        
+        .btn-search, .btn-clear {
+            width: 100%;
+            margin: 5px 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4 text-center">
+                🗺️ {{ page_title }}
+                <small class="text-muted d-block">ค้นหาสถานที่ศักดิ์สิทธิ์และพิกัดเลขเด็ดทั่วประเทศไทย</small>
+            </h1>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Search Filters -->
+        <div class="col-lg-3 col-md-4">
+            <div class="search-filters">
+                <h5 class="mb-3">🔍 ค้นหาและกรอง</h5>
+                
+                <div class="filter-group">
+                    <label for="search-query">ค้นหาตามชื่อสถานที่</label>
+                    <input type="text" id="search-query" placeholder="พิมพ์ชื่อสถานที่..." />
+                </div>
+                
+                <div class="filter-group">
+                    <label for="region-filter">ภาค</label>
+                    <select id="region-filter">
+                        <option value="">ทุกภาค</option>
+                        <option value="north">ภาคเหนือ</option>
+                        <option value="central">ภาคกลาง</option>
+                        <option value="northeast">ภาคอีสาน</option>
+                        <option value="south">ภาคใต้</option>
+                        <option value="east">ภาคตะวันออก</option>
+                        <option value="west">ภาคตะวันตก</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="province-filter">จังหวัด</label>
+                    <select id="province-filter">
+                        <option value="">ทุกจังหวัด</option>
+                        {% for province in provinces %}
+                        <option value="{{ province.id }}">{{ province.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="category-filter">ประเภทสถานที่</label>
+                    <select id="category-filter">
+                        <option value="">ทุกประเภท</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.get_name_display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="text-center">
+                    <button class="btn-search" id="search-btn">ค้นหา</button>
+                    <button class="btn-clear" id="clear-btn">ล้างการกรอง</button>
+                </div>
+            </div>
+            
+            <!-- Stats Card -->
+            <div class="stats-card">
+                <div class="stats-number" id="locations-count">0</div>
+                <div class="stats-label">สถานที่ทั้งหมด</div>
+            </div>
+        </div>
+        
+        <!-- Map -->
+        <div class="col-lg-9 col-md-8">
+            <div id="map"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<script>
+let map;
+let markers = L.markerClusterGroup({
+    chunkedLoading: true,
+    maxClusterRadius: 50,
+});
+let allLocations = [];
+
+// Initialize map
+function initMap() {
+    // Center on Thailand
+    map = L.map('map').setView([13.7563, 100.5018], 6);
+    
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Add marker cluster group
+    map.addLayer(markers);
+    
+    // Load locations
+    loadLocations();
+}
+
+// Load all locations
+function loadLocations() {
+    console.log('Loading locations from API...');
+    fetch('{% url "lucky_spots:locations_api" %}')
+        .then(response => {
+            console.log('API response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('API data received:', data);
+            allLocations = data.locations;
+            displayLocations(allLocations);
+            updateStats(allLocations.length);
+        })
+        .catch(error => {
+            console.error('Error loading locations:', error);
+            document.getElementById('map').innerHTML = '<div style="padding: 50px; text-align: center; color: red;">Error loading locations: ' + error.message + '</div>';
+        });
+}
+
+// Display locations on map
+function displayLocations(locations) {
+    // Clear existing markers
+    markers.clearLayers();
+    
+    locations.forEach(location => {
+        // Create custom icon based on category
+        const iconClass = getCategoryIcon(location.category_code);
+        const icon = L.divIcon({
+            html: `<div class="custom-marker" style="background: #FF6B6B; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">${iconClass}</div>`,
+            iconSize: [30, 30],
+            className: 'custom-div-icon'
+        });
+        
+        // Create marker
+        const marker = L.marker([location.latitude, location.longitude], { icon: icon });
+        
+        // Create popup content
+        const popupContent = createPopupContent(location);
+        marker.bindPopup(popupContent, {
+            maxWidth: 300,
+            className: 'custom-popup'
+        });
+        
+        markers.addLayer(marker);
+    });
+}
+
+// Get category icon
+function getCategoryIcon(category) {
+    const icons = {
+        'temple': '🏛️',
+        'shrine': '⛩️',
+        'sacred_tree': '🌳',
+        'naga': '🐍',
+        'mysterious': '✨',
+        'cave': '🕳️',
+        'mountain': '⛰️',
+        'river': '🏞️',
+        'other': '📍'
+    };
+    return icons[category] || '📍';
+}
+
+// Create popup content
+function createPopupContent(location) {
+    let imageHtml = '';
+    if (location.main_image) {
+        imageHtml = `<img src="${location.main_image}" alt="${location.name}" class="popup-image" />`;
+    }
+    
+    let luckyNumbersHtml = '';
+    if (location.lucky_numbers && location.lucky_numbers.length > 0) {
+        luckyNumbersHtml = `
+            <div class="popup-lucky-numbers">
+                <div class="title">เลขเด็ดที่เคยให้โชค:</div>
+                <div class="numbers">${location.lucky_numbers.join(', ')}</div>
+            </div>
+        `;
+    }
+    
+    return `
+        <div>
+            ${imageHtml}
+            <div class="popup-title">${location.name}</div>
+            <div class="popup-province">📍 ${location.province} • ${location.category}</div>
+            ${luckyNumbersHtml}
+            <a href="${location.url}" class="popup-btn">ดูรายละเอียด</a>
+        </div>
+    `;
+}
+
+// Search and filter
+function searchLocations() {
+    const query = document.getElementById('search-query').value;
+    const region = document.getElementById('region-filter').value;
+    const province = document.getElementById('province-filter').value;
+    const category = document.getElementById('category-filter').value;
+    
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (region) params.append('region', region);
+    if (province) params.append('province', province);
+    if (category) params.append('category', category);
+    
+    fetch(`{% url "lucky_spots:locations_search_api" %}?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            displayLocations(data.locations);
+            updateStats(data.locations.length);
+            
+            // Fit map to show all filtered locations
+            if (data.locations.length > 0) {
+                const group = new L.featureGroup(markers.getLayers());
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        })
+        .catch(error => {
+            console.error('Error searching locations:', error);
+        });
+}
+
+// Clear filters
+function clearFilters() {
+    document.getElementById('search-query').value = '';
+    document.getElementById('region-filter').value = '';
+    document.getElementById('province-filter').value = '';
+    document.getElementById('category-filter').value = '';
+    
+    displayLocations(allLocations);
+    updateStats(allLocations.length);
+    
+    // Reset map view
+    map.setView([13.7563, 100.5018], 6);
+}
+
+// Update stats
+function updateStats(count) {
+    document.getElementById('locations-count').textContent = count;
+}
+
+// Event listeners
+document.getElementById('search-btn').addEventListener('click', searchLocations);
+document.getElementById('clear-btn').addEventListener('click', clearFilters);
+
+// Search on enter key
+document.getElementById('search-query').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchLocations();
+    }
+});
+
+// Auto-search when filters change
+document.getElementById('region-filter').addEventListener('change', searchLocations);
+document.getElementById('province-filter').addEventListener('change', searchLocations);
+document.getElementById('category-filter').addEventListener('change', searchLocations);
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing map...');
+    try {
+        initMap();
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        document.getElementById('map').innerHTML = '<div style="padding: 50px; text-align: center; color: red;">Error loading map. Check browser console for details.</div>';
+    }
+});
+</script>
+{% endblock %}

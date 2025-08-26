@@ -11,6 +11,7 @@ urlpatterns = [
     path('news/', include('news.urls')),
     path('ai/', include('ai_engine.urls')),
     path('lottery_checker/', include('lottery_checker.urls')),
+    path('lucky-spots/', include('lucky_spots.urls')),
 ]
 
 if settings.DEBUG:

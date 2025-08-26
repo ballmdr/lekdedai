@@ -23,15 +23,13 @@
             
             <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ article.title }}</h1>
             
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4 text-gray-600">
-                    <span>โดย {% if article.author %}{{ article.author.get_full_name|default:article.author.username }}{% else %}ผู้สื่อข่าว{% endif %}</span>
-                    <span>•</span>
-                    <span>{{ article.published_date|date:"j F Y, H:i" }}</span>
-                    <span>•</span>
-                    <span>อ่าน {{ article.views }} ครั้ง</span>
-                </div>
-                
+
+            <div class="flex items-center gap-4 text-gray-600">
+                <span>โดย {% if article.author %}{{ article.author.get_full_name|default:article.author.username }}{% else %}ผู้สื่อข่าว{% endif %}</span>
+                <span>•</span>
+                <span>{{ article.published_date|date:"j F Y, H:i" }}</span>
+                <span>•</span>
+                <span>อ่าน {{ article.views }} ครั้ง</span>
                 <!-- Admin Edit Button -->
                 {% if user.is_staff %}
                 <div class="flex gap-2">
@@ -53,6 +51,7 @@
                     </a>
                 </div>
                 {% endif %}
+
             </div>
         </div>
         
