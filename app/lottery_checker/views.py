@@ -269,6 +269,122 @@ def refresh_lotto_data_api(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def check_lottery_quick(request):
+    """API สำหรับตรวจหวยด่วนในหน้าแรก - ใช้ผลหวยงวดล่าสุด"""
+    try:
+        data = json.loads(request.body)
+        lottery_number = data.get('lottery_number', '').strip()
+        
+        if not lottery_number:
+            return JsonResponse({
+                'success': False,
+                'error': 'กรุณากรอกเลขสลากที่ต้องการตรวจ'
+            })
+        
+        if not lottery_number.isdigit():
+            return JsonResponse({
+                'success': False,
+                'error': 'กรุณากรอกเฉพาะตัวเลข'
+            })
+        
+        if len(lottery_number) != 6:
+            return JsonResponse({
+                'success': False,
+                'error': 'กรุณากรอกเลข 6 หลัก'
+            })
+        
+        # ดึงผลหวยงวดล่าสุด
+        latest_result = LottoResult.objects.filter(is_valid=True).order_by('-draw_date').first()
+        
+        if not latest_result:
+            return JsonResponse({
+                'success': False,
+                'error': 'ไม่พบข้อมูลผลหวยล่าสุด'
+            })
+        
+        # ตรวจสอบเลข
+        result_data = latest_result.result_data
+        if not isinstance(result_data, dict):
+            return JsonResponse({
+                'success': False,
+                'error': 'ข้อมูลผลหวยไม่ถูกต้อง'
+            })
+        
+        # เก็บผลการตรวจสอบ
+        prizes_won = []
+        is_winner = False
+        
+        # ตรวจสอบรางวัลต่างๆ
+        for prize_type, numbers in result_data.items():
+            if isinstance(numbers, list):
+                for number in numbers:
+                    if str(number) == lottery_number:
+                        prizes_won.append(prize_type)
+                        is_winner = True
+            elif isinstance(numbers, str):
+                if numbers == lottery_number:
+                    prizes_won.append(prize_type)
+                    is_winner = True
+        
+        # ตรวจสอบเลข 2 ตัวท้าย และ 3 ตัวท้าย
+        last_2_digits = lottery_number[-2:]
+        last_3_digits = lottery_number[-3:]
+        
+        # ตรวจสอบกับรางวัลที่ 1 สำหรับเลข 2 ตัวและ 3 ตัวท้าย
+        if 'first' in result_data and isinstance(result_data['first'], list):
+            for first_prize in result_data['first']:
+                if str(first_prize)[-2:] == last_2_digits:
+                    prizes_won.append('เลข 2 ตัวท้าย')
+                    is_winner = True
+                if str(first_prize)[-3:] == last_3_digits:
+                    prizes_won.append('เลข 3 ตัวท้าย')
+                    is_winner = True
+        
+        # สร้างข้อความผลลัพธ์
+        if is_winner:
+            prize_names = {
+                'first': 'รางวัลที่ 1',
+                'second': 'รางวัลที่ 2', 
+                'third': 'รางวัลที่ 3',
+                'fourth': 'รางวัลที่ 4',
+                'fifth': 'รางวัลที่ 5',
+                'เลข 2 ตัวท้าย': 'เลข 2 ตัวท้าย',
+                'เลข 3 ตัวท้าย': 'เลข 3 ตัวท้าย'
+            }
+            
+            won_prizes = []
+            for prize in prizes_won:
+                won_prizes.append(prize_names.get(prize, prize))
+            
+            message = f"🎉 ยินดีด้วย! เลข {lottery_number} ถูกรางวัล: {', '.join(won_prizes)}"
+        else:
+            message = f"เลข {lottery_number} ไม่ถูกรางวัล งวดวันที่ {latest_result.formatted_date}"
+        
+        return JsonResponse({
+            'success': True,
+            'result': {
+                'is_winner': is_winner,
+                'message': message,
+                'lottery_number': lottery_number,
+                'draw_date': latest_result.formatted_date,
+                'prizes_won': prizes_won
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'ข้อมูลที่ส่งมาไม่ถูกต้อง'
+        })
+    except Exception as e:
+        logger.error(f"Error in check_lottery_quick: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': 'เกิดข้อผิดพลาดในระบบ'
+        })
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def bulk_fetch_api(request):
     """API สำหรับดึงข้อมูลจาก GLO API ตั้งแต่ 1 มกราคม 2567 (2024)"""
     try:

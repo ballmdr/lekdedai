@@ -1,296 +1,477 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}LekDedAI - เลขเด็ดจาก AI{% endblock %}
 
+{% block extra_css %}{% endblock %}
+
 {% block content %}
-<!-- Hero Section -->
-<section class="gradient-bg text-white py-20">
-    <div class="container mx-auto px-4 text-center">
-        <h1 class="text-4xl md:text-6xl font-bold mb-8">
-            เลขเด็ด AI ประจำงวด 1 มกราคม 2568
-        </h1>
-        
-        <!-- Lucky Numbers Display -->
-        <div class="flex justify-center items-center space-x-6 mb-8 flex-wrap">
-            <div class="lucky-number text-white text-4xl md:text-6xl font-bold rounded-full w-24 h-24 md:w-32 md:h-32 flex items-center justify-center shadow-2xl">
-                78
-            </div>
-            <div class="lucky-number text-white text-4xl md:text-6xl font-bold rounded-full w-24 h-24 md:w-32 md:h-32 flex items-center justify-center shadow-2xl">
-                51
-            </div>
-            <div class="lucky-number text-white text-4xl md:text-6xl font-bold rounded-full w-24 h-24 md:w-32 md:h-32 flex items-center justify-center shadow-2xl">
-                492
-            </div>
-        </div>
-        
-        <p class="text-xl md:text-2xl mb-8 text-gray-100">
-            วิเคราะห์จากสถิติย้อนหลังและแนวโน้มด้วย Machine Learning
-        </p>
-        
-        <a href="/ai/" class="inline-block bg-yellow-400 text-gray-900 text-xl font-bold px-8 py-4 rounded-full hover:bg-yellow-300 transition-all transform hover:scale-105 shadow-2xl mb-8">
-            ดูเลขเด็ด AI ทั้งหมด
-        </a>
-        
-        <!-- Countdown Timer -->
-        <div class="countdown-timer inline-block px-6 py-3 rounded-full">
-            <p class="text-sm font-medium mb-2">เหลือเวลาก่อนประกาศผล:</p>
-            <div id="countdown-timer" class="text-2xl font-bold">5 วัน 10:30:15</div>
-        </div>
-    </div>
-</section>
 
-<!-- Interactive Tools Section -->
-<section class="py-16 bg-gray-100">
+  <!-- Daily Content Hero -->
+  <section class="py-12 bg-gradient-to-br from-primary/5 via-background to-secondary/5 relative overflow-hidden">
+    <div class="absolute inset-0" style="background: radial-gradient(circle at 30% 20%, rgba(255, 193, 7, 0.1), transparent 50%);"></div>
+
+    <div class="container mx-auto px-4 relative z-10">
+      <div class="text-center mb-8">
+        <div class="flex items-center justify-center gap-2 mb-4">
+          <i class="fas fa-calendar text-primary"></i>
+          <span class="text-sm font-medium text-muted-foreground">
+            วันที่ {{ thai_current_date }}
+          </span>
+        </div>
+        <h2 class="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">เลขเด็ดประจำวัน</h2>
+        <p class="text-lg text-muted-foreground max-w-2xl mx-auto">อัปเดตเลขเด็ด ข่าวหวย และสถิติล่าสุดทุกวัน</p>
+      </div>
+
+      <!-- Today's Featured Numbers -->
+      <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div class="card border-primary/20 bg-primary/5">
+          <div class="p-4 text-center pb-2">
+            <h3 class="text-lg font-serif text-foreground mb-2">เลขเด็ด AI</h3>
+            <div class="badge bg-primary text-primary-foreground mx-auto mb-2">
+              <i class="fas fa-star mr-1"></i>
+              แนะนำ
+            </div>
+          </div>
+          <div class="p-4 pt-0 text-center">
+            {% if latest_prediction and latest_prediction.get_three_digit_list %}
+              <div class="text-3xl font-bold text-primary mb-2">{{ latest_prediction.get_three_digit_list.0 }}</div>
+              <div class="text-sm text-muted-foreground">ความแม่นยำ {{ latest_prediction.overall_confidence|floatformat:0 }}%</div>
+            {% else %}
+              <div class="text-3xl font-bold text-primary mb-2">427</div>
+              <div class="text-sm text-muted-foreground">ความแม่นยำ 87%</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card border-secondary/20 bg-secondary/5">
+          <div class="p-4 text-center pb-2">
+            <h3 class="text-lg font-serif text-foreground mb-2">เลขฮิต</h3>
+            <div class="badge badge-secondary mx-auto mb-2">
+              <i class="fas fa-chart-line mr-1"></i>
+              ยอดนิยม
+            </div>
+          </div>
+          <div class="p-4 pt-0 text-center">
+            {% if latest_prediction and latest_prediction.get_two_digit_list %}
+              <div class="text-3xl font-bold text-secondary mb-2">{{ latest_prediction.get_two_digit_list.0 }}</div>
+              <div class="text-sm text-muted-foreground">ออกบ่อย</div>
+            {% else %}
+              <div class="text-3xl font-bold text-secondary mb-2">15</div>
+              <div class="text-sm text-muted-foreground">ออกบ่อย 15 ครั้ง</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card border-accent/20 bg-accent/5">
+          <div class="p-4 text-center pb-2">
+            <h3 class="text-lg font-serif text-foreground mb-2">เลขเสริมดวง</h3>
+            <div class="badge badge-outline mx-auto mb-2">
+              <i class="fas fa-moon mr-1"></i>
+              จากความฝัน
+            </div>
+          </div>
+          <div class="p-4 pt-0 text-center">
+            {% if latest_prediction and latest_prediction.get_two_digit_list|length > 1 %}
+              <div class="text-3xl font-bold text-accent mb-2">{{ latest_prediction.get_two_digit_list.1 }}</div>
+              <div class="text-sm text-muted-foreground">จาก AI</div>
+            {% else %}
+              <div class="text-3xl font-bold text-accent mb-2">89</div>
+              <div class="text-sm text-muted-foreground">ฝันเห็นงู</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Daily Stats & Quick Info -->
+  <section class="py-8 bg-card/30">
     <div class="container mx-auto px-4">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Lottery Checker -->
-            <div class="bg-white rounded-2xl shadow-xl p-8 card-hover">
-                <h3 class="text-2xl font-bold mb-6 text-center text-purple-600">
-                    <i class="fas fa-search mr-3"></i>
-                    ตรวจผลสลากกินแบ่งรัฐบาลล่าสุด
-                </h3>
-                <div class="flex space-x-3 mb-4">
-                    <input 
-                        type="text" 
-                        id="lotteryInput"
-                        placeholder="กรอกเลข 6 หลักของคุณที่นี่" 
-                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 text-lg"
-                        maxlength="6"
-                        pattern="[0-9]{6}"
-                    >
-                    <button 
-                        onclick="checkLottery()"
-                        id="lotteryBtn"
-                        class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
-                    >
-                        ตรวจรางวัล
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="text-center p-4">
+          <div class="text-2xl font-bold text-primary mb-1">{{ site_stats.total_visitors_today|floatformat:0 }}</div>
+          <div class="text-sm text-muted-foreground">คนเข้าชมวันนี้</div>
+        </div>
+        <div class="text-center p-4">
+          <div class="text-2xl font-bold text-secondary mb-1">{{ site_stats.accuracy_percentage }}%</div>
+          <div class="text-sm text-muted-foreground">ความแม่นยำเฉลี่ย</div>
+        </div>
+        <div class="text-center p-4">
+          <div class="text-2xl font-bold text-accent mb-1">{{ site_stats.total_predictions }}</div>
+          <div class="text-sm text-muted-foreground">เลขที่ทำนายแล้ว</div>
+        </div>
+        <div class="text-center p-4">
+          <div class="text-2xl font-bold text-primary mb-1">{{ site_stats.total_news_today }}</div>
+          <div class="text-sm text-muted-foreground">ข่าวใหม่วันนี้</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Sections -->
+  <section class="py-16" id="today">
+    <div class="container mx-auto px-4">
+      <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Left Column - Main Content -->
+        <div class="lg:col-span-2 space-y-8">
+          <!-- Latest Lottery News -->
+          <div>
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
+                <i class="fas fa-newspaper text-primary"></i>
+                ข่าวหวยล่าสุด
+              </h3>
+              <a href="/news/" class="btn btn-outline">ดูทั้งหมด</a>
+            </div>
+
+            <div class="space-y-4">
+              {% for article in latest_news %}
+              <a href="{{ article.get_absolute_url }}" class="block">
+                <div class="card hover:shadow-md transition-shadow">
+                  <div class="p-4">
+                    <div class="flex gap-4">
+                      {% if article.featured_image %}
+                        <div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                          <img src="{{ article.featured_image.url }}" alt="{{ article.title }}" class="w-full h-full object-cover">
+                        </div>
+                      {% else %}
+                        <div class="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <i class="fas fa-newspaper text-primary text-2xl"></i>
+                        </div>
+                      {% endif %}
+                      <div class="flex-1">
+                        <h4 class="font-semibold mb-2 text-foreground hover:text-primary transition-colors">{{ article.title }}</h4>
+                        <p class="text-sm text-muted-foreground mb-2">{{ article.intro|truncatechars:100 }}</p>
+                        {% if article.get_extracted_numbers_list %}
+                          <div class="flex gap-1 mb-2">
+                            {% for number in article.get_extracted_numbers_list|slice:":3" %}
+                              <span class="badge badge-outline text-xs">{{ number }}</span>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+                        <div class="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span class="flex items-center gap-1">
+                            <i class="fas fa-clock"></i>{{ article.published_date|timesince }} ที่แล้ว
+                          </span>
+                          <span class="flex items-center gap-1">
+                            <i class="fas fa-users"></i>
+                            อ่าน {{ article.views }} ครั้ง
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a>
+              {% empty %}
+              <div class="card hover:shadow-md transition-shadow">
+                <div class="p-4">
+                  <div class="flex gap-4">
+                    <div class="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <i class="fas fa-newspaper text-primary text-2xl"></i>
+                    </div>
+                    <div class="flex-1">
+                      <h4 class="font-semibold mb-2">ยังไม่มีข่าวล่าสุด</h4>
+                      <p class="text-sm text-muted-foreground mb-2">กรุณาติดตามข่าวสารในภายหลัง</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Lottery Locations -->
+          <div id="locations">
+            <h3 class="text-2xl font-serif font-bold text-foreground mb-6 flex items-center gap-2">
+              <i class="fas fa-map-pin text-primary"></i>
+              พิกัดเลขเด็ด - สถานที่ขอหวย
+            </h3>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              {% for location in popular_lucky_locations %}
+              <a href="{{ location.get_absolute_url }}" class="block">
+                <div class="card hover:shadow-md transition-shadow">
+                  <div class="p-4">
+                    <div class="flex gap-4">
+                      {% if location.main_image %}
+                        <div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                          <img src="{{ location.main_image.url }}" alt="{{ location.name }}" class="w-full h-full object-cover">
+                        </div>
+                      {% else %}
+                        <div class="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                          {% if location.category.icon %}
+                            <i class="{{ location.category.icon }} text-primary text-xl"></i>
+                          {% else %}
+                            <i class="fas fa-map-pin text-primary text-xl"></i>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                      <div class="flex-1">
+                        <h4 class="font-semibold mb-1 text-foreground hover:text-primary transition-colors">{{ location.name }}</h4>
+                        <p class="text-sm text-muted-foreground mb-2">
+                          {{ location.province.name }} - {{ location.category.get_name_display }}
+                          {% if location.get_lucky_numbers_list %}
+                            <br>เลขเด่น: {{ location.get_lucky_numbers_list|slice:":3"|join:", " }}
+                          {% endif %}
+                        </p>
+                        <div class="flex items-center justify-between">
+                          <span class="badge badge-outline text-xs">
+                            <i class="fas fa-eye mr-1"></i>
+                            {{ location.views_count }} ครั้ง
+                          </span>
+                          <div class="text-xs text-muted-foreground">
+                            <i class="fas fa-navigation mr-1"></i>
+                            ดูรายละเอียด
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a>
+              {% empty %}
+              <!-- Fallback content if no locations found -->
+              <div class="card hover:shadow-md transition-shadow">
+                <div class="p-4">
+                  <div class="flex gap-4">
+                    <div class="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <i class="fas fa-map-pin text-primary text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                      <h4 class="font-semibold mb-1 text-foreground">วัดไผ่ล้อม</h4>
+                      <p class="text-sm text-muted-foreground mb-2">วัดดังขอเลขเด็ด เลขที่ออกบ่อย: 27, 72, 07</p>
+                      <div class="flex items-center justify-between">
+                        <span class="badge badge-outline text-xs">
+                          <i class="fas fa-star mr-1"></i>
+                          ยอดนิยม
+                        </span>
+                        <div class="text-xs text-muted-foreground">
+                          <i class="fas fa-navigation mr-1"></i>
+                          ดูรายละเอียด
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card hover:shadow-md transition-shadow">
+                <div class="p-4">
+                  <div class="flex gap-4">
+                    <div class="w-16 h-16 bg-secondary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <i class="fas fa-map-pin text-secondary text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                      <h4 class="font-semibold mb-1 text-foreground">ศาลเจ้าพ่อหลักเมือง</h4>
+                      <p class="text-sm text-muted-foreground mb-2">ศาลเจ้าศักดิ์สิทธิ์ เลขแนะนำ: 89, 98, 19</p>
+                      <div class="flex items-center justify-between">
+                        <span class="badge badge-secondary text-xs">
+                          <i class="fas fa-trophy mr-1"></i>
+                          แม่นยำสูง
+                        </span>
+                        <div class="text-xs text-muted-foreground">
+                          <i class="fas fa-navigation mr-1"></i>
+                          ดูรายละเอียด
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="mt-6 text-center">
+              <a href="/lucky_spots/" class="btn btn-outline">
+                <i class="fas fa-map-pin mr-2"></i>
+                ดูพิกัดเลขเด็ดทั้งหมด
+              </a>
+            </div>
+          </div>
+
+          <!-- Dream Interpretation -->
+          <div>
+            <h3 class="text-2xl font-serif font-bold text-foreground mb-6 flex items-center gap-2">
+              <i class="fas fa-moon text-primary"></i>
+              แปลความฝันวันนี้
+            </h3>
+
+            <div class="card">
+              <div class="p-6">
+                <div class="space-y-4">
+                  <div class="bg-muted/50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-2 text-foreground">ความฝันยอดนิยม: "ฝันเห็นงูใหญ่สีเขียว"</h4>
+                    <p class="text-sm text-muted-foreground mb-3">
+                      งูสีเขียวในความฝันแทนความโชคดีและเงินทอง แนะนำเลข 89, 98, 08
+                    </p>
+                    <div class="flex gap-2">
+                      <span class="badge badge-outline">89</span>
+                      <span class="badge badge-outline">98</span>
+                      <span class="badge badge-outline">08</span>
+                    </div>
+                  </div>
+
+                  <div class="space-y-3">
+                    <textarea 
+                      id="dreamInput"
+                      placeholder="เล่าความฝันของคุณ..." 
+                      rows="3" 
+                      class="textarea resize-none"
+                    ></textarea>
+                    <button onclick="interpretDream()" id="dreamBtn" class="btn btn-primary w-full">
+                      <i class="fas fa-moon mr-2"></i>
+                      แปลความฝันของฉัน
                     </button>
-                </div>
-                
-                <!-- Loading -->
-                <div id="lotteryLoading" class="hidden text-center py-4">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                    <p class="mt-2 text-gray-600">กำลังตรวจสอบ...</p>
-                </div>
-                
-                <!-- Results -->
-                <div id="lotteryResults" class="hidden">
-                    <div class="bg-purple-50 rounded-lg p-4 mb-4">
-                        <h4 class="font-semibold text-purple-800 mb-2">ผลการตรวจสอบ:</h4>
-                        <div id="lotteryResultText" class="text-purple-700"></div>
+                  </div>
+
+                  <!-- Loading -->
+                  <div id="dreamLoading" class="hidden text-center py-4">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p class="mt-2 text-muted-foreground">กำลังวิเคราะห์ความฝัน...</p>
+                  </div>
+                  
+                  <!-- Results -->
+                  <div id="dreamResults" class="hidden">
+                    <div class="bg-primary/10 rounded-lg p-4 mb-4">
+                      <h4 class="font-semibold text-primary mb-2">คำทำนาย:</h4>
+                      <p id="dreamInterpretation" class="text-foreground"></p>
                     </div>
                     
-                    <button 
-                        onclick="resetLotteryForm()"
-                        class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                    >
-                        ตรวจใหม่
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Dream Interpretation -->
-            <div class="bg-white rounded-2xl shadow-xl p-8 card-hover">
-                <h3 class="text-2xl font-bold mb-6 text-center text-blue-600">
-                    <i class="fas fa-moon mr-3"></i>
-                    ตีความฝันให้เป็นเลข
-                </h3>
-                <div class="flex space-x-3 mb-4">
-                    <input 
-                        type="text" 
-                        id="dreamInput"
-                        placeholder="คุณฝันว่าอะไร? เช่น 'ฝันเห็นช้าง'" 
-                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg"
-                    >
-                    <button 
-                        onclick="interpretDream()"
-                        id="dreamBtn"
-                        class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-                    >
-                        ค้นหาคำทำนาย
-                    </button>
-                </div>
-                
-                <!-- Loading -->
-                <div id="dreamLoading" class="hidden text-center py-4">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <p class="mt-2 text-gray-600">กำลังวิเคราะห์ความฝัน...</p>
-                </div>
-                
-                <!-- Results -->
-                <div id="dreamResults" class="hidden">
-                    <div class="bg-blue-50 rounded-lg p-4 mb-4">
-                        <h4 class="font-semibold text-blue-800 mb-2">คำทำนาย:</h4>
-                        <p id="dreamInterpretation" class="text-blue-700"></p>
+                    <div class="bg-muted/50 rounded-lg p-4 mb-4">
+                      <h4 class="font-semibold text-foreground mb-3">เลขมงคลจากความฝัน:</h4>
+                      <div id="dreamNumbers" class="grid grid-cols-3 gap-3"></div>
                     </div>
                     
-                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                        <h4 class="font-semibold text-gray-800 mb-3">เลขมงคลจากความฝัน:</h4>
-                        <div id="dreamNumbers" class="grid grid-cols-3 gap-3"></div>
-                    </div>
-                    
-                    <button 
-                        onclick="resetDreamForm()"
-                        class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                    >
-                        ตีความใหม่
+                    <button onclick="resetDreamForm()" class="btn btn-outline w-full">
+                      ตีความใหม่
                     </button>
+                  </div>
                 </div>
+              </div>
             </div>
+          </div>
         </div>
-    </div>
-</section>
 
-<!-- Core Features Section -->
-<section class="py-16">
-    <div class="container mx-auto px-4">
-        <h2 class="text-4xl font-bold text-center mb-16">ฟีเจอร์หลักของเรา</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <!-- Feature Card 1 -->
-            <div class="feature-card-1 text-white rounded-2xl p-8 text-center card-hover">
-                <div class="text-5xl mb-4">
-                    <i class="fas fa-brain"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-3">เลขเด็ด AI</h3>
-                <p class="text-gray-100">วิเคราะห์ด้วย Machine Learning</p>
+        <!-- Right Sidebar -->
+        <div class="space-y-6">
+          <!-- Quick Lottery Check -->
+          <div class="card">
+            <div class="p-4 border-b">
+              <h3 class="font-serif flex items-center gap-2 text-lg font-bold text-foreground">
+                <i class="fas fa-search text-primary"></i>
+                ตรวจหวยด่วน
+              </h3>
             </div>
-            
-            <!-- Feature Card 2 -->
-            <div class="feature-card-2 text-white rounded-2xl p-8 text-center card-hover">
-                <div class="text-5xl mb-4">
-                    <i class="fas fa-moon"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-3">ตีความฝัน</h3>
-                <p class="text-gray-100">แปลความฝันเป็นเลขนำโชค</p>
-            </div>
-            
-            <!-- Feature Card 3 -->
-            <div class="feature-card-3 text-white rounded-2xl p-8 text-center card-hover">
-                <div class="text-5xl mb-4">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-3">สถิติหวย</h3>
-                <p class="text-gray-100">วิเคราะห์ข้อมูลสถิติย้อนหลัง</p>
-            </div>
-            
-            <!-- Feature Card 4 -->
-            <div class="feature-card-4 text-white rounded-2xl p-8 text-center card-hover">
-                <div class="text-5xl mb-4">
-                    <i class="fas fa-ticket-alt"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-3">ตรวจหวย</h3>
-                <p class="text-gray-100">ตรวจผลสลากกินแบ่งรัฐบาล</p>
-            </div>
-        </div>
-    </div>
-</section>
+            <div class="p-4 space-y-3">
+              <input 
+                id="lotteryInput"
+                placeholder="กรอกเลข 6 หลัก" 
+                class="input"
+                maxlength="6"
+                pattern="[0-9]{6}"
+              />
+              <button onclick="checkLottery()" id="lotteryBtn" class="btn btn-primary w-full">ตรวจผลหวย</button>
+              <a href="/lottery_checker/" class="btn btn-outline w-full">
+                <i class="fas fa-search mr-2"></i>
+                ไปหน้าตรวจหวยแบบละเอียด
+              </a>
+              {% if latest_lottery_result %}
+              <div class="text-xs text-muted-foreground text-center">งวดล่าสุด: {{ latest_lottery_result.formatted_date }}</div>
+              {% endif %}
 
-<!-- How It Works Section -->
-<section class="py-16 bg-gray-50">
-    <div class="container mx-auto px-4">
-        <h2 class="text-4xl font-bold text-center mb-16">LekDedAI ทำงานอย่างไร?</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Step 1 -->
-            <div class="text-center">
-                <div class="bg-purple-600 text-white text-4xl rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-database"></i>
+              <!-- Loading -->
+              <div id="lotteryLoading" class="hidden text-center py-4">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p class="mt-2 text-muted-foreground">กำลังตรวจสอบ...</p>
+              </div>
+              
+              <!-- Results -->
+              <div id="lotteryResults" class="hidden">
+                <div class="bg-primary/10 rounded-lg p-4 mb-4">
+                  <h4 class="font-semibold text-primary mb-2">ผลการตรวจสอบ:</h4>
+                  <div id="lotteryResultText" class="text-foreground"></div>
                 </div>
-                <h3 class="text-xl font-bold mb-3">1. รวบรวมสถิติ</h3>
-                <p class="text-gray-600">รวบรวมข้อมูลผลสลากย้อนหลังมากกว่า 10 ปี</p>
+                
+                <button onclick="resetLotteryForm()" class="btn btn-outline w-full">
+                  ตรวจใหม่
+                </button>
+              </div>
             </div>
-            
-            <!-- Step 2 -->
-            <div class="text-center">
-                <div class="bg-blue-600 text-white text-4xl rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-robot"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-3">2. วิเคราะห์ด้วย AI</h3>
-                <p class="text-gray-600">ค้นหาแพทเทิร์นและความน่าจะเป็นที่ซ่อนอยู่</p>
-            </div>
-            
-            <!-- Step 3 -->
-            <div class="text-center">
-                <div class="bg-green-600 text-white text-4xl rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-lightbulb"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-3">3. สร้างชุดเลขเด็ด</h3>
-                <p class="text-gray-600">นำเสนอชุดเลขที่มีโอกาสสูงสุดสำหรับงวดถัดไป</p>
-            </div>
-        </div>
-    </div>
-</section>
+          </div>
 
-<!-- News & Content Section -->
-<section class="py-16">
-    <div class="container mx-auto px-4">
-        <h2 class="text-4xl font-bold text-center mb-16">ข่าวสารและบทความน่าสนใจ</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Article Card 1 -->
-            <div class="bg-white rounded-2xl shadow-xl overflow-hidden card-hover">
-                <div class="h-48 bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
-                    <i class="fas fa-newspaper text-6xl text-white opacity-80"></i>
-                </div>
-                <div class="p-6">
-                    <h3 class="text-xl font-bold mb-3 text-gray-800">ส่องเลขเด็ดทะเบียนรถนายกฯ ประจำงวดนี้</h3>
-                    <p class="text-gray-600 mb-4">วิเคราะห์เลขเด็ดจากทะเบียนรถของบุคคลสำคัญที่มักให้โชค</p>
-                    <a href="/news/" class="text-purple-600 font-semibold hover:text-purple-700 transition-colors">
-                        อ่านเพิ่มเติม →
-                    </a>
-                </div>
+          <!-- Hot Numbers -->
+          <div class="card">
+            <div class="p-4 border-b">
+              <h3 class="font-serif flex items-center gap-2 text-lg font-bold text-foreground">
+                <i class="fas fa-chart-bar text-secondary"></i>
+                เลขฮิตประจำสัปดาห์
+              </h3>
             </div>
-            
-            <!-- Article Card 2 -->
-            <div class="bg-white rounded-2xl shadow-xl overflow-hidden card-hover">
-                <div class="h-48 bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center">
-                    <i class="fas fa-moon text-6xl text-white opacity-80"></i>
+            <div class="p-4">
+              <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-foreground">เลขออกบ่อย</span>
+                  <div class="flex gap-1">
+                    <span class="badge badge-secondary">07</span>
+                    <span class="badge badge-secondary">23</span>
+                    <span class="badge badge-secondary">45</span>
+                  </div>
                 </div>
-                <div class="p-6">
-                    <h3 class="text-xl font-bold mb-3 text-gray-800">รวม 10 ความฝันยอดฮิตที่มักให้โชค</h3>
-                    <p class="text-gray-600 mb-4">ความฝันที่พบบ่อยและมักนำโชคมาให้ผู้ฝัน</p>
-                    <a href="/dreams/" class="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
-                        อ่านเพิ่มเติม →
-                    </a>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-foreground">เลขไม่เคยออก</span>
+                  <div class="flex gap-1">
+                    <span class="badge badge-outline">89</span>
+                    <span class="badge badge-outline">91</span>
+                    <span class="badge badge-outline">96</span>
+                  </div>
                 </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-foreground">เลขแนวโน้มสูง</span>
+                  <div class="flex gap-1">
+                    <span class="badge bg-accent text-accent-foreground">12</span>
+                    <span class="badge bg-accent text-accent-foreground">34</span>
+                    <span class="badge bg-accent text-accent-foreground">56</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            
-            <!-- Article Card 3 -->
-            <div class="bg-white rounded-2xl shadow-xl overflow-hidden card-hover">
-                <div class="h-48 bg-gradient-to-br from-green-400 to-emerald-400 flex items-center justify-center">
-                    <i class="fas fa-chart-line text-6xl text-white opacity-80"></i>
-                </div>
-                <div class="p-6">
-                    <h3 class="text-xl font-bold mb-3 text-gray-800">สถิติเลขเบิ้ล-เลขหาม ที่น่าจับตามอง</h3>
-                    <p class="text-gray-600 mb-4">วิเคราะห์สถิติเลขที่ออกบ่อยและเลขที่หายไปนาน</p>
-                    <a href="/lotto_stats/" class="text-green-600 font-semibold hover:text-green-700 transition-colors">
-                        อ่านเพิ่มเติม →
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+          </div>
 
-<!-- CTA Section -->
-<section class="py-16 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-    <div class="container mx-auto px-4 text-center">
-        <h2 class="text-4xl font-bold mb-6">พร้อมที่จะได้เลขเด็ดแล้วหรือยัง?</h2>
-        <p class="text-xl mb-8 text-gray-100">เริ่มต้นใช้งาน LekDedAI วันนี้ และเพิ่มโอกาสในการถูกรางวัล</p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/ai/" class="bg-yellow-400 text-gray-900 px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-300 transition-all transform hover:scale-105">
-                ดูเลขเด็ด AI
-            </a>
-            <a href="/dreams/" class="bg-white text-purple-600 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105">
-                ตีความฝัน
-            </a>
-            <a href="/lottery_checker/" class="bg-green-500 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-green-600 transition-all transform hover:scale-105">
-                ตรวจหวย
-            </a>
+          <!-- AI Prediction -->
+          <div class="card border-primary/20">
+            <div class="p-4 border-b">
+              <h3 class="font-serif flex items-center gap-2 text-lg font-bold text-foreground">
+                <i class="fas fa-brain text-primary"></i>
+                AI ทำนายใหม่
+              </h3>
+            </div>
+            <div class="p-4">
+              <div class="text-center space-y-4">
+                <div>
+                  {% if latest_prediction %}
+                    <div class="text-2xl font-bold text-primary mb-1">{{ latest_prediction.get_three_digit_list.0|default:"427" }}</div>
+                    <div class="text-sm text-muted-foreground">เลขบน 3 ตัว</div>
+                    <div class="badge bg-primary/10 text-primary mt-2">{{ latest_prediction.overall_confidence|floatformat:0|default:"87" }}% แม่นยำ</div>
+                  {% else %}
+                    <div class="text-2xl font-bold text-primary mb-1">427</div>
+                    <div class="text-sm text-muted-foreground">เลขบน 3 ตัว</div>
+                    <div class="badge bg-primary/10 text-primary mt-2">87% แม่นยำ</div>
+                  {% endif %}
+                </div>
+                <a href="/ai/" class="btn btn-primary w-full">
+                  <i class="fas fa-bolt mr-2"></i>
+                  สร้างเลขใหม่
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
-</section>
+  </section>
+
 
 <script>
 // Dream Interpretation Functions
@@ -336,8 +517,8 @@ async function interpretDream() {
             
             data.result.numbers.forEach(number => {
                 const div = document.createElement('div');
-                div.className = 'bg-white border-2 border-blue-300 rounded-lg p-3 text-center';
-                div.innerHTML = `<span class="text-xl font-bold text-blue-600">${number}</span>`;
+                div.className = 'bg-card border border-border rounded-lg p-3 text-center';
+                div.innerHTML = `<span class="text-xl font-bold text-primary">${number}</span>`;
                 numbersContainer.appendChild(div);
             });
             
@@ -375,6 +556,11 @@ async function checkLottery() {
         return;
     }
 
+    if (!/^\d{6}$/.test(lotteryNumber)) {
+        alert('กรุณากรอกเลข 6 หลัก');
+        return;
+    }
+
     // Show loading
     lotteryLoading.classList.remove('hidden');
     lotteryBtn.disabled = true;
@@ -396,15 +582,41 @@ async function checkLottery() {
         const data = await response.json();
 
         if (data.success) {
-            // Show results
-            lotteryResultText.textContent = data.result.message;
+            // Show results with color coding
+            const resultDiv = document.createElement('div');
+            if (data.result.is_winner) {
+                resultDiv.innerHTML = `
+                    <div class="text-green-600 font-bold mb-2">🎉 ยินดีด้วย!</div>
+                    <div class="text-foreground">${data.result.message}</div>
+                `;
+                resultDiv.className = 'p-3 bg-green-50 border border-green-200 rounded-lg';
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="text-orange-600 font-bold mb-2">ผลการตรวจสอบ</div>
+                    <div class="text-foreground">${data.result.message}</div>
+                `;
+                resultDiv.className = 'p-3 bg-orange-50 border border-orange-200 rounded-lg';
+            }
+            
+            lotteryResultText.innerHTML = '';
+            lotteryResultText.appendChild(resultDiv);
             lotteryResults.classList.remove('hidden');
         } else {
-            lotteryResultText.textContent = data.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+            lotteryResultText.innerHTML = `
+                <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="text-red-600 font-bold mb-2">เกิดข้อผิดพลาด</div>
+                    <div class="text-foreground">${data.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่'}</div>
+                </div>
+            `;
             lotteryResults.classList.remove('hidden');
         }
     } catch (error) {
-        lotteryResultText.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
+        lotteryResultText.innerHTML = `
+            <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div class="text-red-600 font-bold mb-2">เกิดข้อผิดพลาด</div>
+                <div class="text-foreground">ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้</div>
+            </div>
+        `;
         lotteryResults.classList.remove('hidden');
     } finally {
         lotteryLoading.classList.add('hidden');
@@ -436,18 +648,18 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Enter key support for dream input
+// Enter key support for inputs
 document.addEventListener('DOMContentLoaded', function() {
     const dreamInput = document.getElementById('dreamInput');
     if (dreamInput) {
         dreamInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 interpretDream();
             }
         });
     }
     
-    // Enter key support for lottery input
     const lotteryInput = document.getElementById('lotteryInput');
     if (lotteryInput) {
         lotteryInput.addEventListener('keypress', function(e) {
@@ -458,4 +670,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+{% block extra_js %}
+<script src="{% static 'js/theme.js' %}"></script>
+{% endblock %}
 {% endblock %}

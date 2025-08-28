@@ -8,67 +8,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
 <style>
-    #map {
-        height: 600px;
-        width: 100%;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    .search-filters {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-    }
-    
-    .filter-group {
-        margin-bottom: 15px;
-    }
-    
-    .filter-group label {
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 5px;
-        display: block;
-    }
-    
-    .filter-group input,
-    .filter-group select {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
-    }
-    
-    .btn-search {
-        background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
-        color: white;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 6px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-    
-    .btn-search:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    
-    .btn-clear {
-        background: #6c757d;
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        border-radius: 6px;
-        margin-left: 10px;
-        cursor: pointer;
-    }
-    
+    /* Popup styles to match theme */
     .custom-popup {
         max-width: 300px;
     }
@@ -77,159 +17,176 @@
         width: 100%;
         height: 120px;
         object-fit: cover;
-        border-radius: 4px;
-        margin-bottom: 10px;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
     }
     
     .popup-title {
-        font-size: 16px;
+        font-size: 1rem;
         font-weight: bold;
-        color: #333;
-        margin-bottom: 5px;
+        color: var(--foreground);
+        margin-bottom: 0.25rem;
     }
     
     .popup-province {
-        color: #666;
-        font-size: 12px;
-        margin-bottom: 10px;
+        color: var(--muted-foreground);
+        font-size: 0.75rem;
+        margin-bottom: 0.5rem;
     }
     
     .popup-lucky-numbers {
-        background: #f8f9fa;
-        padding: 8px;
-        border-radius: 4px;
-        margin-bottom: 10px;
+        background: var(--muted);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
     }
     
     .popup-lucky-numbers .title {
-        font-size: 12px;
-        color: #666;
-        margin-bottom: 5px;
+        font-size: 0.75rem;
+        color: var(--muted-foreground);
+        margin-bottom: 0.25rem;
     }
     
     .popup-lucky-numbers .numbers {
         font-weight: bold;
-        color: #FF6B6B;
+        color: var(--primary);
     }
     
     .popup-btn {
-        background: #007bff;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 4px;
+        background: var(--primary);
+        color: var(--primary-foreground);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
         text-decoration: none;
-        font-size: 12px;
+        font-size: 0.75rem;
         display: inline-block;
+        transition: all 0.2s;
     }
     
-    .stats-card {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    
-    .stats-number {
-        font-size: 2em;
-        font-weight: bold;
-        color: #FF6B6B;
-    }
-    
-    .stats-label {
-        color: #666;
-        font-size: 14px;
+    .popup-btn:hover {
+        background: var(--accent);
+        color: var(--accent-foreground);
     }
 
     @media (max-width: 768px) {
         #map {
-            height: 400px;
-        }
-        
-        .search-filters {
-            padding: 15px;
-        }
-        
-        .btn-search, .btn-clear {
-            width: 100%;
-            margin: 5px 0;
+            height: 400px !important;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4 text-center">
-                🗺️ {{ page_title }}
-                <small class="text-muted d-block">ค้นหาสถานที่ศักดิ์สิทธิ์และพิกัดเลขเด็ดทั่วประเทศไทย</small>
+<div class="min-h-screen bg-background">
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-foreground mb-2">
+                <i class="fas fa-map-marked-alt text-primary mr-3"></i>
+                {{ page_title }}
             </h1>
+            <p class="text-lg text-muted-foreground">ค้นหาสถานที่ศักดิ์สิทธิ์และพิกัดเลขเด็ดทั่วประเทศไทย</p>
         </div>
-    </div>
-    
-    <div class="row">
-        <!-- Search Filters -->
-        <div class="col-lg-3 col-md-4">
-            <div class="search-filters">
-                <h5 class="mb-3">🔍 ค้นหาและกรอง</h5>
-                
-                <div class="filter-group">
-                    <label for="search-query">ค้นหาตามชื่อสถานที่</label>
-                    <input type="text" id="search-query" placeholder="พิมพ์ชื่อสถานที่..." />
+        
+        <div class="grid lg:grid-cols-4 gap-6">
+            <!-- Search Filters -->
+            <div class="lg:col-span-1">
+                <div class="card p-6 mb-6">
+                    <h5 class="text-lg font-semibold text-foreground mb-4">
+                        <i class="fas fa-filter text-primary mr-2"></i>
+                        ค้นหาและกรอง
+                    </h5>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="search-query" class="block text-sm font-medium text-foreground mb-2">ค้นหาตามชื่อสถานที่</label>
+                            <input type="text" id="search-query" placeholder="พิมพ์ชื่อสถานที่..." class="input" />
+                        </div>
+                        
+                        <div>
+                            <label for="region-filter" class="block text-sm font-medium text-foreground mb-2">ภาค</label>
+                            <select id="region-filter" class="input">
+                                <option value="">ทุกภาค</option>
+                                <option value="north">ภาคเหนือ</option>
+                                <option value="central">ภาคกลาง</option>
+                                <option value="northeast">ภาคอีสาน</option>
+                                <option value="south">ภาคใต้</option>
+                                <option value="east">ภาคตะวันออก</option>
+                                <option value="west">ภาคตะวันตก</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="province-filter" class="block text-sm font-medium text-foreground mb-2">จังหวัด</label>
+                            <select id="province-filter" class="input">
+                                <option value="">ทุกจังหวัด</option>
+                                {% for province in provinces %}
+                                <option value="{{ province.id }}">{{ province.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="category-filter" class="block text-sm font-medium text-foreground mb-2">ประเภทสถานที่</label>
+                            <select id="category-filter" class="input">
+                                <option value="">ทุกประเภท</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.get_name_display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <button class="btn btn-primary w-full" id="search-btn">
+                                <i class="fas fa-search mr-2"></i>
+                                ค้นหา
+                            </button>
+                            <button class="btn btn-outline w-full" id="clear-btn">
+                                <i class="fas fa-eraser mr-2"></i>
+                                ล้างการกรอง
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="filter-group">
-                    <label for="region-filter">ภาค</label>
-                    <select id="region-filter">
-                        <option value="">ทุกภาค</option>
-                        <option value="north">ภาคเหนือ</option>
-                        <option value="central">ภาคกลาง</option>
-                        <option value="northeast">ภาคอีสาน</option>
-                        <option value="south">ภาคใต้</option>
-                        <option value="east">ภาคตะวันออก</option>
-                        <option value="west">ภาคตะวันตก</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="province-filter">จังหวัด</label>
-                    <select id="province-filter">
-                        <option value="">ทุกจังหวัด</option>
-                        {% for province in provinces %}
-                        <option value="{{ province.id }}">{{ province.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="category-filter">ประเภทสถานที่</label>
-                    <select id="category-filter">
-                        <option value="">ทุกประเภท</option>
-                        {% for category in categories %}
-                        <option value="{{ category.id }}">{{ category.get_name_display }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="text-center">
-                    <button class="btn-search" id="search-btn">ค้นหา</button>
-                    <button class="btn-clear" id="clear-btn">ล้างการกรอง</button>
+                <!-- Stats Card -->
+                <div class="card p-6 text-center">
+                    <div class="text-3xl font-bold text-primary mb-2" id="locations-count">0</div>
+                    <div class="text-muted-foreground">สถานที่ทั้งหมด</div>
                 </div>
             </div>
             
-            <!-- Stats Card -->
-            <div class="stats-card">
-                <div class="stats-number" id="locations-count">0</div>
-                <div class="stats-label">สถานที่ทั้งหมด</div>
+            <!-- Map -->
+            <div class="lg:col-span-3">
+                <div class="card p-4 mb-6">
+                    <div id="map" style="height: 600px; border-radius: 0.5rem;"></div>
+                </div>
+                
+                <!-- Locations List -->
+                <div class="card p-6">
+                    <h3 class="text-2xl font-bold text-foreground mb-6">
+                        <i class="fas fa-list text-primary mr-2"></i>
+                        รายการสถานที่
+                        <span class="text-sm font-normal text-muted-foreground ml-2">(<span id="list-count">0</span> สถานที่)</span>
+                    </h3>
+                    
+                    <!-- Loading State -->
+                    <div id="locations-loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                        <p class="text-muted-foreground">กำลังโหลดข้อมูลสถานที่...</p>
+                    </div>
+                    
+                    <!-- Locations Grid -->
+                    <div id="locations-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+                        <!-- Locations will be populated here -->
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="locations-empty" class="text-center py-8 hidden">
+                        <i class="fas fa-search text-4xl text-muted-foreground/50 mb-4"></i>
+                        <p class="text-muted-foreground">ไม่พบสถานที่ที่ตรงกับการค้นหา</p>
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        <!-- Map -->
-        <div class="col-lg-9 col-md-8">
-            <div id="map"></div>
         </div>
     </div>
 </div>
@@ -276,7 +233,12 @@ function loadLocations() {
             console.log('API data received:', data);
             allLocations = data.locations;
             displayLocations(allLocations);
+            displayLocationsList(allLocations);
             updateStats(allLocations.length);
+            
+            // Hide loading, show list
+            document.getElementById('locations-loading').classList.add('hidden');
+            document.getElementById('locations-list').classList.remove('hidden');
         })
         .catch(error => {
             console.error('Error loading locations:', error);
@@ -293,7 +255,7 @@ function displayLocations(locations) {
         // Create custom icon based on category
         const iconClass = getCategoryIcon(location.category_code);
         const icon = L.divIcon({
-            html: `<div class="custom-marker" style="background: #FF6B6B; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">${iconClass}</div>`,
+            html: `<div class="custom-marker" style="background: var(--primary); color: var(--primary-foreground); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">${iconClass}</div>`,
             iconSize: [30, 30],
             className: 'custom-div-icon'
         });
@@ -310,6 +272,119 @@ function displayLocations(locations) {
         
         markers.addLayer(marker);
     });
+}
+
+// Display locations list
+function displayLocationsList(locations) {
+    const listContainer = document.getElementById('locations-list');
+    const listCount = document.getElementById('list-count');
+    const emptyState = document.getElementById('locations-empty');
+    
+    // Update count
+    listCount.textContent = locations.length;
+    
+    if (locations.length === 0) {
+        listContainer.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+    }
+    
+    emptyState.classList.add('hidden');
+    listContainer.classList.remove('hidden');
+    
+    // Clear existing content
+    listContainer.innerHTML = '';
+    
+    locations.forEach(location => {
+        const locationCard = createLocationCard(location);
+        listContainer.appendChild(locationCard);
+    });
+}
+
+// Create location card
+function createLocationCard(location) {
+    const card = document.createElement('div');
+    card.className = 'card hover:shadow-md transition-shadow cursor-pointer';
+    card.onclick = () => focusOnLocation(location);
+    
+    let imageHtml = '';
+    if (location.main_image) {
+        imageHtml = `
+            <div class="relative">
+                <img src="${location.main_image}" alt="${location.name}" class="w-full h-48 object-cover rounded-t-lg">
+                <div class="absolute top-2 right-2">
+                    <span class="badge bg-primary text-primary-foreground text-xs">
+                        ${getCategoryIcon(location.category_code)}
+                    </span>
+                </div>
+            </div>
+        `;
+    } else {
+        imageHtml = `
+            <div class="w-full h-48 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-t-lg flex items-center justify-center">
+                <i class="text-6xl text-primary/50">${getCategoryIcon(location.category_code)}</i>
+            </div>
+        `;
+    }
+    
+    let luckyNumbersHtml = '';
+    if (location.lucky_numbers && location.lucky_numbers.length > 0) {
+        luckyNumbersHtml = `
+            <div class="mt-3">
+                <p class="text-sm font-medium text-foreground mb-2">
+                    <i class="fas fa-star text-primary mr-1"></i>
+                    เลขเด็ด:
+                </p>
+                <div class="flex flex-wrap gap-1">
+                    ${location.lucky_numbers.slice(0, 3).map(num => 
+                        `<span class="badge bg-primary text-primary-foreground text-xs">${num}</span>`
+                    ).join('')}
+                    ${location.lucky_numbers.length > 3 ? `<span class="text-xs text-muted-foreground">+${location.lucky_numbers.length - 3}</span>` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    card.innerHTML = `
+        ${imageHtml}
+        <div class="p-4">
+            <h4 class="font-semibold text-foreground mb-1">${location.name}</h4>
+            <p class="text-sm text-muted-foreground mb-2">
+                <i class="fas fa-map-marker-alt mr-1"></i>
+                ${location.province}
+            </p>
+            <p class="text-xs text-muted-foreground mb-3">${location.category}</p>
+            ${luckyNumbersHtml}
+            <div class="mt-4 flex items-center justify-between">
+                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); window.open('${location.url}', '_blank')">
+                    <i class="fas fa-external-link-alt mr-1"></i>
+                    รายละเอียด
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); focusOnLocation(${JSON.stringify(location).replace(/"/g, '&quot;')})">
+                    <i class="fas fa-map-marker-alt mr-1"></i>
+                    ดูในแผนที่
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return card;
+}
+
+// Focus on location in map
+function focusOnLocation(location) {
+    // Zoom to location
+    map.setView([location.latitude, location.longitude], 15);
+    
+    // Find and open the marker popup
+    markers.eachLayer(function(marker) {
+        if (marker.getLatLng().lat === location.latitude && marker.getLatLng().lng === location.longitude) {
+            marker.openPopup();
+        }
+    });
+    
+    // Scroll to map
+    document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // Get category icon
@@ -373,6 +448,7 @@ function searchLocations() {
         .then(response => response.json())
         .then(data => {
             displayLocations(data.locations);
+            displayLocationsList(data.locations);
             updateStats(data.locations.length);
             
             // Fit map to show all filtered locations
@@ -394,6 +470,7 @@ function clearFilters() {
     document.getElementById('category-filter').value = '';
     
     displayLocations(allLocations);
+    displayLocationsList(allLocations);
     updateStats(allLocations.length);
     
     // Reset map view
