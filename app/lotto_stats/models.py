@@ -37,6 +37,20 @@ class LotteryDraw(models.Model):
         front = [x.strip() for x in self.three_digit_front.split(',') if x.strip()]
         back = [x.strip() for x in self.three_digit_back.split(',') if x.strip()]
         return front + back
+    
+    def get_three_digit_front_list(self, limit=2):
+        """ดึงเลขหน้า 3 ตัว (3 ตัวแรก) เฉพาะจำนวนที่ระบุ"""
+        full_numbers = [x.strip() for x in self.three_digit_front.split(',') if x.strip()]
+        # ตัดเอาเฉพาะ 3 ตัวแรกของแต่ละเลข
+        three_digit_numbers = [num[:3] for num in full_numbers if len(num) >= 3]
+        return three_digit_numbers[:limit]
+    
+    def get_three_digit_back_list(self, limit=2):
+        """ดึงเลขท้าย 3 ตัว (3 ตัวท้าย) เฉพาะจำนวนที่ระบุ"""
+        full_numbers = [x.strip() for x in self.three_digit_back.split(',') if x.strip()]
+        # ตัดเอาเฉพาะ 3 ตัวท้ายของแต่ละเลข
+        three_digit_numbers = [num[-3:] for num in full_numbers if len(num) >= 3]
+        return three_digit_numbers[:limit]
 
 class NumberStatistics(models.Model):
     """สถิติของเลขแต่ละตัว"""
