@@ -4,168 +4,179 @@
 {% block title %}ข่าวใบ้หวย - LekDedAI{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-4xl font-bold text-center mb-8">📰 ข่าวใบ้หวย</h1>
-    
-    <!-- Search and Filter -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <div class="flex flex-col md:flex-row gap-4">
-            <!-- Search -->
-            <form method="get" class="flex-1">
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        name="q" 
-                        value="{{ query }}"
-                        placeholder="ค้นหาข่าว หรือเลข..." 
-                        class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    >
-                    <button type="submit" class="absolute right-2 top-2">
-                        🔍
-                    </button>
+<div class="min-h-screen bg-background">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-8 text-foreground">
+            <i class="fas fa-newspaper text-primary mr-3"></i>
+            ข่าวใบ้หวย
+        </h1>
+        
+        <!-- Search and Filter -->
+        <div class="card p-6 mb-8">
+            <div class="flex flex-col md:flex-row gap-4">
+                <!-- Search -->
+                <form method="get" class="flex-1">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            name="q" 
+                            value="{{ query }}"
+                            placeholder="ค้นหาข่าว หรือเลข..." 
+                            class="input pr-10"
+                        >
+                        <button type="submit" class="absolute right-2 top-2 text-muted-foreground hover:text-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Category Filter -->
+                <div class="flex gap-2">
+                    <a href="{% url 'news:news_list' %}" 
+                       class="px-4 py-2 rounded-lg transition-colors {% if not category %}bg-primary text-primary-foreground{% else %}bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
+                        ทั้งหมด
+                    </a>
+                    {% for cat in categories %}
+                    <a href="?category={{ cat.slug }}" 
+                       class="px-4 py-2 rounded-lg transition-colors {% if category.slug == cat.slug %}bg-primary text-primary-foreground{% else %}bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
+                        {{ cat.name }} ({{ cat.article_count }})
+                    </a>
+                    {% endfor %}
                 </div>
-            </form>
-            
-            <!-- Category Filter -->
-            <div class="flex gap-2">
-                <a href="{% url 'news:news_list' %}" 
-                   class="px-4 py-2 rounded-lg {% if not category %}bg-purple-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
-                    ทั้งหมด
-                </a>
-                {% for cat in categories %}
-                <a href="?category={{ cat.slug }}" 
-                   class="px-4 py-2 rounded-lg {% if category.slug == cat.slug %}bg-purple-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
-                    {{ cat.name }} ({{ cat.article_count }})
-                </a>
+            </div>
+        </div>
+    
+        <!-- Latest Lucky Hints -->
+        {% if latest_hints %}
+        <div class="card bg-gradient-to-r from-primary/10 to-secondary/10 p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4 text-foreground">
+                <i class="fas fa-star text-primary mr-2"></i>
+                เลขเด็ดล่าสุด
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                {% for hint in latest_hints %}
+                <div class="card p-4 text-center">
+                    <p class="text-sm text-muted-foreground mb-1">{{ hint.source_name }}</p>
+                    <p class="text-2xl font-bold text-primary">{{ hint.lucky_numbers }}</p>
+                    <p class="text-xs text-muted-foreground">{{ hint.hint_date|date:"j M" }}</p>
+                </div>
                 {% endfor %}
             </div>
-        </div>
-    </div>
-    
-    <!-- Latest Lucky Hints -->
-    {% if latest_hints %}
-    <div class="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-lg shadow-lg p-6 mb-8">
-        <h2 class="text-2xl font-bold mb-4">🎯 เลขเด็ดล่าสุด</h2>
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {% for hint in latest_hints %}
-            <div class="bg-white rounded-lg p-4 text-center">
-                <p class="text-sm text-gray-600 mb-1">{{ hint.source_name }}</p>
-                <p class="text-2xl font-bold text-red-600">{{ hint.lucky_numbers }}</p>
-                <p class="text-xs text-gray-500">{{ hint.hint_date|date:"j M" }}</p>
+            <div class="text-center mt-4">
+                <a href="{% url 'news:lucky_hints' %}" class="text-primary hover:text-accent transition-colors">
+                    ดูเลขเด็ดทั้งหมด →
+                </a>
             </div>
-            {% endfor %}
         </div>
-        <div class="text-center mt-4">
-            <a href="{% url 'news:lucky_hints' %}" class="text-purple-600 hover:underline">
-                ดูเลขเด็ดทั้งหมด →
-            </a>
-        </div>
-    </div>
-    {% endif %}
+        {% endif %}
     
-    <!-- News Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for article in articles %}
-        <article class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition">
-            {% if article.featured_image %}
-            <img src="{{ article.featured_image.url }}" 
-                 alt="{{ article.title }}" 
-                 class="w-full h-48 object-cover">
-            {% else %}
-            <div class="w-full h-48 bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
-                <span class="text-6xl">📰</span>
-            </div>
-            {% endif %}
-            
-            <div class="p-6">
-                <div class="flex items-center gap-2 mb-2">
-                    {% if article.category %}
-                    <span class="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded">
-                        {{ article.category.name }}
-                    </span>
-                    {% endif %}
-                    <span class="text-xs text-gray-500">
-                        {{ article.published_date|date:"j M Y" }}
-                    </span>
-                </div>
-                
-                <h3 class="text-xl font-bold mb-2">
-                    <a href="{{ article.get_absolute_url }}" class="hover:text-purple-600">
-                        {{ article.title }}
-                    </a>
-                </h3>
-                
-                <p class="text-gray-600 mb-4">{{ article.intro|truncatewords:20 }}</p>
-                
-                {% if article.extracted_numbers %}
-                <div class="border-t pt-4">
-                    <p class="text-sm font-semibold mb-2">🔢 เลขจากข่าว:</p>
-                    <div class="flex flex-wrap gap-2">
-                        {% for num in article.get_extracted_numbers_list|slice:":5" %}
-                        <span class="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-bold">
-                            {{ num }}
-                        </span>
-                        {% endfor %}
-                        {% if article.get_extracted_numbers_list|length > 5 %}
-                        <span class="text-sm text-gray-500">...</span>
-                        {% endif %}
-                    </div>
-                    <div class="mt-2">
-                        <span class="text-xs text-gray-500">
-                            ความน่าเชื่อถือ: {{ article.confidence_score }}%
-                        </span>
-                    </div>
+        <!-- News Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for article in articles %}
+            <article class="card overflow-hidden hover:shadow-md transition-shadow">
+                {% if article.featured_image %}
+                <img src="{{ article.featured_image.url }}" 
+                     alt="{{ article.title }}" 
+                     class="w-full h-48 object-cover">
+                {% else %}
+                <div class="w-full h-48 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                    <i class="fas fa-newspaper text-6xl text-primary/50"></i>
                 </div>
                 {% endif %}
                 
-                <div class="flex items-center justify-between mt-4">
-                    <span class="text-sm text-gray-500">
-                        <i class="far fa-eye"></i> {{ article.views }} views
-                    </span>
-                    <a href="{{ article.get_absolute_url }}" 
-                       class="text-purple-600 hover:underline text-sm">
-                        อ่านต่อ →
-                    </a>
+                <div class="p-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        {% if article.category %}
+                        <span class="badge badge-outline text-xs">
+                            {{ article.category.name }}
+                        </span>
+                        {% endif %}
+                        <span class="text-xs text-muted-foreground">
+                            {{ article.published_date|date:"j M Y" }}
+                        </span>
+                    </div>
+                    
+                    <h3 class="text-xl font-bold mb-2">
+                        <a href="{{ article.get_absolute_url }}" class="text-foreground hover:text-primary transition-colors">
+                            {{ article.title }}
+                        </a>
+                    </h3>
+                    
+                    <p class="text-muted-foreground mb-4">{{ article.intro|truncatewords:20 }}</p>
+                    
+                    {% if article.extracted_numbers %}
+                    <div class="border-t border-border pt-4">
+                        <p class="text-sm font-semibold mb-2 text-foreground">
+                            <i class="fas fa-hashtag text-primary mr-1"></i>
+                            เลขจากข่าว:
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            {% for num in article.get_extracted_numbers_list|slice:":5" %}
+                            <span class="badge bg-primary text-primary-foreground text-sm font-bold">
+                                {{ num }}
+                            </span>
+                            {% endfor %}
+                            {% if article.get_extracted_numbers_list|length > 5 %}
+                            <span class="text-sm text-muted-foreground">...</span>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2">
+                            <span class="text-xs text-muted-foreground">
+                                ความน่าเชื่อถือ: {{ article.confidence_score }}%
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="flex items-center justify-between mt-4">
+                        <span class="text-sm text-muted-foreground">
+                            <i class="fas fa-eye mr-1"></i> {{ article.views }} views
+                        </span>
+                        <a href="{{ article.get_absolute_url }}" 
+                           class="text-primary hover:text-accent transition-colors text-sm">
+                            อ่านต่อ →
+                        </a>
+                    </div>
                 </div>
+            </article>
+            {% empty %}
+            <div class="col-span-full text-center py-8">
+                <p class="text-muted-foreground">ยังไม่มีข่าว</p>
             </div>
-        </article>
-        {% empty %}
-        <div class="col-span-full text-center py-8">
-            <p class="text-gray-500">ยังไม่มีข่าว</p>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
     
-    <!-- Pagination -->
-    {% if articles.has_other_pages %}
-    <div class="flex justify-center mt-8">
-        <nav class="flex gap-2">
-            {% if articles.has_previous %}
-            <a href="?page={{ articles.previous_page_number }}{% if category %}&category={{ category.slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}" 
-               class="px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-100">
-                ← ก่อนหน้า
-            </a>
-            {% endif %}
-            
-            {% for num in articles.paginator.page_range %}
-                {% if articles.number == num %}
-                <span class="px-4 py-2 bg-purple-600 text-white rounded-lg">{{ num }}</span>
-                {% else %}
-                <a href="?page={{ num }}{% if category %}&category={{ category.slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}" 
-                   class="px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-100">
-                    {{ num }}
+        <!-- Pagination -->
+        {% if articles.has_other_pages %}
+        <div class="flex justify-center mt-8">
+            <nav class="flex gap-2">
+                {% if articles.has_previous %}
+                <a href="?page={{ articles.previous_page_number }}{% if category %}&category={{ category.slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}" 
+                   class="btn btn-outline">
+                    ← ก่อนหน้า
                 </a>
                 {% endif %}
-            {% endfor %}
-            
-            {% if articles.has_next %}
-            <a href="?page={{ articles.next_page_number }}{% if category %}&category={{ category.slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}" 
-               class="px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-100">
-                ถัดไป →
-            </a>
-            {% endif %}
-        </nav>
+                
+                {% for num in articles.paginator.page_range %}
+                    {% if articles.number == num %}
+                    <span class="btn btn-primary">{{ num }}</span>
+                    {% else %}
+                    <a href="?page={{ num }}{% if category %}&category={{ category.slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}" 
+                       class="btn btn-outline">
+                        {{ num }}
+                    </a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if articles.has_next %}
+                <a href="?page={{ articles.next_page_number }}{% if category %}&category={{ category.slug }}{% endif %}{% if query %}&q={{ query }}{% endif %}" 
+                   class="btn btn-outline">
+                    ถัดไป →
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 {% endblock %}

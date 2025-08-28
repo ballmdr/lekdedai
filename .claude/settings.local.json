@@ -3,7 +3,8 @@
     "allow": [
       "Bash(docker compose exec:*)",
       "Bash(python manage.py startapp:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(python manage.py collectstatic:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -6,154 +7,171 @@
     <title>{% block title %}LekDedAI - เลขเด็ดจาก AI{% endblock %}</title>
     {% block meta %}{% endblock %}
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: 'var(--background)',
+                        foreground: 'var(--foreground)',
+                        card: {
+                            DEFAULT: 'var(--card)',
+                            foreground: 'var(--card-foreground)'
+                        },
+                        popover: {
+                            DEFAULT: 'var(--popover)',
+                            foreground: 'var(--popover-foreground)'
+                        },
+                        primary: {
+                            DEFAULT: 'var(--primary)',
+                            foreground: 'var(--primary-foreground)'
+                        },
+                        secondary: {
+                            DEFAULT: 'var(--secondary)',
+                            foreground: 'var(--secondary-foreground)'
+                        },
+                        muted: {
+                            DEFAULT: 'var(--muted)',
+                            foreground: 'var(--muted-foreground)'
+                        },
+                        accent: {
+                            DEFAULT: 'var(--accent)',
+                            foreground: 'var(--accent-foreground)'
+                        },
+                        destructive: {
+                            DEFAULT: 'var(--destructive)',
+                            foreground: 'var(--destructive-foreground)'
+                        },
+                        border: 'var(--border)',
+                        input: 'var(--input)',
+                        ring: 'var(--ring)',
+                    },
+                    borderRadius: {
+                        lg: 'var(--radius)',
+                        md: 'calc(var(--radius) - 2px)',
+                        sm: 'calc(var(--radius) - 4px)',
+                    },
+                }
+            },
+        }
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
     {% block extra_css %}{% endblock %}
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-        
-        body {
-            font-family: 'Sarabun', sans-serif;
-        }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        
-        .card-hover:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        
-        .lucky-number {
-            background: linear-gradient(135deg, #8A2BE2 0%, #FF6B6B 100%);
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        
-        .countdown-timer {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        }
-        
-        .feature-card-1 { background: linear-gradient(135deg, #8A2BE2 0%, #9370DB 100%); }
-        .feature-card-2 { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); }
-        .feature-card-3 { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
-        .feature-card-4 { background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%); }
-    </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Header Navigation Bar -->
-    <nav class="bg-white shadow-lg sticky top-0 z-50">
+<body class="min-h-screen bg-background">
+    <!-- Header -->
+    <header class="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div class="container mx-auto px-4 py-4">
-            <div class="flex justify-between items-center">
-                <a href="/" class="text-2xl font-bold text-purple-600 flex items-center space-x-2">
-                    <span class="text-3xl">🔮</span>
-                    <span>LekDedAI</span>
-                </a>
-                <div class="hidden md:flex space-x-6">
-                    <a href="/" class="hover:text-purple-600 transition-colors font-medium">หน้าแรก</a>
-                    <a href="/ai/" class="hover:text-purple-600 transition-colors font-medium">เลขเด็ด AI</a>
-                    <a href="/dreams/" class="hover:text-purple-600 transition-colors font-medium">ตีความฝัน</a>
-                    <a href="/lottery_checker/" class="hover:text-purple-600 transition-colors font-medium">ตรวจหวย</a>
-                    <a href="/lotto_stats/" class="hover:text-purple-600 transition-colors font-medium">สถิติหวย</a>
-                    <a href="/lucky-spots/" class="hover:text-purple-600 transition-colors font-medium">พิกัดเลขเด็ด</a>
-                    <a href="/news/" class="hover:text-purple-600 transition-colors font-medium">ข่าวสาร</a>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-brain w-5 h-5 text-primary-foreground"></i>
+                    </div>
+                    <a href="/" class="text-xl font-serif font-bold text-foreground hover:text-primary transition-colors">เลขเด็ดเอไอ</a>
                 </div>
+                <nav class="hidden md:flex items-center gap-6">
+                    <a href="/" class="text-muted-foreground hover:text-foreground transition-colors">เลขวันนี้</a>
+                    <a href="/news/" class="text-muted-foreground hover:text-foreground transition-colors">ข่าวหวย</a>
+                    <a href="/dreams/" class="text-muted-foreground hover:text-foreground transition-colors">ความฝัน</a>
+                    <a href="/lucky-spots/" class="text-muted-foreground hover:text-foreground transition-colors">พิกัดเลขเด็ด</a>
+                    <a href="/lottery_checker/" class="text-muted-foreground hover:text-foreground transition-colors">ตรวจหวย</a>
+                    <a href="/lotto_stats/" class="text-muted-foreground hover:text-foreground transition-colors">สถิติ</a>
+                </nav>
                 <!-- Mobile menu button -->
-                <button class="md:hidden text-gray-600 hover:text-purple-600" id="mobile-menu-btn">
-                    <i class="fas fa-bars text-xl"></i>
+                <button class="md:hidden text-foreground" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars"></i>
                 </button>
             </div>
             <!-- Mobile menu -->
-            <div class="md:hidden hidden mt-4 pb-4" id="mobile-menu">
-                <div class="flex flex-col space-y-3">
-                    <a href="/" class="hover:text-purple-600 transition-colors">หน้าแรก</a>
-                    <a href="/ai/" class="hover:text-purple-600 transition-colors">เลขเด็ด AI</a>
-                    <a href="/dreams/" class="hover:text-purple-600 transition-colors">ตีความฝัน</a>
-                    <a href="/lottery_checker/" class="hover:text-purple-600 transition-colors">ตรวจหวย</a>
-                    <a href="/lotto_stats/" class="hover:text-purple-600 transition-colors">สถิติหวย</a>
-                    <a href="/lucky-spots/" class="hover:text-purple-600 transition-colors">พิกัดเลขเด็ด</a>
-                    <a href="/news/" class="hover:text-purple-600 transition-colors">ข่าวสาร</a>
-                </div>
+            <div id="mobileMenu" class="hidden md:hidden mt-4 py-4 border-t border-border">
+                <nav class="flex flex-col gap-4">
+                    <a href="/" class="text-muted-foreground hover:text-foreground transition-colors">เลขวันนี้</a>
+                    <a href="/news/" class="text-muted-foreground hover:text-foreground transition-colors">ข่าวหวย</a>
+                    <a href="/dreams/" class="text-muted-foreground hover:text-foreground transition-colors">ความฝัน</a>
+                    <a href="/lucky-spots/" class="text-muted-foreground hover:text-foreground transition-colors">พิกัดเลขเด็ด</a>
+                    <a href="/lottery_checker/" class="text-muted-foreground hover:text-foreground transition-colors">ตรวจหวย</a>
+                    <a href="/lotto_stats/" class="text-muted-foreground hover:text-foreground transition-colors">สถิติ</a>
+                </nav>
             </div>
         </div>
-    </nav>
+    </header>
     
     <main>
         {% block content %}{% endblock %}
     </main>
     
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-12 mt-16">
+    <footer class="bg-card border-t border-border py-8">
         <div class="container mx-auto px-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid md:grid-cols-3 gap-8">
                 <div>
-                    <h3 class="text-xl font-bold mb-4">🔮 LekDedAI</h3>
-                    <p class="text-gray-300">แพลตฟอร์ม AI สำหรับวิเคราะห์เลขเด็ดและตีความฝัน</p>
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-brain text-primary-foreground"></i>
+                        </div>
+                        <h4 class="font-serif font-bold text-foreground">เลขเด็ดเอไอ</h4>
+                    </div>
+                    <p class="text-sm text-muted-foreground">พอร์ทัลเลขเด็ดและข่าวหวยอันดับ 1 ของไทย</p>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4">ลิงก์สำคัญ</h4>
-                    <ul class="space-y-2">
-                        <li><a href="/" class="text-gray-300 hover:text-white transition-colors">หน้าแรก</a></li>
-                        <li><a href="/ai/" class="text-gray-300 hover:text-white transition-colors">เลขเด็ด AI</a></li>
-                        <li><a href="/dreams/" class="text-gray-300 hover:text-white transition-colors">ตีความฝัน</a></li>
-                        <li><a href="/lottery_checker/" class="text-gray-300 hover:text-white transition-colors">ตรวจหวย</a></li>
-                        <li><a href="/lucky-spots/" class="text-gray-300 hover:text-white transition-colors">พิกัดเลขเด็ด</a></li>
+                    <h5 class="font-semibold mb-4 text-foreground">เมนูหลัก</h5>
+                    <ul class="space-y-2 text-sm text-muted-foreground">
+                        <li>
+                            <a href="/" class="hover:text-foreground transition-colors">
+                                เลขเด็ดวันนี้
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/news/" class="hover:text-foreground transition-colors">
+                                ข่าวหวย
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/lotto_stats/" class="hover:text-foreground transition-colors">
+                                สถิติหวย
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/lottery_checker/" class="hover:text-foreground transition-colors">
+                                ตรวจหวย
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4">ติดต่อเรา</h4>
-                    <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-300 hover:text-white transition-colors">เกี่ยวกับเรา</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white transition-colors">ติดต่อเรา</a></li>
-                        <li><a href="#" class="text-gray-300 hover:text-white transition-colors">นโยบายความเป็นส่วนตัว</a></li>
+                    <h5 class="font-semibold mb-4 text-foreground">ติดตาม</h5>
+                    <ul class="space-y-2 text-sm text-muted-foreground">
+                        <li>Facebook: เลขเด็ดเอไอ</li>
+                        <li>Line: @lekded-ai</li>
+                        <li>อีเมล: info@lekded-ai.com</li>
                     </ul>
                 </div>
             </div>
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center">
-                <p class="text-gray-300">&copy; 2025 LekDedAI. All rights reserved.</p>
+            <div class="border-t border-border mt-6 pt-6 text-center text-sm text-muted-foreground">
+                <p>&copy; 2024 เลขเด็ดเอไอ - พอร์ทัลเลขเด็ดและข่าวหวย</p>
             </div>
         </div>
     </footer>
 
     <script>
         // Mobile menu toggle
-        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
-            const mobileMenu = document.getElementById('mobile-menu');
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
             mobileMenu.classList.toggle('hidden');
-        });
-
-        // Countdown timer functionality
-        function updateCountdown() {
-            const now = new Date();
-            const targetDate = new Date('2025-01-01T00:00:00'); // งวดถัดไป
-            
-            const timeDiff = targetDate - now;
-            
-            if (timeDiff > 0) {
-                const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-                
-                const countdownElement = document.getElementById('countdown-timer');
-                if (countdownElement) {
-                    countdownElement.innerHTML = `${days} วัน ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                }
-            }
         }
         
-        // Update countdown every second
-        setInterval(updateCountdown, 1000);
-        updateCountdown(); // Initial call
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuButton = event.target.closest('button');
+            
+            if (!menuButton && !mobileMenu.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
     </script>
+    <script src="{% static 'js/theme.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
