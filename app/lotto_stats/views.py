@@ -49,6 +49,11 @@ def statistics_page(request):
     # สถิติเพิ่มเติม
     stats_summary = calculator.get_statistics_summary()
     
+    # สถิติใหม่
+    running_number_stats = calculator.get_running_number_stats()
+    double_number_stats = calculator.get_double_number_stats()
+    sequential_number_stats = calculator.get_sequential_number_stats()
+    
     # สถานะการซิงค์ข้อมูล
     sync_service = LottoSyncService()
     sync_status = sync_service.get_sync_status()
@@ -64,7 +69,11 @@ def statistics_page(request):
         'monthly_labels': monthly_labels,
         'monthly_data': monthly_data,
         'monthly_data_with_labels': monthly_data_with_labels, # เพิ่มข้อมูลสำหรับ table และ heatmap
+        'monthly_stats': monthly_stats,
         'stats_summary': stats_summary,
+        'running_number_stats': running_number_stats,
+        'double_number_stats': double_number_stats,
+        'sequential_number_stats': sequential_number_stats,
         'sync_status': sync_status,
     }
     

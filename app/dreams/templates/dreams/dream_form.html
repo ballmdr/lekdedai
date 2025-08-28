@@ -119,16 +119,16 @@
                     </div>
                     <div class="p-4 space-y-3">
                         <div class="p-3 bg-muted/30 rounded-lg">
-                            <div class="font-medium text-sm text-foreground">ฝันเห็นงูใหญ่สีเขียว</div>
-                            <div class="text-xs text-muted-foreground mt-1">เลข: 89, 98, 08</div>
+                            <div class="font-medium text-sm text-foreground">ฝันเห็นงู / พญานาค</div>
+                            <div class="text-xs text-muted-foreground mt-1">เลข: 56, 65, 59</div>
                         </div>
                         <div class="p-3 bg-muted/30 rounded-lg">
-                            <div class="font-medium text-sm text-foreground">ฝันเห็นช้างขาว</div>
-                            <div class="text-xs text-muted-foreground mt-1">เลข: 15, 51, 19</div>
+                            <div class="font-medium text-sm text-foreground">ฝันเห็นช้าง</div>
+                            <div class="text-xs text-muted-foreground mt-1">เลข: 19, 99</div>
                         </div>
                         <div class="p-3 bg-muted/30 rounded-lg">
-                            <div class="font-medium text-sm text-foreground">ฝันเห็นเงินทอง</div>
-                            <div class="text-xs text-muted-foreground mt-1">เลข: 28, 82, 23</div>
+                            <div class="font-medium text-sm text-foreground">ฝันเห็นเงิน / ทอง</div>
+                            <div class="text-xs text-muted-foreground mt-1">เลข: 28, 82, 68</div>
                         </div>
                     </div>
                 </div>
@@ -175,117 +175,34 @@
                 </div>
                 
                 <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {% for category_name, keywords in categories_with_keywords.items %}
                         <div>
                             <h3 class="font-semibold text-foreground mb-4 flex items-center gap-2">
-                                <i class="fas fa-paw text-secondary"></i>
-                                สัตว์ในความฝัน
+                                {% if '🐘' in category_name %}
+                                    <i class="fas fa-paw text-secondary"></i>
+                                {% elif '👑' in category_name %}
+                                    <i class="fas fa-user text-accent"></i>
+                                {% elif '🏠' in category_name %}
+                                    <i class="fas fa-home text-primary"></i>
+                                {% elif '💪' in category_name %}
+                                    <i class="fas fa-hand-paper text-secondary"></i>
+                                {% endif %}
+                                {{ category_name }}
                             </h3>
                             <div class="space-y-2">
+                                {% for keyword in keywords %}
                                 <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">🐘 ช้าง</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">89</span>
-                                        <span class="badge badge-outline text-xs">98</span>
+                                    <span class="text-foreground text-sm font-medium">{{ keyword.keyword }}</span>
+                                    <div class="text-right text-xs">
+                                        <div class="text-foreground font-semibold">เด่น: {{ keyword.main_number }} | รอง: {{ keyword.secondary_number }}</div>
+                                        <div class="text-muted-foreground mt-1">มักตี: {{ keyword.common_numbers }}</div>
                                     </div>
                                 </div>
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">🐍 งู</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">01</span>
-                                        <span class="badge badge-outline text-xs">10</span>
-                                    </div>
-                                </div>
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">🐅 เสือ</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">37</span>
-                                        <span class="badge badge-outline text-xs">73</span>
-                                    </div>
-                                </div>
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">🐕 หมา</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">18</span>
-                                        <span class="badge badge-outline text-xs">81</span>
-                                    </div>
-                                </div>
+                                {% endfor %}
                             </div>
                         </div>
-                        
-                        <div>
-                            <h3 class="font-semibold text-foreground mb-4 flex items-center gap-2">
-                                <i class="fas fa-home text-accent"></i>
-                                สิ่งของ/สถานที่
-                            </h3>
-                            <div class="space-y-2">
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">🏠 บ้าน</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">14</span>
-                                        <span class="badge badge-outline text-xs">41</span>
-                                    </div>
-                                </div>
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">💰 เงิน</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">28</span>
-                                        <span class="badge badge-outline text-xs">82</span>
-                                    </div>
-                                </div>
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">🚗 รถ</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">54</span>
-                                        <span class="badge badge-outline text-xs">45</span>
-                                    </div>
-                                </div>
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">🌊 น้ำ</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">09</span>
-                                        <span class="badge badge-outline text-xs">90</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h3 class="font-semibold text-foreground mb-4 flex items-center gap-2">
-                                <i class="fas fa-palette text-primary"></i>
-                                สีและธรรมชาติ
-                            </h3>
-                            <div class="space-y-2">
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">🔴 สีแดง</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">05</span>
-                                        <span class="badge badge-outline text-xs">50</span>
-                                    </div>
-                                </div>
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">🟢 สีเขียว</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">07</span>
-                                        <span class="badge badge-outline text-xs">70</span>
-                                    </div>
-                                </div>
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">🔥 ไฟ</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">17</span>
-                                        <span class="badge badge-outline text-xs">71</span>
-                                    </div>
-                                </div>
-                                <div class="flex justify-between items-center p-2 bg-muted/30 rounded">
-                                    <span class="text-foreground">⭐ ดาว</span>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-outline text-xs">12</span>
-                                        <span class="badge badge-outline text-xs">21</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
