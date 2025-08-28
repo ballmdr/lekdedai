@@ -39,6 +39,7 @@ def locations_api(request):
             'main_image': location.main_image.url if location.main_image else '',
             'lucky_numbers': location.get_lucky_numbers_list()[:3],  # First 3 numbers
             'url': location.get_absolute_url(),
+            'can_edit': request.user.is_staff,
         })
     
     return JsonResponse({'locations': data})
@@ -87,6 +88,7 @@ def locations_search_api(request):
             'main_image': location.main_image.url if location.main_image else '',
             'lucky_numbers': location.get_lucky_numbers_list()[:3],
             'url': location.get_absolute_url(),
+            'can_edit': request.user.is_staff,
         })
     
     return JsonResponse({'locations': data})

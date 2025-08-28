@@ -355,15 +355,22 @@ function createLocationCard(location) {
             </p>
             <p class="text-xs text-muted-foreground mb-3">${location.category}</p>
             ${luckyNumbersHtml}
-            <div class="mt-4 flex items-center justify-between">
-                <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); window.open('${location.url}', '_blank')">
-                    <i class="fas fa-external-link-alt mr-1"></i>
-                    รายละเอียด
-                </button>
-                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); focusOnLocation(${JSON.stringify(location).replace(/"/g, '&quot;')})">
-                    <i class="fas fa-map-marker-alt mr-1"></i>
-                    ดูในแผนที่
-                </button>
+            <div class="mt-4 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); window.open('${location.url}', '_blank')">
+                        <i class="fas fa-external-link-alt mr-1"></i>
+                        รายละเอียด
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); focusOnLocation(${JSON.stringify(location).replace(/"/g, '&quot;')})">
+                        <i class="fas fa-map-marker-alt mr-1"></i>
+                        ดูในแผนที่
+                    </button>
+                </div>
+                ${location.can_edit ? `
+                    <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); window.open('/admin/lucky_spots/luckylocation/${location.id}/change/', '_blank')" title="แก้ไขข้อมูล">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                ` : ''}
             </div>
         </div>
     `;

@@ -32,7 +32,18 @@
     </nav>
 
     <!-- Header -->
-    <div class="gradient-bg text-white rounded-lg p-8 mb-8 text-center">
+    <div class="gradient-bg text-white rounded-lg p-8 mb-8 text-center relative">
+        {% if user.is_staff %}
+        <div class="absolute top-4 right-4">
+            <a href="/admin/lucky_spots/luckylocation/{{ location.id }}/change/" 
+               class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-2"
+               title="แก้ไขข้อมูลสถานที่">
+                <i class="fas fa-edit"></i>
+                <span class="hidden sm:inline">แก้ไข</span>
+            </a>
+        </div>
+        {% endif %}
+        
         <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ location.name }}</h1>
         <p class="text-lg opacity-90">
             📍 {{ location.province.name }} • {{ location.category.get_name_display }}
