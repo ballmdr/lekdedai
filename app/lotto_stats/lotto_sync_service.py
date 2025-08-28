@@ -220,8 +220,9 @@ class LottoSyncService:
             if not first_prize:
                 return None
             
-            # ดึงเลข 2 ตัว (เลขท้ายของรางวัลที่ 1)
-            two_digit = first_prize[-2:] if len(first_prize) >= 2 else ''
+            # ดึงเลข 2 ตัว (จาก last2 field)
+            two_digit_numbers = self._extract_prize_numbers(result_data, 'last2')
+            two_digit = two_digit_numbers[0] if two_digit_numbers else (first_prize[-2:] if len(first_prize) >= 2 else '')
             
             # ดึงเลข 3 ตัวหน้า (จากรางวัลที่ 2, 3) - จำกัดจำนวนเพื่อไม่ให้เกิน field length
             three_digit_front = self._extract_three_digit_front(result_data)
@@ -333,26 +334,12 @@ class LottoSyncService:
         return None
     
     def _extract_three_digit_front(self, result_data):
-        """ดึงเลข 3 ตัวหน้า (จากรางวัลที่ 2, 3)"""
-        three_digit_front = []
-        
-        for prize_type in ['second', 'third']:
-            numbers = self._extract_prize_numbers(result_data, prize_type)
-            if numbers:
-                three_digit_front.extend(numbers)
-        
-        return three_digit_front
+        """ดึงเลข 3 ตัวหน้า (จาก last3f)"""
+        return self._extract_prize_numbers(result_data, 'last3f')
     
     def _extract_three_digit_back(self, result_data):
-        """ดึงเลข 3 ตัวหลัง (จากรางวัลที่ 4, 5)"""
-        three_digit_back = []
-        
-        for prize_type in ['fourth', 'fifth']:
-            numbers = self._extract_prize_numbers(result_data, prize_type)
-            if numbers:
-                three_digit_back.extend(numbers)
-        
-        return three_digit_back
+        """ดึงเลข 3 ตัวหลัง (จาก last3b)"""
+        return self._extract_prize_numbers(result_data, 'last3b')
     
     def _extract_prize_numbers(self, result_data, prize_type):
         """ดึงเลขรางวัลตามประเภท"""

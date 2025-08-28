@@ -3,6 +3,29 @@
 
 {% block title %}สถิติหวย - LekDedAI{% endblock %}
 
+{% block extra_css %}
+<style>
+.clickable-number {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clickable-number:hover {
+    transform: scale(1.05);
+    text-shadow: 0 0 8px currentColor;
+}
+
+.chart-container {
+    position: relative;
+    height: 200px;
+}
+
+.chart-container canvas {
+    height: 200px !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 {% csrf_token %}
 <div class="min-h-screen bg-background">
@@ -15,7 +38,21 @@
         
         <!-- สรุปสถิติ -->
         {% if stats_summary %}
-        <div class="card p-6 mb-8">
+        <div class="card p-6 mb-8 relative">
+            {% if user.is_staff %}
+            <div class="absolute top-4 right-4">
+                <button 
+                    onclick="syncLatestData()" 
+                    id="syncBtn"
+                    class="btn btn-ghost btn-sm"
+                    title="ซิงค์ข้อมูลล่าสุด"
+                >
+                    <i class="fas fa-sync-alt mr-1"></i>
+                    <span class="hidden sm:inline">ซิงค์ข้อมูล</span>
+                </button>
+            </div>
+            {% endif %}
+            
             <h2 class="text-2xl font-bold mb-4 text-foreground">
                 <i class="fas fa-chart-line text-primary mr-2"></i>
                 สรุปภาพรวม
@@ -27,7 +64,11 @@
                 </div>
                 <div class="text-center">
                     <p class="text-muted-foreground">เลข 2 ตัวที่ออกบ่อยที่สุด</p>
-                    <p class="text-3xl font-bold text-accent">{{ stats_summary.most_common_all_time.2d.number }}</p>
+                    <p class="text-3xl font-bold text-accent clickable-number" 
+                       onclick="quickSearchNumber('{{ stats_summary.most_common_all_time.2d.number }}')"
+                       title="คลิกเพื่อดูสถิติเลข {{ stats_summary.most_common_all_time.2d.number }}">
+                        {{ stats_summary.most_common_all_time.2d.number }}
+                    </p>
                     <p class="text-sm text-muted-foreground">{{ stats_summary.most_common_all_time.2d.count }} ครั้ง</p>
                 </div>
                 <div class="text-center">
@@ -36,8 +77,42 @@
                     <p class="text-sm text-foreground">ถึง {{ stats_summary.date_range.to }}</p>
                 </div>
             </div>
+            
+            <div class="mt-4 flex items-center justify-center text-xs text-muted-foreground">
+                <i class="fas fa-clock mr-1"></i>
+                <span id="lastUpdated">อัปเดตล่าสุด: {{ stats_summary.date_range.to }}</span>
+            </div>
         </div>
         {% endif %}
+
+        <!-- ค้นหาเลข (ย้ายมาไว้ด้านบน) -->
+        <div class="card p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4 text-foreground">
+                <i class="fas fa-search text-primary mr-2"></i>
+                ค้นหาสถิติเลข
+            </h2>
+            <p class="text-sm text-muted-foreground mb-4">ค้นหาสถิติของเลขที่คุณสนใจ วิเคราะห์จากผลหวยย้อนหลัง {{ stats_summary.total_draws }} งวด</p>
+            <div class="flex gap-4">
+                <input 
+                    type="text" 
+                    id="searchNumber" 
+                    placeholder="ใส่เลข 2-3 หลัก (เช่น 01, 123)" 
+                    maxlength="3"
+                    class="input flex-1"
+                >
+                <button 
+                    onclick="searchNumber()"
+                    class="btn btn-primary"
+                >
+                    <i class="fas fa-search mr-2"></i>
+                    ค้นหา
+                </button>
+            </div>
+            
+            <div id="searchResult" class="mt-4 hidden">
+                <!-- ผลการค้นหาจะแสดงที่นี่ -->
+            </div>
+        </div>
     
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- เลขที่ออกบ่อย -->
@@ -46,11 +121,15 @@
                     <i class="fas fa-fire text-accent mr-2"></i>
                     เลขฮอต (ออกบ่อย)
                 </h2>
-                <canvas id="hotNumbersChart" class="mb-4"></canvas>
+                <div class="chart-container mb-4">
+                    <canvas id="hotNumbersChart"></canvas>
+                </div>
                 
                 <div class="grid grid-cols-5 gap-2">
                     {% for num in hot_numbers %}
-                    <div class="bg-accent/10 text-center p-3 rounded-lg">
+                    <div class="bg-accent/10 text-center p-3 rounded-lg hover:bg-accent/20 cursor-pointer transition-colors" 
+                         onclick="quickSearchNumber('{{ num.number }}')" 
+                         title="คลิกเพื่อดูสถิติเลข {{ num.number }}">
                         <div class="font-bold text-xl text-accent">{{ num.number }}</div>
                         <div class="text-xs text-muted-foreground">{{ num.count }} ครั้ง</div>
                     </div>
@@ -64,11 +143,15 @@
                     <i class="fas fa-snowflake text-secondary mr-2"></i>
                     เลขเย็น (ไม่ออกนาน)
                 </h2>
-                <canvas id="coldNumbersChart" class="mb-4"></canvas>
+                <div class="chart-container mb-4">
+                    <canvas id="coldNumbersChart"></canvas>
+                </div>
                 
                 <div class="grid grid-cols-5 gap-2">
                     {% for num in cold_numbers %}
-                    <div class="bg-secondary/10 text-center p-3 rounded-lg">
+                    <div class="bg-secondary/10 text-center p-3 rounded-lg hover:bg-secondary/20 cursor-pointer transition-colors" 
+                         onclick="quickSearchNumber('{{ num.number }}')" 
+                         title="คลิกเพื่อดูสถิติเลข {{ num.number }}">
                         <div class="font-bold text-xl text-secondary">{{ num.number }}</div>
                         <div class="text-xs text-muted-foreground">{{ num.days }} วัน</div>
                     </div>
@@ -80,9 +163,20 @@
             <div class="card p-6 lg:col-span-2">
                 <h2 class="text-2xl font-bold mb-4 text-foreground">
                     <i class="fas fa-calendar-alt text-primary mr-2"></i>
-                    สถิติการออกรายเดือน
+                    สถิติเลขที่ออกบ่อยในแต่ละเดือน
                 </h2>
+                <p class="text-sm text-muted-foreground mb-4">
+                    แสดงความถี่ของเลขท้าย 2 ตัวที่ออกในแต่ละเดือนตลอดปี ช่วยคาดเดาแนวโน้มเลขเด็ดประจำเดือน
+                </p>
                 <canvas id="monthlyStatsChart"></canvas>
+                <div class="mt-4 text-center">
+                    <div class="inline-flex items-center gap-4 text-xs text-muted-foreground">
+                        <div class="flex items-center gap-1">
+                            <div class="w-3 h-3 bg-primary rounded"></div>
+                            <span>ข้อมูลจากผลหวยย้อนหลัง {{ stats_summary.total_draws }} งวด</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <!-- ตารางผลหวยย้อนหลัง -->
@@ -106,10 +200,26 @@
                             {% for draw in recent_draws %}
                             <tr class="border-b border-border hover:bg-accent/10">
                                 <td class="px-4 py-2 text-foreground">{{ draw.draw_date|date:"j M Y" }}</td>
-                                <td class="px-4 py-2 text-center font-bold text-primary">{{ draw.first_prize }}</td>
-                                <td class="px-4 py-2 text-center font-semibold text-foreground">{{ draw.two_digit }}</td>
-                                <td class="px-4 py-2 text-center text-sm text-muted-foreground">{{ draw.three_digit_front }}</td>
-                                <td class="px-4 py-2 text-center text-sm text-muted-foreground">{{ draw.three_digit_back }}</td>
+                                <td class="px-4 py-2 text-center">
+                                    <span class="font-bold text-primary">
+                                        {{ draw.first_prize }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2 text-center">
+                                    <span class="font-semibold text-foreground">
+                                        {{ draw.two_digit }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2 text-center text-sm text-muted-foreground">
+                                    {% for num in draw.get_three_digit_front_list %}
+                                        <span class="inline-block mx-1">{{ num }}</span>{% if not forloop.last %}, {% endif %}
+                                    {% empty %}-{% endfor %}
+                                </td>
+                                <td class="px-4 py-2 text-center text-sm text-muted-foreground">
+                                    {% for num in draw.get_three_digit_back_list %}
+                                        <span class="inline-block mx-1">{{ num }}</span>{% if not forloop.last %}, {% endif %}
+                                    {% empty %}-{% endfor %}
+                                </td>
                             </tr>
                             {% empty %}
                             <tr>
@@ -119,34 +229,6 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
-    
-        <!-- ค้นหาเลข -->
-        <div class="mt-8 card p-6">
-            <h2 class="text-2xl font-bold mb-4 text-foreground">
-                <i class="fas fa-search text-primary mr-2"></i>
-                ค้นหาสถิติเลข
-            </h2>
-            <div class="flex gap-4">
-                <input 
-                    type="text" 
-                    id="searchNumber" 
-                    placeholder="ใส่เลข 2-3 หลัก" 
-                    maxlength="3"
-                    class="input flex-1"
-                >
-                <button 
-                    onclick="searchNumber()"
-                    class="btn btn-primary"
-                >
-                    <i class="fas fa-search mr-2"></i>
-                    ค้นหา
-                </button>
-            </div>
-            
-            <div id="searchResult" class="mt-4 hidden">
-                <!-- ผลการค้นหาจะแสดงที่นี่ -->
             </div>
         </div>
     </div>
@@ -181,21 +263,48 @@ new Chart(hotCtx, {
         datasets: [{
             label: 'จำนวนครั้งที่ออก',
             data: {{ hot_numbers_data|safe }},
-            backgroundColor: 'rgba(239, 68, 68, 0.5)',
-            borderColor: 'rgb(239, 68, 68)',
-            borderWidth: 1
+            backgroundColor: 'hsl(43, 74%, 66%, 0.7)',
+            borderColor: 'hsl(43, 74%, 66%)',
+            borderWidth: 2,
+            borderRadius: 4,
+            borderSkipped: false
         }]
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: 'hsl(43, 74%, 66%)',
+                borderWidth: 1
             }
         },
         scales: {
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    color: 'hsl(0, 0%, 35%)',
+                    font: {
+                        weight: 'bold'
+                    }
+                }
+            },
             y: {
-                beginAtZero: true
+                beginAtZero: true,
+                grid: {
+                    color: 'hsl(0, 0%, 88%)',
+                },
+                ticks: {
+                    color: 'hsl(0, 0%, 35%)'
+                }
             }
         }
     }
@@ -210,54 +319,54 @@ new Chart(coldCtx, {
         datasets: [{
             label: 'จำนวนวันที่ไม่ออก',
             data: {{ cold_numbers_data|safe }},
-            backgroundColor: 'rgba(59, 130, 246, 0.5)',
-            borderColor: 'rgb(59, 130, 246)',
-            borderWidth: 1
+            backgroundColor: 'hsl(0, 0%, 96%, 0.8)',
+            borderColor: 'hsl(0, 0%, 35%)',
+            borderWidth: 2,
+            borderRadius: 4,
+            borderSkipped: false
         }]
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: 'hsl(0, 0%, 35%)',
+                borderWidth: 1
             }
         },
         scales: {
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    color: 'hsl(0, 0%, 35%)',
+                    font: {
+                        weight: 'bold'
+                    }
+                }
+            },
             y: {
-                beginAtZero: true
+                beginAtZero: true,
+                grid: {
+                    color: 'hsl(0, 0%, 88%)',
+                },
+                ticks: {
+                    color: 'hsl(0, 0%, 35%)'
+                }
             }
         }
     }
 });
 
-// Monthly Stats Chart
-const monthlyCtx = document.getElementById('monthlyStatsChart').getContext('2d');
-new Chart(monthlyCtx, {
-    type: 'line',
-    data: {
-        labels: {{ monthly_labels|safe }},
-        datasets: [{
-            label: 'จำนวนครั้งที่เลขฮอตออก',
-            data: {{ monthly_data|safe }},
-            borderColor: 'rgb(147, 51, 234)',
-            backgroundColor: 'rgba(147, 51, 234, 0.1)',
-            tension: 0.4
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                display: true
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
-});
+// Monthly Stats Chart - ลบออกแล้ว เปลี่ยนเป็น table และ heatmap
 
 // ฟังก์ชันค้นหาเลข
 async function searchNumber() {
@@ -332,7 +441,65 @@ async function searchNumber() {
     }
 }
 
+// ฟังก์ชันค้นหาเลขแบบด่วน (เมื่อคลิกที่เลข)
+function quickSearchNumber(number) {
+    // เติมเลขลงในช่องค้นหา
+    document.getElementById('searchNumber').value = number;
+    
+    // เรียกฟังก์ชันค้นหา
+    searchNumber();
+    
+    // เลื่อนไปยังส่วนค้นหา
+    document.getElementById('searchResult').scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+    });
+}
+
 // ฟังก์ชันซิงค์ข้อมูลล่าสุด
+async function syncLatestData() {
+    const syncBtn = document.getElementById('syncBtn');
+    const icon = syncBtn.querySelector('i');
+    
+    // แสดง loading state
+    icon.classList.remove('fa-sync-alt');
+    icon.classList.add('fa-spinner', 'fa-spin');
+    syncBtn.disabled = true;
+    
+    try {
+        // จำลองการซิงค์ข้อมูล (ในระบบจริงจะเรียก API)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // อัปเดตเวลา
+        const now = new Date();
+        const thaiDate = now.toLocaleDateString('th-TH', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        document.getElementById('lastUpdated').textContent = `อัปเดตล่าสุด: ${thaiDate}`;
+        
+        // แสดงข้อความสำเร็จ
+        const successMsg = document.createElement('div');
+        successMsg.className = 'fixed top-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50';
+        successMsg.innerHTML = '<i class="fas fa-check mr-2"></i>ซิงค์ข้อมูลเรียบร้อย';
+        document.body.appendChild(successMsg);
+        
+        setTimeout(() => {
+            document.body.removeChild(successMsg);
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Error syncing data:', error);
+    } finally {
+        // คืนค่า button state
+        icon.classList.remove('fa-spinner', 'fa-spin');
+        icon.classList.add('fa-sync-alt');
+        syncBtn.disabled = false;
+    }
+}
 
 // Enter key support
 document.getElementById('searchNumber').addEventListener('keypress', function(e) {

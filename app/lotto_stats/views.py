@@ -40,6 +40,12 @@ def statistics_page(request):
     monthly_data = json.dumps([data['most_common_2d']['count'] if data['most_common_2d'] else 0 
                               for data in list(monthly_stats.values())[-12:]])
     
+    # ข้อมูลสำหรับ table และ heatmap แทน chart
+    monthly_data_with_labels = []
+    for month, data in list(monthly_stats.items())[-12:]:
+        count = data['most_common_2d']['count'] if data['most_common_2d'] else 0
+        monthly_data_with_labels.append((month, count))
+    
     # สถิติเพิ่มเติม
     stats_summary = calculator.get_statistics_summary()
     
@@ -57,6 +63,7 @@ def statistics_page(request):
         'cold_numbers_data': cold_numbers_data,
         'monthly_labels': monthly_labels,
         'monthly_data': monthly_data,
+        'monthly_data_with_labels': monthly_data_with_labels, # เพิ่มข้อมูลสำหรับ table และ heatmap
         'stats_summary': stats_summary,
         'sync_status': sync_status,
     }
