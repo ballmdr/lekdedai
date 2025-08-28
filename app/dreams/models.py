@@ -22,10 +22,24 @@ class DreamKeyword(models.Model):
         related_name='keywords',
         verbose_name="หมวดหมู่"
     )
+    
+    # เลขเด่น และเลขรอง
+    main_number = models.CharField("เลขเด่น", max_length=1, help_text="เลขหลักเดียว 0-9")
+    secondary_number = models.CharField("เลขรอง", max_length=1, help_text="เลขหลักเดียว 0-9")
+    
+    # เลขที่มักตี (combinations)
+    common_numbers = models.CharField(
+        "เลขที่มักตี", 
+        max_length=100,
+        help_text="ใส่เลขคั่นด้วยเครื่องหมายจุลภาค เช่น 12,34,56"
+    )
+    
+    # เก็บ numbers แบบเดิมไว้เพื่อ backward compatibility
     numbers = models.CharField(
         "เลขที่เกี่ยวข้อง", 
         max_length=100,
-        help_text="ใส่เลขคั่นด้วยเครื่องหมายจุลภาค เช่น 12,34,56"
+        blank=True,
+        help_text="จะถูกสร้างอัตโนมัติจาก common_numbers"
     )
     
     class Meta:
@@ -33,12 +47,31 @@ class DreamKeyword(models.Model):
         verbose_name_plural = "คำสำคัญความฝัน"
         ordering = ['keyword']
     
+    def save(self, *args, **kwargs):
+        """อัปเดต numbers field อัตโนมัติจาก common_numbers"""
+        if self.common_numbers:
+            self.numbers = self.common_numbers
+        super().save(*args, **kwargs)
+    
     def __str__(self):
-        return f"{self.keyword} - {self.numbers}"
+        return f"{self.keyword} - เลขเด่น: {self.main_number}, เลขรอง: {self.secondary_number}"
     
     def get_numbers_list(self):
         """แปลงเลขเป็น list"""
-        return [num.strip() for num in self.numbers.split(',') if num.strip()]
+        return [num.strip() for num in self.common_numbers.split(',') if num.strip()]
+    
+    def get_main_combinations(self):
+        """สร้างเลขจากเลขเด่นและเลขรอง"""
+        main = self.main_number
+        secondary = self.secondary_number
+        
+        combinations = [
+            f"{main}{secondary}",  # เลขเด่น + เลขรอง
+            f"{secondary}{main}",  # เลขรอง + เลขเด่น
+            f"{main}{main}",       # เลขเด่น + เลขเด่น
+        ]
+        
+        return combinations
 
 class DreamInterpretation(models.Model):
     """การตีความฝันของผู้ใช้"""

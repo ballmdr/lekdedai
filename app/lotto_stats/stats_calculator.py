@@ -79,23 +79,38 @@ class StatsCalculator:
         return cold_numbers[:limit]
     
     def get_monthly_statistics(self):
-        """สถิติรายเดือน"""
+        """สถิติรายเดือน - จัดกลุ่มตามเดือน (ไม่แยกปี)"""
+        # Thai month names
+        thai_months = {
+            1: 'มกราคม', 2: 'กุมภาพันธ์', 3: 'มีนาคม', 4: 'เมษายน',
+            5: 'พฤษภาคม', 6: 'มิถุนายน', 7: 'กรกฎาคม', 8: 'สิงหาคม',
+            9: 'กันยายน', 10: 'ตุลาคม', 11: 'พฤศจิกายน', 12: 'ธันวาคม'
+        }
+        
         monthly_stats = {}
         
-        for draw in self.all_draws[:365]:  # ข้อมูล 1 ปี
-            month_key = draw.draw_date.strftime('%Y-%m')
+        for draw in self.all_draws:
+            month_num = draw.draw_date.month
+            month_name = thai_months[month_num]
             
-            if month_key not in monthly_stats:
-                monthly_stats[month_key] = {
-                    'draws': 0,
+            if month_name not in monthly_stats:
+                monthly_stats[month_name] = {
+                    'draws': [],  # เก็บข้อมูลการจับสลากแต่ละงวด
                     'numbers_2d': [],
-                    'numbers_3d': []
+                    'numbers_3d': [],
+                    'month_number': month_num  # เก็บหมายเลขเดือนสำหรับเรียงลำดับ
                 }
             
-            monthly_stats[month_key]['draws'] += 1
-            monthly_stats[month_key]['numbers_2d'].append(draw.two_digit)
-            monthly_stats[month_key]['numbers_2d'].extend(draw.get_all_two_digits())
-            monthly_stats[month_key]['numbers_3d'].extend(draw.get_all_three_digits())
+            # เก็บข้อมูลการจับสลาก
+            monthly_stats[month_name]['draws'].append({
+                'date': draw.draw_date,
+                'date_str': draw.draw_date.strftime('%d/%m/%Y')
+            })
+            
+            # เก็บเลขที่ออก
+            monthly_stats[month_name]['numbers_2d'].append(draw.two_digit)
+            monthly_stats[month_name]['numbers_2d'].extend(draw.get_all_two_digits())
+            monthly_stats[month_name]['numbers_3d'].extend(draw.get_all_three_digits())
         
         # หาเลขที่ออกบ่อยที่สุดในแต่ละเดือน
         result = {}
@@ -106,8 +121,13 @@ class StatsCalculator:
             most_common_2d = counter_2d.most_common(1)
             most_common_3d = counter_3d.most_common(1)
             
+            # เรียงลำดับงวดตามวันที่ (ใหม่สุดก่อน)
+            sorted_draws = sorted(data['draws'], key=lambda x: x['date'], reverse=True)
+            
             result[month] = {
-                'total_draws': data['draws'],
+                'month_number': data['month_number'],  # สำหรับเรียงลำดับ
+                'total_draws': len(data['draws']),
+                'draw_dates': [d['date_str'] for d in sorted_draws[:5]],  # แสดง 5 งวดล่าสุด
                 'most_common_2d': {
                     'number': most_common_2d[0][0] if most_common_2d else None,
                     'count': most_common_2d[0][1] if most_common_2d else 0
@@ -118,7 +138,12 @@ class StatsCalculator:
                 }
             }
         
-        return result
+        # เรียงลำดับตามเดือน (มกราคม, กุมภาพันธ์, ...)
+        sorted_result = {}
+        for month in sorted(result.keys(), key=lambda x: result[x]['month_number']):
+            sorted_result[month] = result[month]
+        
+        return sorted_result
     
     def get_number_statistics(self, number):
         """สถิติของเลขที่เจาะจง"""
@@ -198,3 +223,217 @@ class StatsCalculator:
                 '3d': {'number': most_common_3d[0], 'count': most_common_3d[1]}
             }
         }
+    
+    def get_running_number_stats(self):
+        """สถิติเลขวิ่ง (0-9) ที่ออกในรางวัลเลขท้าย 2 ตัว และรางวัลที่ 1"""
+        digit_stats = {}
+        
+        # Initialize counters for each digit
+        for digit in range(10):
+            digit_stats[str(digit)] = {
+                'two_digit_count': 0,
+                'first_prize_count': 0,
+                'total_count': 0,
+                'last_appeared': None,
+                'days_since_last': 0
+            }
+        
+        today = datetime.now().date()
+        
+        for draw in self.all_draws:
+            # Count digits in two_digit (last 2 digits)
+            for digit_char in draw.two_digit:
+                digit_stats[digit_char]['two_digit_count'] += 1
+                digit_stats[digit_char]['total_count'] += 1
+                if digit_stats[digit_char]['last_appeared'] is None:
+                    digit_stats[digit_char]['last_appeared'] = draw.draw_date
+            
+            # Count digits in first prize
+            for digit_char in draw.first_prize:
+                digit_stats[digit_char]['first_prize_count'] += 1
+                digit_stats[digit_char]['total_count'] += 1
+                if digit_stats[digit_char]['last_appeared'] is None:
+                    digit_stats[digit_char]['last_appeared'] = draw.draw_date
+        
+        # Calculate days since last appearance
+        for digit in digit_stats:
+            if digit_stats[digit]['last_appeared']:
+                digit_stats[digit]['days_since_last'] = (today - digit_stats[digit]['last_appeared']).days
+                digit_stats[digit]['last_appeared_str'] = digit_stats[digit]['last_appeared'].strftime('%d/%m/%Y')
+            else:
+                digit_stats[digit]['days_since_last'] = 999
+                digit_stats[digit]['last_appeared_str'] = '-'
+        
+        return digit_stats
+    
+    def get_double_number_stats(self, days_back=365):
+        """สถิติเลขเบิ้ล/เลขหาม (เลขซ้ำ เช่น 22, 99, 111)"""
+        cutoff_date = datetime.now().date() - timedelta(days=days_back)
+        recent_draws = self.all_draws.filter(draw_date__gte=cutoff_date)
+        
+        double_stats = {
+            '2d': {},  # เลขเบิ้ล 2 ตัว (00, 11, 22, ..., 99)
+            '3d': {}   # เลขเบิ้ล 3 ตัว (000, 111, 222, ..., 999)
+        }
+        
+        # Initialize 2D doubles
+        for i in range(10):
+            double_num = str(i) + str(i)
+            double_stats['2d'][double_num] = {
+                'count': 0,
+                'last_appeared': None,
+                'appearances': []
+            }
+        
+        # Initialize 3D doubles
+        for i in range(10):
+            double_num = str(i) + str(i) + str(i)
+            double_stats['3d'][double_num] = {
+                'count': 0,
+                'last_appeared': None,
+                'appearances': []
+            }
+        
+        for draw in recent_draws:
+            # Check 2D doubles in two_digit and first_prize
+            if draw.two_digit in double_stats['2d']:
+                double_stats['2d'][draw.two_digit]['count'] += 1
+                double_stats['2d'][draw.two_digit]['last_appeared'] = draw.draw_date
+                double_stats['2d'][draw.two_digit]['appearances'].append({
+                    'date': draw.draw_date.strftime('%d/%m/%Y'),
+                    'type': 'เลขท้าย 2 ตัว'
+                })
+            
+            # Check 2D doubles in first prize
+            for i in range(len(draw.first_prize) - 1):
+                two_digit = draw.first_prize[i:i+2]
+                if two_digit in double_stats['2d']:
+                    double_stats['2d'][two_digit]['count'] += 1
+                    double_stats['2d'][two_digit]['last_appeared'] = draw.draw_date
+                    double_stats['2d'][two_digit]['appearances'].append({
+                        'date': draw.draw_date.strftime('%d/%m/%Y'),
+                        'type': f'รางวัลที่ 1 (ตำแหน่ง {i+1}-{i+2})'
+                    })
+            
+            # Check 3D doubles in three digit prizes
+            for three_digit in draw.get_all_three_digits():
+                if len(three_digit) >= 3:
+                    three_num = three_digit[:3]
+                    if three_num in double_stats['3d']:
+                        double_stats['3d'][three_num]['count'] += 1
+                        double_stats['3d'][three_num]['last_appeared'] = draw.draw_date
+                        double_stats['3d'][three_num]['appearances'].append({
+                            'date': draw.draw_date.strftime('%d/%m/%Y'),
+                            'type': 'รางวัล 3 ตัว'
+                        })
+        
+        # Calculate days since last appearance
+        today = datetime.now().date()
+        for category in double_stats:
+            for number in double_stats[category]:
+                stats = double_stats[category][number]
+                if stats['last_appeared']:
+                    stats['days_since_last'] = (today - stats['last_appeared']).days
+                    stats['last_appeared_str'] = stats['last_appeared'].strftime('%d/%m/%Y')
+                else:
+                    stats['days_since_last'] = 999
+                    stats['last_appeared_str'] = '-'
+        
+        return double_stats
+    
+    def get_sequential_number_stats(self, days_back=365):
+        """สถิติเลขเรียง (เลขต่อเนื่อง เช่น 123, 234, 456, 789)"""
+        cutoff_date = datetime.now().date() - timedelta(days=days_back)
+        recent_draws = self.all_draws.filter(draw_date__gte=cutoff_date)
+        
+        def is_sequential(number_str):
+            """ตรวจสอบว่าเป็นเลขเรียงหรือไม่"""
+            if len(number_str) < 2:
+                return False
+            
+            digits = [int(d) for d in number_str]
+            # ตรวจสอบเลขเรียงขึ้น (เช่น 123, 234)
+            ascending = all(digits[i] + 1 == digits[i + 1] for i in range(len(digits) - 1))
+            # ตรวจสอบเลขเรียงลง (เช่น 321, 987)
+            descending = all(digits[i] - 1 == digits[i + 1] for i in range(len(digits) - 1))
+            
+            return ascending or descending
+        
+        sequential_stats = {
+            '2d': {},
+            '3d': {}
+        }
+        
+        # Generate all possible sequential numbers
+        # 2-digit sequences
+        for i in range(10):
+            for j in [-1, 1]:  # ascending and descending
+                if 0 <= i + j <= 9:
+                    seq_num = str(i) + str(i + j)
+                    if seq_num not in sequential_stats['2d']:
+                        sequential_stats['2d'][seq_num] = {
+                            'count': 0,
+                            'last_appeared': None,
+                            'appearances': [],
+                            'type': 'เรียงขึ้น' if j == 1 else 'เรียงลง'
+                        }
+        
+        # 3-digit sequences
+        for i in range(10):
+            for j in [-1, 1]:  # ascending and descending
+                if 0 <= i + j <= 9 and 0 <= i + 2*j <= 9:
+                    seq_num = str(i) + str(i + j) + str(i + 2*j)
+                    if seq_num not in sequential_stats['3d']:
+                        sequential_stats['3d'][seq_num] = {
+                            'count': 0,
+                            'last_appeared': None,
+                            'appearances': [],
+                            'type': 'เรียงขึ้น' if j == 1 else 'เรียงลง'
+                        }
+        
+        for draw in recent_draws:
+            # Check 2D sequences in two_digit
+            if draw.two_digit in sequential_stats['2d']:
+                sequential_stats['2d'][draw.two_digit]['count'] += 1
+                sequential_stats['2d'][draw.two_digit]['last_appeared'] = draw.draw_date
+                sequential_stats['2d'][draw.two_digit]['appearances'].append({
+                    'date': draw.draw_date.strftime('%d/%m/%Y'),
+                    'type': 'เลขท้าย 2 ตัว'
+                })
+            
+            # Check 2D sequences in first prize
+            for i in range(len(draw.first_prize) - 1):
+                two_digit = draw.first_prize[i:i+2]
+                if two_digit in sequential_stats['2d']:
+                    sequential_stats['2d'][two_digit]['count'] += 1
+                    sequential_stats['2d'][two_digit]['last_appeared'] = draw.draw_date
+                    sequential_stats['2d'][two_digit]['appearances'].append({
+                        'date': draw.draw_date.strftime('%d/%m/%Y'),
+                        'type': f'รางวัลที่ 1 (ตำแหน่ง {i+1}-{i+2})'
+                    })
+            
+            # Check 3D sequences in three digit prizes
+            for three_digit in draw.get_all_three_digits():
+                if len(three_digit) >= 3:
+                    three_num = three_digit[:3]
+                    if three_num in sequential_stats['3d']:
+                        sequential_stats['3d'][three_num]['count'] += 1
+                        sequential_stats['3d'][three_num]['last_appeared'] = draw.draw_date
+                        sequential_stats['3d'][three_num]['appearances'].append({
+                            'date': draw.draw_date.strftime('%d/%m/%Y'),
+                            'type': 'รางวัล 3 ตัว'
+                        })
+        
+        # Calculate days since last appearance
+        today = datetime.now().date()
+        for category in sequential_stats:
+            for number in sequential_stats[category]:
+                stats = sequential_stats[category][number]
+                if stats['last_appeared']:
+                    stats['days_since_last'] = (today - stats['last_appeared']).days
+                    stats['last_appeared_str'] = stats['last_appeared'].strftime('%d/%m/%Y')
+                else:
+                    stats['days_since_last'] = 999
+                    stats['last_appeared_str'] = '-'
+        
+        return sequential_stats

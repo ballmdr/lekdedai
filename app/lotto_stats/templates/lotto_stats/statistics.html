@@ -64,9 +64,7 @@
                 </div>
                 <div class="text-center">
                     <p class="text-muted-foreground">เลข 2 ตัวที่ออกบ่อยที่สุด</p>
-                    <p class="text-3xl font-bold text-accent clickable-number" 
-                       onclick="quickSearchNumber('{{ stats_summary.most_common_all_time.2d.number }}')"
-                       title="คลิกเพื่อดูสถิติเลข {{ stats_summary.most_common_all_time.2d.number }}">
+                    <p class="text-3xl font-bold text-amber-600">
                         {{ stats_summary.most_common_all_time.2d.number }}
                     </p>
                     <p class="text-sm text-muted-foreground">{{ stats_summary.most_common_all_time.2d.count }} ครั้ง</p>
@@ -127,10 +125,8 @@
                 
                 <div class="grid grid-cols-5 gap-2">
                     {% for num in hot_numbers %}
-                    <div class="bg-accent/10 text-center p-3 rounded-lg hover:bg-accent/20 cursor-pointer transition-colors" 
-                         onclick="quickSearchNumber('{{ num.number }}')" 
-                         title="คลิกเพื่อดูสถิติเลข {{ num.number }}">
-                        <div class="font-bold text-xl text-accent">{{ num.number }}</div>
+                    <div class="bg-accent/10 text-center p-3 rounded-lg transition-colors">
+                        <div class="font-bold text-xl text-amber-600">{{ num.number }}</div>
                         <div class="text-xs text-muted-foreground">{{ num.count }} ครั้ง</div>
                     </div>
                     {% endfor %}
@@ -149,10 +145,8 @@
                 
                 <div class="grid grid-cols-5 gap-2">
                     {% for num in cold_numbers %}
-                    <div class="bg-secondary/10 text-center p-3 rounded-lg hover:bg-secondary/20 cursor-pointer transition-colors" 
-                         onclick="quickSearchNumber('{{ num.number }}')" 
-                         title="คลิกเพื่อดูสถิติเลข {{ num.number }}">
-                        <div class="font-bold text-xl text-secondary">{{ num.number }}</div>
+                    <div class="bg-secondary/10 text-center p-3 rounded-lg transition-colors">
+                        <div class="font-bold text-xl text-amber-600">{{ num.number }}</div>
                         <div class="text-xs text-muted-foreground">{{ num.days }} วัน</div>
                     </div>
                     {% endfor %}
@@ -166,9 +160,30 @@
                     สถิติเลขที่ออกบ่อยในแต่ละเดือน
                 </h2>
                 <p class="text-sm text-muted-foreground mb-4">
-                    แสดงความถี่ของเลขท้าย 2 ตัวที่ออกในแต่ละเดือนตลอดปี ช่วยคาดเดาแนวโน้มเลขเด็ดประจำเดือน
+                    เลขท้าย 2 ตัวที่ออกบ่อยที่สุดในแต่ละเดือน ช่วยคาดเดาแนวโน้มเลขเด็ดประจำเดือน
                 </p>
-                <canvas id="monthlyStatsChart"></canvas>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for month, data in monthly_stats.items %}
+                    {% if data.most_common_2d.number %}
+                    <div class="bg-muted/20 rounded-lg p-5 border border-border">
+                        <div class="text-center mb-4">
+                            <h3 class="text-lg font-bold text-foreground mb-2">เดือน{{ month }}</h3>
+                            <div class="text-3xl font-bold text-amber-600 mb-2">{{ data.most_common_2d.number }}</div>
+                            <div class="text-sm text-muted-foreground">ออก {{ data.most_common_2d.count }} ครั้ง จาก {{ data.total_draws }} งวด</div>
+                        </div>
+                        
+                        <div class="mt-3 pt-3 border-t border-border">
+                            <div class="text-xs text-muted-foreground mb-2">งวดล่าสุด:</div>
+                            <div class="flex flex-wrap gap-1">
+                                {% for date in data.draw_dates %}
+                                <span class="text-xs bg-accent/20 px-2 py-1 rounded text-foreground">{{ date }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
                 <div class="mt-4 text-center">
                     <div class="inline-flex items-center gap-4 text-xs text-muted-foreground">
                         <div class="flex items-center gap-1">
@@ -179,6 +194,117 @@
                 </div>
             </div>
             
+            <!-- สถิติเลขวิ่ง (0-9) -->
+            <div class="card p-6">
+                <h2 class="text-2xl font-bold mb-4 text-foreground">
+                    <i class="fas fa-running text-primary mr-2"></i>
+                    สถิติเลขวิ่ง (0-9)
+                </h2>
+                <p class="text-sm text-muted-foreground mb-4">
+                    แสดงความถี่ของแต่ละตัวเลข 0-9 ที่ออกในรางวัลเลขท้าย 2 ตัว และรางวัลที่ 1
+                </p>
+                <div class="grid grid-cols-5 gap-3">
+                    {% for digit, stats in running_number_stats.items %}
+                    <div class="bg-muted/50 text-center p-4 rounded-lg transition-colors"
+                         title="เลข {{ digit }}: ออกทั้งหมด {{ stats.total_count }} ครั้ง (เลขท้าย: {{ stats.two_digit_count }}, รางวัลที่ 1: {{ stats.first_prize_count }})">
+                        <div class="font-bold text-2xl text-amber-600">{{ digit }}</div>
+                        <div class="text-xs text-muted-foreground mt-1">{{ stats.total_count }} ครั้ง</div>
+                        <div class="text-xs text-muted-foreground">{{ stats.days_since_last }} วัน</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- สถิติเลขเบิ้ล/เลขหาม -->
+            <div class="card p-6">
+                <h2 class="text-2xl font-bold mb-4 text-foreground">
+                    <i class="fas fa-clone text-accent mr-2"></i>
+                    สถิติเลขเบิ้ล/เลขหาม
+                </h2>
+                <p class="text-sm text-muted-foreground mb-4">
+                    เลขซ้ำ เช่น 11, 22, 99, 111, 222 ที่ออกในรอบปี
+                </p>
+                
+                <!-- เลขเบิ้ล 2 ตัว -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3 text-foreground">เลข 2 ตัว</h3>
+                    <div class="grid grid-cols-5 gap-2">
+                        {% for number, stats in double_number_stats.2d.items %}
+                        {% if stats.count > 0 %}
+                        <div class="bg-accent/10 text-center p-3 rounded-lg transition-colors"
+                             title="เลข {{ number }}: ออก {{ stats.count }} ครั้ง, ล่าสุด {{ stats.last_appeared_str }}">
+                            <div class="font-bold text-xl text-amber-600">{{ number }}</div>
+                            <div class="text-xs text-muted-foreground">{{ stats.count }} ครั้ง</div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- เลขเบิ้ล 3 ตัว -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-3 text-foreground">เลข 3 ตัว</h3>
+                    <div class="grid grid-cols-5 gap-2">
+                        {% for number, stats in double_number_stats.3d.items %}
+                        {% if stats.count > 0 %}
+                        <div class="bg-accent/10 text-center p-3 rounded-lg transition-colors"
+                             title="เลข {{ number }}: ออก {{ stats.count }} ครั้ง, ล่าสุด {{ stats.last_appeared_str }}">
+                            <div class="font-bold text-lg text-amber-600">{{ number }}</div>
+                            <div class="text-xs text-muted-foreground">{{ stats.count }} ครั้ง</div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- สถิติเลขเรียง -->
+            <div class="card p-6 lg:col-span-2">
+                <h2 class="text-2xl font-bold mb-4 text-foreground">
+                    <i class="fas fa-sort-numeric-up text-secondary mr-2"></i>
+                    สถิติเลขเรียง
+                </h2>
+                <p class="text-sm text-muted-foreground mb-4">
+                    เลขต่อเนื่อง เช่น 12, 23, 34, 123, 234, 789 ที่ออกในรอบปี
+                </p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- เลขเรียง 2 ตัว -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3 text-foreground">เลข 2 ตัว</h3>
+                        <div class="grid grid-cols-4 gap-2">
+                            {% for number, stats in sequential_number_stats.2d.items %}
+                            {% if stats.count > 0 %}
+                            <div class="bg-secondary/10 text-center p-3 rounded-lg transition-colors"
+                                 title="เลข {{ number }} ({{ stats.type }}): ออก {{ stats.count }} ครั้ง, ล่าสุด {{ stats.last_appeared_str }}">
+                                <div class="font-bold text-lg text-amber-600">{{ number }}</div>
+                                <div class="text-xs text-muted-foreground">{{ stats.count }} ครั้ง</div>
+                                <div class="text-xs text-muted-foreground">{{ stats.type }}</div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- เลขเรียง 3 ตัว -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3 text-foreground">เลข 3 ตัว</h3>
+                        <div class="grid grid-cols-4 gap-2">
+                            {% for number, stats in sequential_number_stats.3d.items %}
+                            {% if stats.count > 0 %}
+                            <div class="bg-secondary/10 text-center p-3 rounded-lg transition-colors"
+                                 title="เลข {{ number }} ({{ stats.type }}): ออก {{ stats.count }} ครั้ง, ล่าสุด {{ stats.last_appeared_str }}">
+                                <div class="font-bold text-sm text-amber-600">{{ number }}</div>
+                                <div class="text-xs text-muted-foreground">{{ stats.count }} ครั้ง</div>
+                                <div class="text-xs text-muted-foreground">{{ stats.type }}</div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ตารางผลหวยย้อนหลัง -->
             <div class="card p-6 lg:col-span-2">
                 <h2 class="text-2xl font-bold mb-4 text-foreground">
@@ -366,7 +492,7 @@ new Chart(coldCtx, {
     }
 });
 
-// Monthly Stats Chart - ลบออกแล้ว เปลี่ยนเป็น table และ heatmap
+// Monthly stats now displayed as cards instead of chart
 
 // ฟังก์ชันค้นหาเลข
 async function searchNumber() {
