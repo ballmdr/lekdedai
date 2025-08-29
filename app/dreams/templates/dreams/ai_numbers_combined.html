@@ -1,0 +1,63 @@
+<!-- Combined AI Numbers Widget Template -->
+{% if available and has_numbers %}
+<div class="ai-numbers-combined bg-gradient-to-r from-indigo-50 to-pink-50 border border-indigo-200 rounded-lg p-4 mb-4">
+    <div class="flex items-start gap-3">
+        <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-robot text-white text-sm"></i>
+        </div>
+        <div class="flex-1">
+            <h4 class="text-sm font-semibold text-gray-800 mb-3">{{ title }}</h4>
+            
+            <!-- Combined numbers display -->
+            <div class="mb-3">
+                <div class="grid grid-cols-5 gap-2 mb-3">
+                    {% for number in numbers|slice:":10" %}
+                    <div class="bg-gradient-to-r from-indigo-500 to-pink-500 text-white rounded-lg px-2 py-2 text-center font-bold text-sm">
+                        {{ number }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Sources breakdown -->
+            {% if sources %}
+            <div class="text-xs space-y-1">
+                {% for source in sources %}
+                <div class="flex items-center gap-2 text-gray-600">
+                    {% if source.type == 'dream' %}
+                        <i class="fas fa-moon text-purple-500"></i>
+                        <span>จากความฝัน:</span>
+                    {% elif source.type == 'news' %}
+                        <i class="fas fa-newspaper text-green-500"></i>
+                        <span>จากข่าว:</span>
+                    {% endif %}
+                    
+                    <div class="flex gap-1">
+                        {% for number in source.numbers %}
+                        <span class="bg-gray-200 text-gray-700 px-1 py-0.5 rounded text-xs">{{ number }}</span>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if source.source_text %}
+                    <span class="text-gray-500 italic">{{ source.source_text }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="text-xs text-gray-500 flex items-center justify-between mt-2 pt-2 border-t">
+                <span>🤖 AI รวมสองระบบ • {{ total_numbers }} เลข</span>
+                <span><i class="fas fa-sparkles"></i> Hybrid AI</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif not available %}
+<div class="ai-numbers-unavailable bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+    <div class="text-gray-500 text-xs">
+        <i class="fas fa-exclamation-circle mr-1"></i>
+        {{ message|default:"ระบบ AI ไม่พร้อมใช้งาน" }}
+    </div>
+</div>
+{% endif %}

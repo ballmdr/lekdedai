@@ -7,78 +7,161 @@
 
 {% block content %}
 
-  <!-- Daily Content Hero -->
-  <section class="py-12 bg-gradient-to-br from-primary/5 via-background to-secondary/5 relative overflow-hidden">
-    <div class="absolute inset-0" style="background: radial-gradient(circle at 30% 20%, rgba(255, 193, 7, 0.1), transparent 50%);"></div>
-
+  <!-- AI Lottery Highlight Section -->
+  <section class="py-16 bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 relative overflow-hidden border-b-2 border-primary/20">
+    <!-- Background Effects -->
+    <div class="absolute inset-0" style="background: radial-gradient(circle at 70% 30%, rgba(255, 193, 7, 0.15), transparent 60%);"></div>
+    <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary/20 to-transparent rounded-full -translate-y-32 translate-x-32"></div>
+    
     <div class="container mx-auto px-4 relative z-10">
-      <div class="text-center mb-8">
-        <div class="flex items-center justify-center gap-2 mb-4">
-          <i class="fas fa-calendar text-primary"></i>
-          <span class="text-sm font-medium text-muted-foreground">
-            วันที่ {{ thai_current_date }}
-          </span>
+      <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-10">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full text-primary font-semibold mb-4">
+            <i class="fas fa-robot"></i>
+            <span>AI PREDICTION</span>
+            <i class="fas fa-sparkles"></i>
+          </div>
+          <h1 class="text-4xl md:text-6xl font-serif font-bold text-foreground mb-4 leading-tight">
+            <span class="text-primary">เลขเด็ด AI</span><br>
+            <span class="text-2xl md:text-4xl text-muted-foreground">ประจำงวดนี้</span>
+          </h1>
+          {% if ai_prediction %}
+          <p class="text-lg text-muted-foreground">
+            งวดวันที่ {{ ai_prediction.session.for_draw_date|date:"j F Y" }} 
+            <span class="inline-flex items-center gap-1 ml-2 text-green-600">
+              <i class="fas fa-check-circle text-sm"></i>
+              <span class="font-semibold">{{ ai_prediction.overall_confidence|floatformat:1 }}% มั่นใจ</span>
+            </span>
+          </p>
+          {% else %}
+          <p class="text-lg text-muted-foreground">การทำนายด้วย AI อัจฉริยะ</p>
+          {% endif %}
         </div>
-        <h2 class="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">เลขเด็ดประจำวัน</h2>
-        <p class="text-lg text-muted-foreground max-w-2xl mx-auto">อัปเดตเลขเด็ด ข่าวหวย และสถิติล่าสุดทุกวัน</p>
-      </div>
 
-      <!-- Today's Featured Numbers -->
-      <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-        <div class="card border-primary/20 bg-primary/5">
-          <div class="p-4 text-center pb-2">
-            <h3 class="text-lg font-serif text-foreground mb-2">เลขเด็ด AI</h3>
-            <div class="badge bg-primary text-primary-foreground mx-auto mb-2">
-              <i class="fas fa-star mr-1"></i>
-              แนะนำ
+        <!-- Highlighted Numbers -->
+        <div class="grid md:grid-cols-2 gap-8 mb-10">
+          <!-- Top 2-Digit -->
+          <div class="card border-2 border-primary/30 bg-primary/5 hover:shadow-xl transition-all duration-300">
+            <div class="p-8 text-center">
+              <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-dice-two text-2xl text-white"></i>
+              </div>
+              <h3 class="text-xl font-bold text-foreground mb-4">เลข 2 ตัวท็อป</h3>
+              <div class="flex justify-center gap-3 mb-4">
+                {% if ai_prediction and ai_prediction.get_top_two_digit_numbers %}
+                  {% for item in ai_prediction.get_top_two_digit_numbers|slice:":2" %}
+                  <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">
+                    {{ item.number }}
+                  </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">47</div>
+                  <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">89</div>
+                {% endif %}
+              </div>
+              {% if ai_prediction %}
+              <p class="text-sm text-muted-foreground">
+                ความมั่นใจ {{ ai_prediction.get_top_two_digit_numbers.0.confidence|default:54|floatformat:1 }}%
+              </p>
+              {% endif %}
             </div>
           </div>
-          <div class="p-4 pt-0 text-center">
-            {% if latest_prediction and latest_prediction.get_three_digit_list %}
-              <div class="text-3xl font-bold text-primary mb-2">{{ latest_prediction.get_three_digit_list.0 }}</div>
-              <div class="text-sm text-muted-foreground">ความแม่นยำ {{ latest_prediction.overall_confidence|floatformat:0 }}%</div>
-            {% else %}
-              <div class="text-3xl font-bold text-primary mb-2">427</div>
-              <div class="text-sm text-muted-foreground">ความแม่นยำ 87%</div>
-            {% endif %}
+
+          <!-- Top 3-Digit -->
+          <div class="card border-2 border-secondary/30 bg-secondary/5 hover:shadow-xl transition-all duration-300">
+            <div class="p-8 text-center">
+              <div class="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-dice-three text-2xl text-white"></i>
+              </div>
+              <h3 class="text-xl font-bold text-foreground mb-4">เลข 3 ตัวท็อป</h3>
+              <div class="flex justify-center gap-2 mb-4">
+                {% if ai_prediction and ai_prediction.get_top_three_digit_numbers %}
+                  {% for item in ai_prediction.get_top_three_digit_numbers|slice:":2" %}
+                  <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">
+                    {{ item.number }}
+                  </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">065</div>
+                  <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">052</div>
+                {% endif %}
+              </div>
+              {% if ai_prediction %}
+              <p class="text-sm text-muted-foreground">
+                ความมั่นใจ {{ ai_prediction.get_top_three_digit_numbers.0.confidence|default:24|floatformat:1 }}%
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Reasoning Summary -->
+        <div class="card bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20 mb-8">
+          <div class="p-6">
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-brain text-white"></i>
+              </div>
+              <div class="flex-1">
+                <h4 class="text-lg font-semibold text-foreground mb-2">เหตุผลหลักจาก AI</h4>
+                {% if ai_prediction and ai_prediction.prediction_summary %}
+                <p class="text-foreground">{{ ai_prediction.prediction_summary }}</p>
+                {% else %}
+                <p class="text-foreground">มาจากการวิเคราะห์กระแสข่าวและสถิติเลขที่ไม่ออกนาน รวมกับการตีความฝันและแนวโน้มเทรนด์ปัจจุบัน</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Call-to-Action -->
+        <div class="text-center">
+          <a href="{% url 'ai_engine:prediction' %}" 
+             class="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold text-lg rounded-xl hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+            <i class="fas fa-chart-line"></i>
+            <span>ดูบทวิเคราะห์ AI ฉบับเต็ม</span>
+            <i class="fas fa-arrow-right"></i>
+          </a>
+          <p class="text-sm text-muted-foreground mt-3">
+            พร้อมรายละเอียดการวิเคราะห์จาก 3 โมเดล AI และเลขเพิ่มเติม
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Other Highlights -->
+  <section class="py-6 bg-muted/30">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-serif font-bold text-foreground mb-2">ไฮไลท์อื่นๆ ประจำวัน</h2>
+        <p class="text-muted-foreground">เลขเด็ดจากแหล่งต่างๆ และข้อมูลเพิ่มเติม</p>
+      </div>
+
+      <!-- Today's Other Numbers -->
+      <div class="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+        <div class="card border-primary/20 bg-primary/5">
+          <div class="p-4 text-center">
+            <h3 class="text-sm font-medium text-foreground mb-2">เลขฮิต</h3>
+            <div class="text-2xl font-bold text-primary mb-1">42</div>
+            <div class="text-xs text-muted-foreground">จากข่าว</div>
           </div>
         </div>
 
         <div class="card border-secondary/20 bg-secondary/5">
-          <div class="p-4 text-center pb-2">
-            <h3 class="text-lg font-serif text-foreground mb-2">เลขฮิต</h3>
-            <div class="badge badge-secondary mx-auto mb-2">
-              <i class="fas fa-chart-line mr-1"></i>
-              ยอดนิยม
-            </div>
-          </div>
-          <div class="p-4 pt-0 text-center">
-            {% if latest_prediction and latest_prediction.get_two_digit_list %}
-              <div class="text-3xl font-bold text-secondary mb-2">{{ latest_prediction.get_two_digit_list.0 }}</div>
-              <div class="text-sm text-muted-foreground">ออกบ่อย</div>
-            {% else %}
-              <div class="text-3xl font-bold text-secondary mb-2">15</div>
-              <div class="text-sm text-muted-foreground">ออกบ่อย 15 ครั้ง</div>
-            {% endif %}
+          <div class="p-4 text-center">
+            <h3 class="text-sm font-medium text-foreground mb-2">เลขฮิต</h3>
+            <div class="text-2xl font-bold text-secondary mb-1">15</div>
+            <div class="text-xs text-muted-foreground">ออกบ่อย</div>
           </div>
         </div>
 
         <div class="card border-accent/20 bg-accent/5">
-          <div class="p-4 text-center pb-2">
-            <h3 class="text-lg font-serif text-foreground mb-2">เลขเสริมดวง</h3>
-            <div class="badge badge-outline mx-auto mb-2">
-              <i class="fas fa-moon mr-1"></i>
-              จากความฝัน
-            </div>
-          </div>
-          <div class="p-4 pt-0 text-center">
-            {% if latest_prediction and latest_prediction.get_two_digit_list|length > 1 %}
-              <div class="text-3xl font-bold text-accent mb-2">{{ latest_prediction.get_two_digit_list.1 }}</div>
-              <div class="text-sm text-muted-foreground">จาก AI</div>
-            {% else %}
-              <div class="text-3xl font-bold text-accent mb-2">89</div>
-              <div class="text-sm text-muted-foreground">ฝันเห็นงู</div>
-            {% endif %}
+          <div class="p-4 text-center">
+            <h3 class="text-sm font-medium text-foreground mb-2">เลขฝัน</h3>
+            <div class="text-2xl font-bold text-accent mb-1">89</div>
+            <div class="text-xs text-muted-foreground">จากความฝัน</div>
           </div>
         </div>
       </div>

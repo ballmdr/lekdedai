@@ -1,0 +1,55 @@
+<!-- News Entity Widget Template -->
+{% if available and has_entities %}
+<div class="news-entity-widget bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 rounded-lg p-4 mb-4">
+    <div class="flex items-start gap-3">
+        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-newspaper text-white text-sm"></i>
+        </div>
+        <div class="flex-1">
+            <h4 class="text-sm font-semibold text-gray-800 mb-2">{{ title }}</h4>
+            
+            <div class="mb-3">
+                <!-- Entity summary -->
+                {% if summary %}
+                <div class="text-xs text-gray-600 mb-2">{{ summary|safe|truncatechars:120 }}</div>
+                {% endif %}
+                
+                <!-- Numbers found -->
+                {% if numbers %}
+                <div class="flex flex-wrap gap-2 mb-2">
+                    {% for number in numbers|slice:":6" %}
+                    <span class="bg-green-500 text-white px-2 py-1 rounded text-sm font-bold">{{ number }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Entity breakdown (if detailed) -->
+                {% if entities %}
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    {% for entity_type, values in entities.items %}
+                        {% if values %}
+                        <div class="bg-white bg-opacity-50 rounded p-2">
+                            <div class="font-medium text-gray-700 capitalize">{{ entity_type|title }}</div>
+                            <div class="text-gray-600">{{ values|slice:":3"|join:", " }}</div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="text-xs text-gray-500 flex items-center justify-between">
+                <span>{{ method|default:"AI" }} • พบ {{ total_found }} รายการ</span>
+                <span><i class="fas fa-search-plus"></i> Entity Recognition</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif not available %}
+<div class="news-entity-unavailable bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+    <div class="text-gray-500 text-xs">
+        <i class="fas fa-exclamation-circle mr-1"></i>
+        {{ message|default:"ระบบสกัดเลขจากข่าวไม่พร้อมใช้งาน" }}
+    </div>
+</div>
+{% endif %}

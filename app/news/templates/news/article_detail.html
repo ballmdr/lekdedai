@@ -71,12 +71,14 @@
                 </div>
                 
                 <!-- Extracted Numbers -->
-                {% if extracted_numbers %}
                 <div class="border-t border-border pt-6">
                     <h3 class="text-xl font-bold mb-4 text-foreground">
                         <i class="fas fa-hashtag text-primary mr-2"></i>
                         เลขที่วิเคราะห์ได้จากข่าว
                     </h3>
+                    
+                    {% if extracted_numbers %}
+                    <!-- มีเลขวิเคราะห์แล้ว -->
                     <div class="bg-primary/10 rounded-lg p-6">
                         <div class="grid grid-cols-5 md:grid-cols-10 gap-3 mb-4">
                             {% for num in extracted_numbers %}
@@ -88,16 +90,32 @@
                         <div class="flex items-center justify-between">
                             <span class="text-sm text-muted-foreground">
                                 ความน่าเชื่อถือ: 
-                                <span class="font-bold text-lg text-foreground">{{ article.confidence_score }}%</span>
+                                <span class="font-bold text-lg text-foreground">{{ article.confidence_score|default:0 }}%</span>
                             </span>
+                            {% if user.is_staff %}
                             <button onclick="analyzeAgain({{ article.id }})" 
                                     class="btn btn-primary">
                                 <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
                             </button>
+                            {% endif %}
                         </div>
                     </div>
+                    {% else %}
+                    <!-- ยังไม่มีเลขวิเคราะห์ -->
+                    <div class="bg-muted/50 rounded-lg p-6 text-center">
+                        <div class="text-muted-foreground mb-4">
+                            <i class="fas fa-info-circle text-2xl mb-2"></i>
+                            <p>ยังไม่มีการวิเคราะห์เลขจากข่าวนี้</p>
+                        </div>
+                        {% if user.is_staff %}
+                        <button onclick="analyzeAgain({{ article.id }})" 
+                                class="btn btn-primary">
+                            <i class="fas fa-magic mr-2"></i>วิเคราะห์เลขเด็ด
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             
                 <!-- Lucky Hints -->
                 {% if lucky_hints %}
@@ -208,9 +226,18 @@
 
 <script>
 async function analyzeAgain(articleId) {
-    if (!confirm('ต้องการวิเคราะห์เลขจากข่าวใหม่?')) return;
+    const hasNumbers = {{ extracted_numbers|yesno:"true,false" }};
+    const confirmMessage = hasNumbers ? 'ต้องการวิเคราะห์เลขจากข่าวใหม่?' : 'ต้องการวิเคราะห์เลขเด็ดจากข่าวนี้?';
+    
+    if (!confirm(confirmMessage)) return;
     
     try {
+        // แสดง loading
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังวิเคราะห์...';
+        button.disabled = true;
+        
         const response = await fetch(`/news/api/analyze/${articleId}/`, {
             method: 'POST',
             headers: {
@@ -220,11 +247,19 @@ async function analyzeAgain(articleId) {
         
         const data = await response.json();
         if (data.success) {
-            alert('วิเคราะห์เสร็จแล้ว กรุณารีเฟรชหน้า');
+            const successMessage = hasNumbers ? 'วิเคราะห์เสร็จแล้ว กรุณารีเฟรชหน้า' : 'วิเคราะห์เลขเด็ดเสร็จแล้ว กรุณารีเฟรชหน้า';
+            alert(successMessage);
             location.reload();
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถวิเคราะห์ได้'));
         }
     } catch (error) {
         alert('เกิดข้อผิดพลาด: ' + error.message);
+    } finally {
+        // คืนค่าปุ่มเดิม
+        const button = event.target;
+        button.innerHTML = originalText;
+        button.disabled = false;
     }
 }
 </script>

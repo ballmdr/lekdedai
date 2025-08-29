@@ -1,0 +1,16 @@
+<!-- Dream Numbers Widget Template -->
+{% if has_numbers %}
+<div class="dream-numbers-widget">
+    <h4 class="widget-title text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+        <i class="fas fa-moon text-primary"></i>
+        {{ title }}
+    </h4>
+    <div class="grid grid-cols-3 gap-2">
+        {% for number in numbers %}
+        <div class="number-badge bg-primary/10 text-primary rounded-lg px-3 py-2 text-center font-bold text-sm border border-primary/20 hover:bg-primary/20 transition-colors">
+            {{ number }}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

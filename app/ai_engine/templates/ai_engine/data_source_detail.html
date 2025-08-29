@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ data_source.name }} - แหล่งข้อมูล AI{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<section class="py-8 bg-gradient-to-br from-accent/10 via-background to-primary/10">
+  <div class="container mx-auto px-4">
+    <div class="text-center">
+      <h1 class="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
+        {% if data_source.source_type == 'news' %}<i class="fas fa-newspaper text-blue-500 mr-2"></i>
+        {% elif data_source.source_type == 'social_media' %}<i class="fas fa-share-alt text-green-500 mr-2"></i>
+        {% elif data_source.source_type == 'dreams' %}<i class="fas fa-moon text-purple-500 mr-2"></i>
+        {% elif data_source.source_type == 'trends' %}<i class="fas fa-trending-up text-orange-500 mr-2"></i>
+        {% elif data_source.source_type == 'astrology' %}<i class="fas fa-star text-indigo-500 mr-2"></i>
+        {% else %}<i class="fas fa-database text-gray-500 mr-2"></i>{% endif %}
+        {{ data_source.name }}
+      </h1>
+      <p class="text-lg text-muted-foreground">{{ data_source.get_source_type_display }}</p>
+    </div>
+  </div>
+</section>
+
+<div class="container mx-auto px-4 py-8">
+  <!-- Source Information -->
+  <div class="card mb-8">
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-info-circle text-primary"></i>
+        ข้อมูลแหล่ง
+      </h2>
+    </div>
+    <div class="p-6">
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm font-medium text-muted-foreground">ชื่อแหล่งข้อมูล</label>
+            <p class="text-lg font-semibold text-foreground">{{ data_source.name }}</p>
+          </div>
+          
+          <div>
+            <label class="text-sm font-medium text-muted-foreground">ประเภท</label>
+            <p class="text-foreground">{{ data_source.get_source_type_display }}</p>
+          </div>
+          
+          {% if data_source.url %}
+          <div>
+            <label class="text-sm font-medium text-muted-foreground">URL</label>
+            <p class="text-foreground">
+              <a href="{{ data_source.url }}" target="_blank" class="text-primary hover:underline">
+                {{ data_source.url }}
+                <i class="fas fa-external-link-alt ml-1 text-xs"></i>
+              </a>
+            </p>
+          </div>
+          {% endif %}
+          
+          {% if data_source.description %}
+          <div>
+            <label class="text-sm font-medium text-muted-foreground">คำอธิบาย</label>
+            <p class="text-foreground">{{ data_source.description }}</p>
+          </div>
+          {% endif %}
+        </div>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm font-medium text-muted-foreground">สถานะ</label>
+            <p class="text-foreground">
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                {% if data_source.is_active %}bg-green-100 text-green-800
+                {% else %}bg-red-100 text-red-800{% endif %}">
+                {% if data_source.is_active %}
+                  <i class="fas fa-check-circle mr-1"></i>เปิดใช้งาน
+                {% else %}
+                  <i class="fas fa-times-circle mr-1"></i>ปิดใช้งาน
+                {% endif %}
+              </span>
+            </p>
+          </div>
+          
+          <div>
+            <label class="text-sm font-medium text-muted-foreground">ความถี่การเก็บข้อมูล</label>
+            <p class="text-foreground">ทุก {{ data_source.scraping_interval }} ชั่วโมง</p>
+          </div>
+          
+          <div>
+            <label class="text-sm font-medium text-muted-foreground">เก็บข้อมูลล่าสุด</label>
+            <p class="text-foreground">
+              {% if data_source.last_scraped %}
+                {{ data_source.last_scraped|date:"j F Y H:i" }}
+                <span class="text-muted-foreground text-sm">({{ data_source.last_scraped|timesince }} ที่แล้ว)</span>
+              {% else %}
+                <span class="text-muted-foreground">ยังไม่เคย</span>
+              {% endif %}
+            </p>
+          </div>
+          
+          <div>
+            <label class="text-sm font-medium text-muted-foreground">สร้างเมื่อ</label>
+            <p class="text-foreground">{{ data_source.created_at|date:"j F Y H:i" }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics -->
+  <div class="card mb-8">
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-chart-bar text-secondary"></i>
+        สถิติข้อมูล
+      </h2>
+    </div>
+    <div class="p-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div class="text-2xl font-bold text-blue-600">{{ stats.total_records }}</div>
+          <div class="text-sm text-blue-700">ข้อมูลทั้งหมด</div>
+        </div>
+        <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+          <div class="text-2xl font-bold text-green-600">{{ stats.today_records }}</div>
+          <div class="text-sm text-green-700">ข้อมูลวันนี้</div>
+        </div>
+        <div class="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+          <div class="text-2xl font-bold text-orange-600">{{ stats.this_week_records }}</div>
+          <div class="text-sm text-orange-700">ข้อมูลสัปดาห์นี้</div>
+        </div>
+        <div class="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+          <div class="text-2xl font-bold text-purple-600">{{ stats.numbers_extracted }}</div>
+          <div class="text-sm text-purple-700">เลขที่สกัดได้</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Data -->
+  <div class="card mb-8">
+    <div class="p-6 border-b flex items-center justify-between">
+      <h2 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-clock text-accent"></i>
+        ข้อมูลล่าสุด
+      </h2>
+      <div class="flex items-center gap-2">
+        <select id="timeRangeFilter" class="select select-sm">
+          <option value="today" {% if time_range == 'today' %}selected{% endif %}>วันนี้</option>
+          <option value="week" {% if time_range == 'week' %}selected{% endif %}>7 วันล่าสุด</option>
+          <option value="month" {% if time_range == 'month' %}selected{% endif %}>30 วันล่าสุด</option>
+          <option value="all" {% if time_range == 'all' %}selected{% endif %}>ทั้งหมด</option>
+        </select>
+        <button onclick="applyTimeFilter()" class="btn btn-primary btn-sm">
+          <i class="fas fa-filter"></i>
+        </button>
+      </div>
+    </div>
+    <div class="p-6">
+      {% if recent_data %}
+      <div class="space-y-4">
+        {% for record in recent_data %}
+        <div class="border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex-1">
+              {% if record.content %}
+              <p class="text-foreground mb-2 leading-relaxed">{{ record.content }}</p>
+              {% endif %}
+              
+              {% if record.metadata %}
+              <div class="text-xs text-muted-foreground mb-2">
+                {% if record.metadata.sentiment %}
+                <span class="inline-flex items-center gap-1 mr-3">
+                  <i class="fas fa-smile"></i>
+                  อารมณ์: {{ record.metadata.sentiment|capfirst }}
+                </span>
+                {% endif %}
+                {% if record.metadata.keywords %}
+                <span class="inline-flex items-center gap-1">
+                  <i class="fas fa-tags"></i>
+                  คีย์เวิร์ด: {{ record.metadata.keywords|join:", " }}
+                </span>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+            
+            <div class="text-right ml-4 flex-shrink-0">
+              <div class="text-sm font-medium text-foreground">
+                {{ record.ingested_at|date:"j/m/Y" }}
+              </div>
+              <div class="text-xs text-muted-foreground">
+                {{ record.ingested_at|date:"H:i" }}
+              </div>
+              <div class="mt-1">
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                  {% if record.processing_status == 'completed' %}bg-green-100 text-green-800
+                  {% elif record.processing_status == 'pending' %}bg-yellow-100 text-yellow-800
+                  {% elif record.processing_status == 'failed' %}bg-red-100 text-red-800
+                  {% else %}bg-gray-100 text-gray-800{% endif %}">
+                  {{ record.get_processing_status_display }}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {% if record.extracted_numbers %}
+          <div class="flex flex-wrap gap-2 pt-3 border-t border-border">
+            <span class="text-sm font-medium text-muted-foreground mr-2">เลขที่สกัด:</span>
+            {% for number in record.extracted_numbers|slice:":10" %}
+            <span class="px-2 py-1 bg-primary/20 text-primary text-sm rounded font-mono">{{ number }}</span>
+            {% endfor %}
+            {% if record.extracted_numbers|length > 10 %}
+            <span class="text-sm text-muted-foreground">และอีก {{ record.extracted_numbers|length|add:"-10" }} ตัว</span>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      
+      <!-- Pagination for data records -->
+      {% if is_paginated %}
+      <div class="flex justify-center mt-6">
+        <nav class="flex items-center gap-2">
+          {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}&time_range={{ time_range }}" class="btn btn-outline btn-sm">
+            <i class="fas fa-chevron-left"></i>
+          </a>
+          {% endif %}
+          
+          {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <span class="btn btn-primary btn-sm">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}&time_range={{ time_range }}" class="btn btn-outline btn-sm">{{ num }}</a>
+            {% endif %}
+          {% endfor %}
+          
+          {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}&time_range={{ time_range }}" class="btn btn-outline btn-sm">
+            <i class="fas fa-chevron-right"></i>
+          </a>
+          {% endif %}
+        </nav>
+      </div>
+      {% endif %}
+      
+      {% else %}
+      <div class="text-center py-12">
+        <i class="fas fa-inbox text-4xl text-muted-foreground mb-4"></i>
+        <h3 class="text-lg font-semibold text-foreground mb-2">ไม่มีข้อมูล</h3>
+        <p class="text-muted-foreground">ยังไม่มีข้อมูลที่เก็บจากแหล่งนี้ในช่วงเวลาที่เลือก</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Extracted Numbers Analysis -->
+  {% if extracted_numbers_stats %}
+  <div class="card mb-8">
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-calculator text-primary"></i>
+        การวิเคราะห์เลขที่สกัด
+      </h2>
+    </div>
+    <div class="p-6">
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Most Common Numbers -->
+        <div>
+          <h3 class="font-semibold text-foreground mb-4">เลขที่ปรากฏบ่อย</h3>
+          <div class="space-y-2">
+            {% for item in extracted_numbers_stats.most_common|slice:":10" %}
+            <div class="flex items-center justify-between p-2 bg-muted/30 rounded">
+              <span class="font-mono font-bold text-foreground">{{ item.number }}</span>
+              <span class="text-sm text-muted-foreground">{{ item.count }} ครั้ง</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        
+        <!-- Number Length Distribution -->
+        <div>
+          <h3 class="font-semibold text-foreground mb-4">การกระจายตามจำนวนหลัก</h3>
+          <div class="space-y-2">
+            {% for length, count in extracted_numbers_stats.length_distribution.items %}
+            <div class="flex items-center justify-between p-2 bg-muted/30 rounded">
+              <span class="text-foreground">{{ length }} หลัก</span>
+              <span class="text-sm text-muted-foreground">{{ count }} ตัว</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Usage in Predictions -->
+  <div class="card">
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-magic text-secondary"></i>
+        การใช้งานในการทำนาย
+      </h2>
+    </div>
+    <div class="p-6">
+      {% if predictions_using_source %}
+      <div class="space-y-3">
+        {% for prediction in predictions_using_source %}
+        <div class="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/30 transition-colors">
+          <div>
+            <h4 class="font-semibold text-foreground">งวดวันที่ {{ prediction.session.for_draw_date|date:"j F Y" }}</h4>
+            <p class="text-sm text-muted-foreground">
+              เลขแนะนำ: 
+              {% if prediction.final_two_digit %}
+                {% for item in prediction.get_top_two_digit_numbers|slice:":3" %}
+                  {{ item.number }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              {% endif %}
+            </p>
+          </div>
+          <div class="text-right">
+            <div class="text-sm font-medium text-foreground">{{ prediction.overall_confidence|floatformat:1 }}%</div>
+            <div class="text-xs text-muted-foreground">ความมั่นใจ</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-8">
+        <i class="fas fa-search text-3xl text-muted-foreground mb-3"></i>
+        <p class="text-muted-foreground">ยังไม่มีการใช้แหล่งข้อมูลนี้ในการทำนาย</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="flex justify-center mt-8 gap-4">
+    <a href="{% url 'ai_engine:data_sources' %}" class="btn btn-primary">
+      <i class="fas fa-arrow-left mr-2"></i>
+      กลับหน้าแหล่งข้อมูล
+    </a>
+    {% if data_source.is_active %}
+    <button onclick="triggerDataCollection()" class="btn btn-secondary">
+      <i class="fas fa-sync-alt mr-2"></i>
+      เก็บข้อมูลใหม่
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function applyTimeFilter() {
+  const timeRange = document.getElementById('timeRangeFilter').value;
+  const params = new URLSearchParams(window.location.search);
+  params.set('time_range', timeRange);
+  params.delete('page'); // Reset to first page
+  window.location.search = params.toString();
+}
+
+async function triggerDataCollection() {
+  if (!confirm('ต้องการเก็บข้อมูลใหม่จากแหล่งนี้หรือไม่?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/ai/api/data-source/{{ data_source.id }}/collect/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      alert('เริ่มเก็บข้อมูลแล้ว กรุณารอสักครู่แล้วรีเฟรชหน้า');
+    } else {
+      alert('เกิดข้อผิดพลาด: ' + data.error);
+    }
+  } catch (error) {
+    alert('เกิดข้อผิดพลาด: ' + error.message);
+  }
+}
+</script>
+{% endblock %}

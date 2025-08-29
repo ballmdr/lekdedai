@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}แดชบอร์ดระบบ AI - LekDedAI{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<section class="py-8 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
+  <div class="container mx-auto px-4">
+    <div class="text-center">
+      <h1 class="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
+        <i class="fas fa-tachometer-alt text-primary mr-2"></i>
+        แดชบอร์ดระบบ AI
+      </h1>
+      <p class="text-lg text-muted-foreground">
+        ภาพรวมและสถิติการทำงานของระบบ AI Ensemble
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="container mx-auto px-4 py-8">
+  <!-- Stats Overview -->
+  <div class="grid md:grid-cols-3 gap-6 mb-8">
+    <!-- Predictions Stats -->
+    <div class="card">
+      <div class="p-6">
+        <h3 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <i class="fas fa-crystal-ball text-primary"></i>
+          การทำนาย
+        </h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-muted-foreground">ทั้งหมด</span>
+            <span class="text-2xl font-bold text-primary">{{ dashboard_stats.predictions.total }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-muted-foreground">วันนี้</span>
+            <span class="text-lg font-semibold text-green-600">{{ dashboard_stats.predictions.today }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-muted-foreground">เดือนนี้</span>
+            <span class="text-lg font-semibold text-blue-600">{{ dashboard_stats.predictions.this_month }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessions Stats -->
+    <div class="card">
+      <div class="p-6">
+        <h3 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <i class="fas fa-cogs text-secondary"></i>
+          เซสชัน
+        </h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-muted-foreground">สำเร็จ</span>
+            <span class="text-lg font-semibold text-green-600">{{ dashboard_stats.sessions.completed }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-muted-foreground">ล็อก</span>
+            <span class="text-lg font-semibold text-orange-600">{{ dashboard_stats.sessions.locked }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-muted-foreground">ล้มเหลว</span>
+            <span class="text-lg font-semibold text-red-600">{{ dashboard_stats.sessions.failed }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Stats -->
+    <div class="card">
+      <div class="p-6">
+        <h3 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <i class="fas fa-database text-accent"></i>
+          ข้อมูล
+        </h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-muted-foreground">ทั้งหมด</span>
+            <span class="text-2xl font-bold text-accent">{{ dashboard_stats.data.total_records|floatformat:0 }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-muted-foreground">วันนี้</span>
+            <span class="text-lg font-semibold text-green-600">{{ dashboard_stats.data.today_records }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-muted-foreground">รอประมวลผล</span>
+            <span class="text-lg font-semibold text-yellow-600">{{ dashboard_stats.data.processing_pending }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Predictions -->
+  <div class="grid lg:grid-cols-2 gap-8 mb-8">
+    <div class="card">
+      <div class="p-6 border-b">
+        <h3 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
+          <i class="fas fa-history text-primary"></i>
+          การทำนายล่าสุด
+        </h3>
+      </div>
+      <div class="p-6">
+        {% if recent_predictions %}
+        <div class="space-y-4">
+          {% for prediction in recent_predictions %}
+          <div class="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+            <div class="flex-1">
+              <h4 class="font-semibold text-foreground">งวด {{ prediction.session.for_draw_date|date:"j/m/Y" }}</h4>
+              <p class="text-sm text-muted-foreground">
+                {{ prediction.prediction_timestamp|date:"j/m/Y H:i" }}
+              </p>
+            </div>
+            <div class="text-right">
+              <div class="text-lg font-bold text-primary">{{ prediction.overall_confidence|floatformat:1 }}%</div>
+              <div class="text-xs text-muted-foreground">ความมั่นใจ</div>
+            </div>
+            <div class="ml-3">
+              <a href="{% url 'ai_engine:ensemble_prediction_detail' prediction.id %}" 
+                 class="btn btn-outline btn-sm">
+                <i class="fas fa-eye"></i>
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+          <a href="{% url 'ai_engine:ensemble_history' %}" class="btn btn-outline">
+            <i class="fas fa-list mr-2"></i>
+            ดูทั้งหมด
+          </a>
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+          <i class="fas fa-crystal-ball text-3xl text-muted-foreground mb-3"></i>
+          <p class="text-muted-foreground">ยังไม่มีการทำนาย</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Data -->
+    <div class="card">
+      <div class="p-6 border-b">
+        <h3 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
+          <i class="fas fa-clock text-secondary"></i>
+          ข้อมูลล่าสุด
+        </h3>
+      </div>
+      <div class="p-6">
+        {% if recent_data %}
+        <div class="space-y-3">
+          {% for data in recent_data %}
+          <div class="border-b border-border pb-3 last:border-b-0">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-2">
+                {% if data.data_source.source_type == 'news' %}
+                  <i class="fas fa-newspaper text-blue-500"></i>
+                {% elif data.data_source.source_type == 'social_media' %}
+                  <i class="fas fa-share-alt text-green-500"></i>
+                {% elif data.data_source.source_type == 'dreams' %}
+                  <i class="fas fa-moon text-purple-500"></i>
+                {% elif data.data_source.source_type == 'trends' %}
+                  <i class="fas fa-trending-up text-orange-500"></i>
+                {% else %}
+                  <i class="fas fa-database text-gray-500"></i>
+                {% endif %}
+                <span class="font-medium text-foreground text-sm">{{ data.data_source.name }}</span>
+              </div>
+              <span class="text-xs text-muted-foreground">{{ data.ingested_at|date:"j/m H:i" }}</span>
+            </div>
+            {% if data.content %}
+            <p class="text-sm text-foreground">{{ data.content|truncatechars:80 }}</p>
+            {% endif %}
+            {% if data.extracted_numbers %}
+            <div class="flex flex-wrap gap-1 mt-2">
+              {% for num in data.extracted_numbers|slice:":5" %}
+              <span class="px-2 py-1 bg-primary/20 text-primary text-xs rounded">{{ num }}</span>
+              {% endfor %}
+              {% if data.extracted_numbers|length > 5 %}
+              <span class="text-xs text-muted-foreground">+{{ data.extracted_numbers|length|add:"-5" }}</span>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+          <a href="{% url 'ai_engine:data_sources' %}" class="btn btn-outline">
+            <i class="fas fa-database mr-2"></i>
+            ดูทั้งหมด
+          </a>
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+          <i class="fas fa-inbox text-3xl text-muted-foreground mb-3"></i>
+          <p class="text-muted-foreground">ยังไม่มีข้อมูล</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- System Health -->
+  <div class="card">
+    <div class="p-6 border-b">
+      <h3 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-heartbeat text-red-500"></i>
+        สถานะระบบ
+      </h3>
+    </div>
+    <div class="p-6">
+      <div class="grid md:grid-cols-4 gap-6">
+        <!-- AI Models Status -->
+        <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+          <div class="text-green-600 text-2xl mb-2">
+            <i class="fas fa-robot"></i>
+          </div>
+          <div class="font-semibold text-green-800 mb-1">โมเดล AI</div>
+          <div class="text-sm text-green-700">ทำงานปกติ</div>
+        </div>
+
+        <!-- Data Collection Status -->
+        <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div class="text-blue-600 text-2xl mb-2">
+            <i class="fas fa-download"></i>
+          </div>
+          <div class="font-semibold text-blue-800 mb-1">เก็บข้อมูล</div>
+          <div class="text-sm text-blue-700">{{ dashboard_stats.data.processing_pending }} รอประมวลผล</div>
+        </div>
+
+        <!-- Prediction Engine -->
+        <div class="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+          <div class="text-purple-600 text-2xl mb-2">
+            <i class="fas fa-magic"></i>
+          </div>
+          <div class="font-semibold text-purple-800 mb-1">เครื่องทำนาย</div>
+          <div class="text-sm text-purple-700">พร้อมใช้งาน</div>
+        </div>
+
+        <!-- Database -->
+        <div class="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+          <div class="text-orange-600 text-2xl mb-2">
+            <i class="fas fa-database"></i>
+          </div>
+          <div class="font-semibold text-orange-800 mb-1">ฐานข้อมูล</div>
+          <div class="text-sm text-orange-700">เชื่อมต่อแล้ว</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="grid md:grid-cols-4 gap-4 mt-8">
+    <a href="{% url 'ai_engine:prediction' %}" class="btn btn-primary text-center">
+      <i class="fas fa-crystal-ball mr-2"></i>
+      สร้างการทำนาย
+    </a>
+    <a href="{% url 'ai_engine:data_sources' %}" class="btn btn-secondary text-center">
+      <i class="fas fa-database mr-2"></i>
+      จัดการข้อมูล
+    </a>
+    <a href="{% url 'ai_engine:ensemble_history' %}" class="btn btn-outline text-center">
+      <i class="fas fa-history mr-2"></i>
+      ประวัติการทำนาย
+    </a>
+    <button onclick="refreshDashboard()" class="btn btn-outline text-center">
+      <i class="fas fa-sync-alt mr-2"></i>
+      รีเฟรช
+    </button>
+  </div>
+</div>
+
+<script>
+async function refreshDashboard() {
+  try {
+    // Simple page reload for now
+    location.reload();
+  } catch (error) {
+    console.error('Error refreshing dashboard:', error);
+  }
+}
+
+// Auto refresh every 5 minutes
+setInterval(() => {
+  refreshDashboard();
+}, 300000);
+</script>
+{% endblock %}
