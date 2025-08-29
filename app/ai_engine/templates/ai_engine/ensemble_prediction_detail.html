@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}รายละเอียดการทำนาย AI Ensemble - {{ prediction.session.for_draw_date }}{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<section class="py-8 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
+  <div class="container mx-auto px-4">
+    <div class="text-center">
+      <h1 class="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
+        <i class="fas fa-robot text-primary mr-2"></i>
+        รายละเอียดการทำนาย AI Ensemble
+      </h1>
+      <p class="text-lg text-muted-foreground">
+        งวดวันที่ {{ prediction.session.for_draw_date|date:"j F Y" }}
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="container mx-auto px-4 py-8">
+  <!-- Prediction Summary -->
+  <div class="card border-primary/20 bg-primary/5 mb-8">
+    <div class="p-6">
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="text-center">
+          <h3 class="text-lg font-semibold text-foreground mb-2">ความมั่นใจรวม</h3>
+          <div class="text-3xl font-bold text-primary">{{ prediction.overall_confidence|floatformat:1 }}%</div>
+        </div>
+        <div class="text-center">
+          <h3 class="text-lg font-semibold text-foreground mb-2">ข้อมูลที่ใช้</h3>
+          <div class="text-3xl font-bold text-secondary">{{ prediction.total_data_points|default:0 }}</div>
+          <div class="text-sm text-muted-foreground">รายการ</div>
+        </div>
+        <div class="text-center">
+          <h3 class="text-lg font-semibold text-foreground mb-2">เวลาทำนาย</h3>
+          <div class="text-lg font-bold text-foreground">{{ prediction.prediction_timestamp|date:"j/m/Y H:i" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Final Predictions -->
+  <div class="card mb-8">
+    <div class="p-6 border-b">
+      <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-target text-primary"></i>
+        เลขเด็ดสุดท้าย
+      </h2>
+    </div>
+    <div class="p-6">
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Two Digit Numbers -->
+        {% if prediction.final_two_digit %}
+        <div>
+          <h3 class="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+            <i class="fas fa-dice-two text-primary"></i>
+            เลขท้าย 2 ตัว
+          </h3>
+          <div class="space-y-3">
+            {% for item in prediction.get_top_two_digit_numbers %}
+            <div class="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold text-xl">
+                  {{ item.number }}
+                </div>
+                <div>
+                  <div class="font-semibold text-foreground">ความมั่นใจ {{ item.confidence|floatformat:1 }}%</div>
+                  <div class="text-sm text-muted-foreground">{{ item.reasoning|truncatechars:60 }}</div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Three Digit Numbers -->
+        {% if prediction.final_three_digit %}
+        <div>
+          <h3 class="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+            <i class="fas fa-dice-three text-secondary"></i>
+            เลขท้าย 3 ตัว
+          </h3>
+          <div class="space-y-3">
+            {% for item in prediction.get_top_three_digit_numbers %}
+            <div class="flex items-center justify-between p-3 bg-secondary/10 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-secondary text-secondary-foreground rounded-lg flex items-center justify-center font-bold text-lg">
+                  {{ item.number }}
+                </div>
+                <div>
+                  <div class="font-semibold text-foreground">ความมั่นใจ {{ item.confidence|floatformat:1 }}%</div>
+                  <div class="text-sm text-muted-foreground">{{ item.reasoning|truncatechars:60 }}</div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Individual Model Predictions -->
+  <div class="card mb-8">
+    <div class="p-6 border-b">
+      <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-brain text-primary"></i>
+        การทำนายของแต่ละโมเดล AI
+      </h2>
+    </div>
+    <div class="p-6">
+      <div class="space-y-6">
+        {% for model_pred in individual_predictions %}
+        <div class="border border-border rounded-lg p-4">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-foreground flex items-center gap-2">
+              {% if model_pred.model_type.role == 'journalist' %}
+                <i class="fas fa-newspaper text-blue-500"></i>
+                <span class="text-blue-500">{{ model_pred.model_type.name }}</span>
+              {% elif model_pred.model_type.role == 'interpreter' %}
+                <i class="fas fa-moon text-purple-500"></i>
+                <span class="text-purple-500">{{ model_pred.model_type.name }}</span>
+              {% elif model_pred.model_type.role == 'statistician' %}
+                <i class="fas fa-chart-line text-green-500"></i>
+                <span class="text-green-500">{{ model_pred.model_type.name }}</span>
+              {% else %}
+                <i class="fas fa-robot text-gray-500"></i>
+                <span class="text-gray-500">{{ model_pred.model_type.name }}</span>
+              {% endif %}
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-muted-foreground">น้ำหนัก:</span>
+              <span class="font-bold text-primary">{{ model_pred.model_type.weight_in_ensemble|floatformat:1 }}%</span>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4 mb-4">
+            <!-- Model's Predictions -->
+            {% if model_pred.predicted_numbers %}
+            <div>
+              <h4 class="font-medium text-foreground mb-2">เลขที่แนะนำ</h4>
+              <div class="flex flex-wrap gap-2">
+                {% if model_pred.predicted_numbers.two_digit %}
+                  {% for num in model_pred.predicted_numbers.two_digit|slice:":5" %}
+                  <div class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                    <span class="font-bold">{{ num }}</span>
+                    <span class="text-xs ml-1">2D</span>
+                  </div>
+                  {% endfor %}
+                {% endif %}
+                {% if model_pred.predicted_numbers.three_digit %}
+                  {% for num in model_pred.predicted_numbers.three_digit|slice:":3" %}
+                  <div class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                    <span class="font-bold">{{ num }}</span>
+                    <span class="text-xs ml-1">3D</span>
+                  </div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Model Reasoning -->
+          {% if model_pred.reasoning %}
+          <div class="bg-muted/30 rounded-lg p-3">
+            <h4 class="font-medium text-foreground mb-2">เหตุผลการทำนาย</h4>
+            {% if model_pred.reasoning.summary %}
+            <p class="text-sm text-foreground">{{ model_pred.reasoning.summary }}</p>
+            {% endif %}
+            {% if model_pred.reasoning.key_factors %}
+            <div class="mt-2">
+              <p class="text-xs text-muted-foreground mb-1">ปัจจัยหลัก:</p>
+              {% for factor in model_pred.reasoning.key_factors|slice:":3" %}
+              <span class="text-xs bg-gray-100 px-2 py-1 rounded mr-1">{{ factor }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% empty %}
+        <p class="text-center text-muted-foreground py-8">ไม่พบการทำนายของโมเดลย่อย</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Model Contributions -->
+  {% if prediction.model_contributions %}
+  <div class="card mb-8">
+    <div class="p-6 border-b">
+      <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-pie-chart text-secondary"></i>
+        การมีส่วนร่วมของโมเดล
+      </h2>
+    </div>
+    <div class="p-6">
+      <div class="grid md:grid-cols-3 gap-6">
+        {% for model_name, contribution in prediction.model_contributions.items %}
+        <div class="text-center p-4 border border-border rounded-lg">
+          <h3 class="font-semibold text-foreground mb-2">{{ model_name }}</h3>
+          <div class="text-2xl font-bold text-primary mb-2">{{ contribution.weight|floatformat:1 }}%</div>
+          {% if contribution.top_numbers %}
+          <div class="text-sm text-muted-foreground">
+            เลขแนะนำ: 
+            {% for num in contribution.top_numbers.two_digit|slice:":3" %}
+              {{ num }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Data Sources Used -->
+  <div class="card mb-8">
+    <div class="p-6 border-b">
+      <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-database text-accent"></i>
+        แหล่งข้อมูลที่ใช้
+      </h2>
+    </div>
+    <div class="p-6">
+      <div class="grid md:grid-cols-2 gap-6">
+        {% for data_record in data_sources_used %}
+        <div class="border border-border rounded-lg p-4">
+          <div class="flex items-center gap-3 mb-3">
+            {% if data_record.data_source.source_type == 'news' %}
+              <i class="fas fa-newspaper text-blue-500 text-xl"></i>
+            {% elif data_record.data_source.source_type == 'social_media' %}
+              <i class="fas fa-share-alt text-green-500 text-xl"></i>
+            {% elif data_record.data_source.source_type == 'dreams' %}
+              <i class="fas fa-moon text-purple-500 text-xl"></i>
+            {% elif data_record.data_source.source_type == 'trends' %}
+              <i class="fas fa-trending-up text-orange-500 text-xl"></i>
+            {% else %}
+              <i class="fas fa-database text-gray-500 text-xl"></i>
+            {% endif %}
+            <div>
+              <h3 class="font-semibold text-foreground">{{ data_record.data_source.name }}</h3>
+              <p class="text-sm text-muted-foreground">{{ data_record.data_source.get_source_type_display }}</p>
+            </div>
+          </div>
+          
+          {% if data_record.content %}
+          <div class="bg-muted/30 rounded p-3 mb-3">
+            <p class="text-sm text-foreground">{{ data_record.content|truncatechars:150 }}</p>
+          </div>
+          {% endif %}
+          
+          <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{{ data_record.ingested_at|date:"j/m/Y H:i" }}</span>
+            {% if data_record.extracted_numbers %}
+            <span>เลขที่สกัด: {{ data_record.extracted_numbers|length }} ตัว</span>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-span-2">
+          <p class="text-center text-muted-foreground py-8">ไม่มีข้อมูลแหล่งข้อมูลที่ใช้</p>
+        </div>
+        {% endfor %}
+      </div>
+      
+      {% if data_sources_used|length > 6 %}
+      <div class="text-center mt-6">
+        <button onclick="showAllDataSources()" class="btn btn-outline">
+          <i class="fas fa-eye mr-2"></i>
+          ดูแหล่งข้อมูลทั้งหมด ({{ data_sources_used|length }} รายการ)
+        </button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Prediction Summary -->
+  {% if prediction.prediction_summary %}
+  <div class="card mb-8">
+    <div class="p-6 border-b">
+      <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-scroll text-primary"></i>
+        สรุปการทำนาย
+      </h2>
+    </div>
+    <div class="p-6">
+      <div class="bg-muted/30 rounded-lg p-6">
+        <p class="text-foreground leading-relaxed">{{ prediction.prediction_summary }}</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Session Information -->
+  <div class="card">
+    <div class="p-6 border-b">
+      <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
+        <i class="fas fa-info-circle text-secondary"></i>
+        ข้อมูลเซสชัน
+      </h2>
+    </div>
+    <div class="p-6">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="font-semibold text-foreground mb-3">รายละเอียดเซสชัน</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">ID เซสชัน:</span>
+              <span class="font-mono text-foreground">{{ prediction.session.session_id }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">สถานะ:</span>
+              <span class="font-semibold 
+                {% if prediction.session.status == 'completed' %}text-green-600
+                {% elif prediction.session.status == 'locked' %}text-orange-600
+                {% elif prediction.session.status == 'failed' %}text-red-600
+                {% else %}text-gray-600{% endif %}">
+                {{ prediction.session.get_status_display }}
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">สร้างเมื่อ:</span>
+              <span class="text-foreground">{{ prediction.session.created_at|date:"j/m/Y H:i:s" }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h3 class="font-semibold text-foreground mb-3">ช่วงเก็บข้อมูล</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">เริ่มต้น:</span>
+              <span class="text-foreground">{{ prediction.session.data_collection_period_start|date:"j/m/Y" }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">สิ้นสุด:</span>
+              <span class="text-foreground">{{ prediction.session.data_collection_period_end|date:"j/m/Y" }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">ระยะเวลา:</span>
+              <span class="text-foreground">{{ prediction.session.get_collection_period_days }} วัน</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="flex justify-center mt-8 gap-4">
+    <a href="{% url 'ai_engine:prediction' %}" class="btn btn-primary">
+      <i class="fas fa-arrow-left mr-2"></i>
+      กลับหน้าหลัก
+    </a>
+    <a href="{% url 'ai_engine:ensemble_history' %}" class="btn btn-outline">
+      <i class="fas fa-history mr-2"></i>
+      ประวัติการทำนาย
+    </a>
+  </div>
+</div>
+
+<script>
+function showAllDataSources() {
+  // Toggle display of all data sources
+  const hiddenSources = document.querySelectorAll('.data-source-hidden');
+  hiddenSources.forEach(source => {
+    source.classList.toggle('hidden');
+  });
+  
+  const button = event.target;
+  if (button.textContent.includes('ดูทั้งหมด')) {
+    button.innerHTML = '<i class="fas fa-eye-slash mr-2"></i>ซ่อนแหล่งข้อมูล';
+  } else {
+    button.innerHTML = '<i class="fas fa-eye mr-2"></i>ดูแหล่งข้อมูลทั้งหมด';
+  }
+}
+</script>
+{% endblock %}

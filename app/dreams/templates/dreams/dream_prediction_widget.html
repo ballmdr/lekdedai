@@ -1,0 +1,54 @@
+<!-- Dream Prediction Widget Template -->
+{% if available and has_predictions %}
+<div class="dream-prediction-widget bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4 mb-4">
+    <div class="flex items-start gap-3">
+        <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-moon text-white text-sm"></i>
+        </div>
+        <div class="flex-1">
+            <h4 class="text-sm font-semibold text-gray-800 mb-2">{{ title }}</h4>
+            
+            <div class="mb-3">
+                <p class="text-xs text-gray-600 mb-2">{{ dream_text|truncatechars:80 }}</p>
+                
+                <!-- High confidence numbers -->
+                {% with high_conf=predictions|dictsort:"score"|slice:":3" %}
+                    {% if high_conf %}
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        {% for pred in high_conf %}
+                            {% if pred.score > 0.7 %}
+                            <div class="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
+                                <span>{{ pred.number }}</span>
+                                <span class="text-xs opacity-80">{{ pred.score|floatformat:1 }}%</span>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Other numbers -->
+                <div class="flex flex-wrap gap-1">
+                    {% for pred in predictions %}
+                        {% if pred.score <= 0.7 %}
+                        <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">{{ pred.number }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="text-xs text-gray-500 flex items-center justify-between">
+                <span>{{ method|default:"AI" }} • {{ confidence|floatformat:0 }}% มั่นใจ</span>
+                <span>{{ latency_ms|default:0 }}ms</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif not available %}
+<div class="dream-prediction-unavailable bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+    <div class="text-gray-500 text-xs">
+        <i class="fas fa-exclamation-circle mr-1"></i>
+        {{ message|default:"ระบบตีความฝันไม่พร้อมใช้งาน" }}
+    </div>
+</div>
+{% endif %}

@@ -150,20 +150,35 @@ def add_comment(request, slug):
 
 def analyze_news(request, article_id):
     """API วิเคราะห์เลขจากข่าว"""
+    # ตรวจสอบสิทธิ์แอดมิน
+    if not request.user.is_staff:
+        return JsonResponse({
+            'success': False,
+            'error': 'ไม่มีสิทธิ์ในการวิเคราะห์'
+        }, status=403)
+    
     article = get_object_or_404(NewsArticle, id=article_id)
     
-    # วิเคราะห์เลข
-    analyzer = NewsAnalyzer()
-    result = analyzer.analyze_article(article)
-    
-    # อัพเดตเลขในบทความ
-    article.extracted_numbers = ', '.join(result['numbers'])
-    article.confidence_score = result['confidence']
-    article.save()
-    
-    return JsonResponse({
-        'success': True,
-        'numbers': result['numbers'],
-        'confidence': result['confidence'],
-        'keywords': result['keywords']
-    })
+    try:
+        # วิเคราะห์เลข
+        analyzer = NewsAnalyzer()
+        result = analyzer.analyze_article(article)
+        
+        # อัพเดตเลขในบทความ
+        article.extracted_numbers = ', '.join(result['numbers'])
+        article.confidence_score = result['confidence']
+        article.save()
+        
+        return JsonResponse({
+            'success': True,
+            'numbers': result['numbers'],
+            'confidence': result['confidence'],
+            'keywords': result['keywords'],
+            'message': 'วิเคราะห์เสร็จแล้ว'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'เกิดข้อผิดพลาดในการวิเคราะห์: {str(e)}'
+        }, status=500)

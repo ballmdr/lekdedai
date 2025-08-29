@@ -1,0 +1,44 @@
+<!-- Dream Analysis Card Template -->
+{% if available and has_content %}
+<div class="dream-analysis-card bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20 rounded-lg p-4 mb-4">
+    <div class="flex items-start gap-3">
+        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-brain text-white text-sm"></i>
+        </div>
+        <div class="flex-1">
+            <h4 class="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                <i class="fas fa-sparkles text-primary text-xs"></i>
+                เลขเด็ดจาก AI วิเคราะห์ข่าว
+            </h4>
+            
+            {% if numbers %}
+            <div class="mb-3">
+                <div class="flex flex-wrap gap-1 mb-2">
+                    {% for number in numbers %}
+                    <span class="bg-primary text-white px-2 py-1 rounded text-xs font-bold">{{ number }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if summary and show_details %}
+            <div class="text-xs text-muted-foreground">
+                {{ summary|safe }}
+            </div>
+            {% endif %}
+            
+            <div class="mt-2 text-xs text-primary/80 flex items-center gap-1">
+                <i class="fas fa-robot"></i>
+                <span>วิเคราะห์โดย AI Dream Analysis</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif not available %}
+<div class="dream-analysis-unavailable bg-muted/30 border border-border rounded-lg p-3 text-center">
+    <div class="text-muted-foreground text-xs">
+        <i class="fas fa-exclamation-circle mr-1"></i>
+        {{ message|default:"ระบบวิเคราะห์ความฝันไม่พร้อมใช้งาน" }}
+    </div>
+</div>
+{% endif %}

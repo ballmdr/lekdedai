@@ -5,6 +5,21 @@ from django.views.decorators.http import require_http_methods
 from .models import DreamKeyword, DreamInterpretation
 import json
 import re
+import os
+import sys
+
+# Import Specialized AI Services
+MCP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'mcp_dream_analysis')
+if os.path.exists(MCP_DIR):
+    sys.path.insert(0, MCP_DIR)
+    try:
+        from specialized_django_integration import interpret_dream_for_django
+        DREAM_AI_AVAILABLE = True
+    except ImportError as e:
+        print(f"Warning: Specialized Dream AI not available: {e}")
+        DREAM_AI_AVAILABLE = False
+else:
+    DREAM_AI_AVAILABLE = False
 
 def dream_form(request):
     """แสดงฟอร์มกรอกความฝัน"""
@@ -39,8 +54,11 @@ def analyze_dream(request):
                 'error': 'กรุณากรอกความฝัน'
             }, status=400)
         
-        # วิเคราะห์ความฝัน
-        result = analyze_dream_text(dream_text)
+        # วิเคราะห์ความฝัน - ใช้ DreamSymbol_Model ถ้ามี, ไม่งั้นใช้วิธีเดิม
+        if DREAM_AI_AVAILABLE:
+            result = interpret_dream_for_django(dream_text)
+        else:
+            result = analyze_dream_text(dream_text)
         
         # บันทึกผลการตีความ
         interpretation = DreamInterpretation.objects.create(

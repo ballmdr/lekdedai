@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}แหล่งข้อมูล AI - LekDedAI{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<section class="py-8 bg-gradient-to-br from-accent/10 via-background to-primary/10">
+  <div class="container mx-auto px-4">
+    <div class="text-center">
+      <h1 class="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
+        <i class="fas fa-database text-accent mr-2"></i>
+        แหล่งข้อมูล AI
+      </h1>
+      <p class="text-lg text-muted-foreground">
+        ข้อมูลที่ AI ใช้ในการวิเคราะห์และทำนายเลขเด็ด
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="container mx-auto px-4 py-8">
+  <!-- Filter and Stats -->
+  <div class="card mb-8">
+    <div class="p-6">
+      <div class="grid md:grid-cols-4 gap-4 mb-6">
+        <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div class="text-2xl font-bold text-blue-600">{{ stats.total_sources }}</div>
+          <div class="text-sm text-blue-700">แหล่งข้อมูลทั้งหมด</div>
+        </div>
+        <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+          <div class="text-2xl font-bold text-green-600">{{ stats.active_sources }}</div>
+          <div class="text-sm text-green-700">แหล่งที่เปิดใช้งาน</div>
+        </div>
+        <div class="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+          <div class="text-2xl font-bold text-orange-600">{{ stats.total_records_today }}</div>
+          <div class="text-sm text-orange-700">ข้อมูลวันนี้</div>
+        </div>
+        <div class="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+          <div class="text-2xl font-bold text-purple-600">{{ stats.processing_records }}</div>
+          <div class="text-sm text-purple-700">กำลังประมวลผล</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex flex-wrap gap-4 items-center">
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium text-foreground">ประเภท:</label>
+          <select id="sourceTypeFilter" class="select">
+            <option value="">ทั้งหมด</option>
+            <option value="news" {% if source_type_filter == 'news' %}selected{% endif %}>ข่าวสาร</option>
+            <option value="social_media" {% if source_type_filter == 'social_media' %}selected{% endif %}>สื่อสังคม</option>
+            <option value="dreams" {% if source_type_filter == 'dreams' %}selected{% endif %}>ความฝัน</option>
+            <option value="trends" {% if source_type_filter == 'trends' %}selected{% endif %}>เทรนด์</option>
+            <option value="astrology" {% if source_type_filter == 'astrology' %}selected{% endif %}>โหราศาสตร์</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium text-foreground">สถานะ:</label>
+          <select id="statusFilter" class="select">
+            <option value="">ทั้งหมด</option>
+            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>เปิดใช้งาน</option>
+            <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>ปิดใช้งาน</option>
+          </select>
+        </div>
+        <button onclick="applyFilters()" class="btn btn-primary">
+          <i class="fas fa-filter mr-2"></i>
+          กรองข้อมูล
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Sources List -->
+  <div class="space-y-6">
+    {% for source in data_sources %}
+    <div class="card">
+      <div class="p-6">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <!-- Source Icon -->
+            <div class="w-16 h-16 rounded-lg flex items-center justify-center text-2xl
+              {% if source.source_type == 'news' %}bg-blue-100 text-blue-600
+              {% elif source.source_type == 'social_media' %}bg-green-100 text-green-600
+              {% elif source.source_type == 'dreams' %}bg-purple-100 text-purple-600
+              {% elif source.source_type == 'trends' %}bg-orange-100 text-orange-600
+              {% elif source.source_type == 'astrology' %}bg-indigo-100 text-indigo-600
+              {% else %}bg-gray-100 text-gray-600{% endif %}">
+              {% if source.source_type == 'news' %}<i class="fas fa-newspaper"></i>
+              {% elif source.source_type == 'social_media' %}<i class="fas fa-share-alt"></i>
+              {% elif source.source_type == 'dreams' %}<i class="fas fa-moon"></i>
+              {% elif source.source_type == 'trends' %}<i class="fas fa-trending-up"></i>
+              {% elif source.source_type == 'astrology' %}<i class="fas fa-star"></i>
+              {% else %}<i class="fas fa-database"></i>{% endif %}
+            </div>
+            
+            <!-- Source Info -->
+            <div>
+              <h3 class="text-xl font-semibold text-foreground mb-1">{{ source.name }}</h3>
+              <div class="flex items-center gap-3 text-sm text-muted-foreground mb-2">
+                <span class="inline-flex items-center gap-1">
+                  <i class="fas fa-tag"></i>
+                  {{ source.get_source_type_display }}
+                </span>
+                {% if source.url %}
+                <span class="inline-flex items-center gap-1">
+                  <i class="fas fa-link"></i>
+                  <a href="{{ source.url }}" target="_blank" class="text-primary hover:underline">
+                    {{ source.url|truncatechars:30 }}
+                  </a>
+                </span>
+                {% endif %}
+              </div>
+              {% if source.description %}
+              <p class="text-sm text-foreground">{{ source.description }}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Status and Actions -->
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+              {% if source.is_active %}bg-green-100 text-green-800
+              {% else %}bg-red-100 text-red-800{% endif %}">
+              {% if source.is_active %}
+                <i class="fas fa-check-circle mr-1"></i>เปิดใช้งาน
+              {% else %}
+                <i class="fas fa-times-circle mr-1"></i>ปิดใช้งาน
+              {% endif %}
+            </span>
+            <a href="{% url 'ai_engine:data_source_detail' source.id %}" 
+               class="btn btn-outline btn-sm">
+              <i class="fas fa-eye mr-1"></i>ดูรายละเอียด
+            </a>
+          </div>
+        </div>
+
+        <!-- Source Statistics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div class="text-center p-3 bg-muted/30 rounded-lg">
+            <div class="text-lg font-bold text-foreground">{{ source.get_total_records }}</div>
+            <div class="text-xs text-muted-foreground">ข้อมูลทั้งหมด</div>
+          </div>
+          <div class="text-center p-3 bg-muted/30 rounded-lg">
+            <div class="text-lg font-bold text-foreground">{{ source.get_today_records }}</div>
+            <div class="text-xs text-muted-foreground">ข้อมูลวันนี้</div>
+          </div>
+          <div class="text-center p-3 bg-muted/30 rounded-lg">
+            <div class="text-lg font-bold text-foreground">{{ source.scraping_interval }}h</div>
+            <div class="text-xs text-muted-foreground">ความถี่เก็บ</div>
+          </div>
+          <div class="text-center p-3 bg-muted/30 rounded-lg">
+            <div class="text-lg font-bold text-foreground">
+              {% if source.last_scraped %}{{ source.last_scraped|timesince }}
+              {% else %}ไม่เคย{% endif %}
+            </div>
+            <div class="text-xs text-muted-foreground">เก็บล่าสุด</div>
+          </div>
+        </div>
+
+        <!-- Recent Data Preview -->
+        {% with recent_data=source.get_recent_data %}
+        {% if recent_data %}
+        <div class="border-t border-border pt-4">
+          <h4 class="font-medium text-foreground mb-3 flex items-center gap-2">
+            <i class="fas fa-clock text-muted-foreground"></i>
+            ข้อมูลล่าสุด
+          </h4>
+          <div class="space-y-2">
+            {% for record in recent_data|slice:":3" %}
+            <div class="bg-muted/20 rounded p-3">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  {% if record.content %}
+                  <p class="text-sm text-foreground mb-1">{{ record.content|truncatechars:120 }}</p>
+                  {% endif %}
+                  {% if record.extracted_numbers %}
+                  <div class="flex flex-wrap gap-1 mb-2">
+                    {% for num in record.extracted_numbers|slice:":8" %}
+                    <span class="px-2 py-1 bg-primary/20 text-primary text-xs rounded">{{ num }}</span>
+                    {% endfor %}
+                    {% if record.extracted_numbers|length > 8 %}
+                    <span class="text-xs text-muted-foreground">และอีก {{ record.extracted_numbers|length|add:"-8" }} ตัว</span>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="text-xs text-muted-foreground ml-3">
+                  {{ record.ingested_at|date:"j/m H:i" }}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="card">
+      <div class="p-12 text-center">
+        <i class="fas fa-database text-4xl text-muted-foreground mb-4"></i>
+        <h3 class="text-xl font-semibold text-foreground mb-2">ไม่พบแหล่งข้อมูล</h3>
+        <p class="text-muted-foreground">ยังไม่มีแหล่งข้อมูลที่ตรงกับเงื่อนไขการค้นหา</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <div class="flex justify-center mt-8">
+    <nav class="flex items-center gap-2">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">
+        <i class="fas fa-chevron-left"></i>
+      </a>
+      {% endif %}
+      
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <span class="btn btn-primary btn-sm">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}" class="btn btn-outline btn-sm">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+      
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">
+        <i class="fas fa-chevron-right"></i>
+      </a>
+      {% endif %}
+    </nav>
+  </div>
+  {% endif %}
+
+  <!-- Action Buttons -->
+  <div class="flex justify-center mt-8 gap-4">
+    <a href="{% url 'ai_engine:prediction' %}" class="btn btn-primary">
+      <i class="fas fa-arrow-left mr-2"></i>
+      กลับหน้าหลัก
+    </a>
+    <button onclick="refreshDataSources()" class="btn btn-secondary">
+      <i class="fas fa-sync-alt mr-2"></i>
+      รีเฟรชข้อมูล
+    </button>
+  </div>
+</div>
+
+<script>
+function applyFilters() {
+  const sourceType = document.getElementById('sourceTypeFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  
+  const params = new URLSearchParams(window.location.search);
+  
+  if (sourceType) {
+    params.set('source_type', sourceType);
+  } else {
+    params.delete('source_type');
+  }
+  
+  if (status) {
+    params.set('status', status);
+  } else {
+    params.delete('status');
+  }
+  
+  window.location.search = params.toString();
+}
+
+async function refreshDataSources() {
+  try {
+    const response = await fetch('/ai/api/refresh-data-sources/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('เกิดข้อผิดพลาด: ' + data.error);
+    }
+  } catch (error) {
+    alert('เกิดข้อผิดพลาดในการรีเฟรช: ' + error.message);
+  }
+}
+
+// Auto refresh every 5 minutes
+setInterval(() => {
+  refreshDataSources();
+}, 300000);
+</script>
+{% endblock %}

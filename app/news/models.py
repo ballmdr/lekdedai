@@ -96,6 +96,9 @@ class NewsArticle(models.Model):
     # การนับ
     views = models.IntegerField("จำนวนคนดู", default=0)
     
+    # URL แหล่งที่มา
+    source_url = models.URLField("URL แหล่งที่มา", blank=True, null=True)
+    
     class Meta:
         verbose_name = "บทความข่าว"
         verbose_name_plural = "บทความข่าว"

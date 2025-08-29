@@ -1,0 +1,9 @@
+# MCP Dream Analysis Requirements
+numpy>=1.21.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
+joblib>=1.0.0
+
+# Optional for enhanced text processing
+pythainlp>=3.0.0
+# Note: pythainlp is optional but recommended for better Thai text processing
