@@ -43,10 +43,32 @@ class SpecializedAIService:
     
     def interpret_dream_sync(self, dream_text: str, top_k: int = 6) -> Dict[str, Any]:
         """
-        Synchronous wrapper for dream symbol interpretation
+        Synchronous dream interpretation using Expert AI first, then MCP fallback
         ใช้สำหรับเรียกจาก Django views - ความฝัน
         """
         try:
+            # Try Expert AI first
+            try:
+                from models.expert_dream_interpreter import ExpertDreamInterpreter
+                expert = ExpertDreamInterpreter()
+                expert_result = expert.interpret_dream(dream_text)
+                
+                # If Expert AI succeeded, return its result directly
+                if expert_result and expert_result.get('interpretation'):
+                    return {
+                        'interpretation': expert_result.get('interpretation', ''),
+                        'main_symbols': expert_result.get('main_symbols', []),
+                        'sentiment': expert_result.get('sentiment', 'Neutral'),
+                        'predicted_numbers': expert_result.get('predicted_numbers', []),
+                        'keywords': expert_result.get('main_symbols', []),  # For backward compatibility
+                        'numbers': [pred['number'] for pred in expert_result.get('predicted_numbers', [])],  # For backward compatibility
+                        'is_expert_ai': True,
+                        'method': 'Expert_AI'
+                    }
+            except Exception as expert_error:
+                self.logger.warning(f"Expert AI failed, falling back to MCP: {str(expert_error)}")
+            
+            # Fallback to MCP if Expert AI fails
             if not DREAM_MCP_AVAILABLE:
                 return self._get_dream_fallback_response(dream_text, "MCP Dream service not available")
             
@@ -75,10 +97,26 @@ class SpecializedAIService:
         numbers = [pred['number'] for pred in predictions]
         keywords = self._extract_keywords_from_dream(dream_text)
         
-        # Use expert interpretation if available
+        # Check if Expert AI was used
         expert_interpretation = mcp_result.get('expert_interpretation', '')
         main_symbols = mcp_result.get('main_symbols', [])
+        sentiment = mcp_result.get('sentiment')
+        predicted_numbers = mcp_result.get('predicted_numbers', [])
         
+        # Expert AI results - return in new format
+        if expert_interpretation and sentiment and predicted_numbers:
+            return {
+                'interpretation': expert_interpretation,
+                'main_symbols': main_symbols,
+                'sentiment': sentiment,
+                'predicted_numbers': predicted_numbers,
+                'keywords': main_symbols,  # For backward compatibility
+                'numbers': [pred['number'] for pred in predicted_numbers],  # For backward compatibility
+                'is_expert_ai': True,
+                'method': 'Expert_AI'
+            }
+        
+        # Traditional format for fallback
         if expert_interpretation:
             interpretation = f"""🔮 **อาจารย์ AI ตีความฝัน**
 
@@ -139,7 +177,9 @@ class SpecializedAIService:
             'analysis_method': 'dream_symbol_model',
             'predictions': predictions,
             'latency_ms': mcp_result.get('latency_ms', 0),
-            'mcp_result': mcp_result
+            'mcp_result': mcp_result,
+            'is_expert_ai': False,
+            'sentiment': 'Neutral'
         }
     
     def _extract_keywords_from_dream(self, dream_text: str) -> List[str]:
@@ -311,7 +351,13 @@ def extract_news_numbers_for_django(news_content: str, entity_types: Optional[Li
     Main function to call from Django views for news entity extraction
     ใช้สำหรับสกัดเลขจากข่าว
     """
-    return specialized_ai_service.extract_news_entities_sync(news_content, entity_types)
+    try:
+        # Use Insight-AI for advanced news analysis
+        from models.insight_ai_news_analyzer import analyze_news_for_django
+        return analyze_news_for_django(news_content)
+    except Exception as e:
+        # Fallback to traditional method
+        return specialized_ai_service.extract_news_entities_sync(news_content, entity_types)
 
 def train_dream_model_from_django(training_data: List[Dict] = None) -> Dict[str, Any]:
     """Train dream model from Django management command"""

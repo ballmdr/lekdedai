@@ -103,33 +103,45 @@ class ExpertDreamInterpreter:
     def interpret_dream(self, dream_text: str) -> Dict:
         """
         อาจารย์ AI ตีความฝันแบบเชิงลึกตามตำราโบราณไทย
+        ใช้ 5-step Cognitive Workflow:
+        1. Symbol Identification
+        2. Contextual Analysis 
+        3. Emotional Sentiment
+        4. Prioritization
+        5. Number Synthesis
         """
         try:
-            # Normalize text
+            # Normalize and fix tokenization
             if PYTHAINLP_AVAILABLE:
                 dream_text = normalize(dream_text)
+            fixed_text = self._fix_thai_tokenization(dream_text.lower())
             
-            # Extract context and emotions
-            context = self._analyze_context(dream_text)
-            
-            # Find symbols in the dream
-            symbols_found = self._find_symbols(dream_text)
+            # STEP 1: Symbol Identification
+            symbols_found = self._find_symbols(fixed_text)
             
             if not symbols_found:
                 return self._handle_no_symbols_found(dream_text)
             
-            # Generate interpretation
-            interpretation = self._generate_interpretation(symbols_found, context)
+            # STEP 2: Contextual Analysis (คำขยาย)
+            context = self._analyze_context(fixed_text)
             
-            # Predict numbers with reasoning
-            predicted_numbers = self._predict_numbers_with_reasoning(symbols_found, context)
+            # STEP 3: Emotional Sentiment (อารมณ์)
+            sentiment = self._determine_sentiment(context, symbols_found)
+            
+            # STEP 4: Prioritization (จัดลำดับความสำคัญ)
+            prioritized_symbols = self._prioritize_symbols(symbols_found, context)
+            
+            # STEP 5: Number Synthesis
+            predicted_numbers = self._synthesize_numbers(prioritized_symbols, context, sentiment)
+            
+            # Generate narrative interpretation
+            interpretation = self._generate_detailed_interpretation(prioritized_symbols, context, sentiment)
             
             return {
                 "interpretation": interpretation,
-                "main_symbols": [symbol['name'] for symbol in symbols_found],
-                "predicted_numbers": predicted_numbers,
-                "context_analysis": context,
-                "timestamp": datetime.now().isoformat()
+                "main_symbols": [symbol['name'] for symbol in prioritized_symbols[:3]],
+                "sentiment": sentiment,
+                "predicted_numbers": predicted_numbers
             }
             
         except Exception as e:
@@ -421,3 +433,186 @@ class ExpertDreamInterpreter:
             ],
             "error": error_msg
         }
+    
+    def _determine_sentiment(self, context: Dict, symbols_found: List[Dict]) -> str:
+        """
+        STEP 3: Determine emotional sentiment (Positive, Negative, Neutral)
+        """
+        emotions = context.get('emotions', [])
+        negative_emotions = ['fear', 'sad', 'angry', 'aggressive', 'scary']
+        positive_emotions = ['joy', 'happy', 'peaceful', 'beautiful', 'giving']
+        
+        # Check for strong negative indicators
+        if any(emo in negative_emotions for emo in emotions):
+            return "Negative"
+            
+        # Check for positive indicators
+        if any(emo in positive_emotions for emo in emotions):
+            return "Positive"
+            
+        # Check symbols for inherent sentiment
+        for symbol in symbols_found[:2]:  # Check top 2 symbols
+            symbol_name = symbol['name']
+            # Negative symbols
+            if any(neg in symbol_name for neg in ['สีดำ', 'ไฟ', 'เลือด', 'ตาย']):
+                return "Negative"
+            # Positive symbols  
+            if any(pos in symbol_name for pos in ['สีขาว', 'ทอง', 'พระ', 'เงิน']):
+                return "Positive"
+                
+        return "Neutral"
+    
+    def _prioritize_symbols(self, symbols_found: List[Dict], context: Dict) -> List[Dict]:
+        """
+        STEP 4: Prioritize symbols based on narrative importance
+        """
+        for symbol in symbols_found:
+            priority_score = symbol.get('confidence', 0.5)
+            
+            # Boost priority for symbols with strong emotional context
+            emotions = context.get('emotions', [])
+            if any(emo in ['fear', 'joy', 'aggressive'] for emo in emotions):
+                if symbol['name'] in ['งู', 'เสือ', 'ไฟ']:  # Active/dangerous symbols
+                    priority_score += 0.2
+                    
+            # Boost for size modifiers
+            if any(mod in ['huge', 'big', 'many'] for mod in context.get('size_modifiers', [])):
+                priority_score += 0.1
+                
+            symbol['priority_score'] = priority_score
+            
+        # Sort by priority score
+        return sorted(symbols_found, key=lambda x: x.get('priority_score', 0), reverse=True)
+    
+    def _synthesize_numbers(self, symbols: List[Dict], context: Dict, sentiment: str) -> List[Dict]:
+        """
+        STEP 5: Intelligent number synthesis based on symbols, context, and emotion
+        """
+        predicted_numbers = []
+        used_numbers = set()
+        
+        if not symbols:
+            return [
+                {"number": "07", "score": 0.60, "reason": "เลขมงคลพื้นฐานสำหรับความฝันที่ไม่ชัดเจน"},
+                {"number": "23", "score": 0.55, "reason": "เลขแห่งการเริ่มต้นใหม่"}
+            ]
+            
+        primary_symbol = symbols[0]
+        
+        # Start with primary symbol's base numbers
+        base_combinations = primary_symbol['data']['combinations']
+        
+        # Modify based on sentiment
+        if sentiment == "Negative":
+            # For negative dreams, prioritize higher numbers or reverse combinations
+            for i, num in enumerate(base_combinations):
+                if num not in used_numbers:
+                    score = 0.95 - (i * 0.1)
+                    # Boost numbers with 8, 0 for negative energy
+                    if '8' in num or '0' in num:
+                        score += 0.05
+                    predicted_numbers.append({
+                        "number": num,
+                        "score": round(score, 2),
+                        "reason": f"จากสัญลักษณ์ '{primary_symbol['name']}' ในบริบทเชิงลบ ส่งผลให้เลข {num} มีพลังงานที่ต้องระวัง"
+                    })
+                    used_numbers.add(num)
+                    
+        elif sentiment == "Positive":
+            # For positive dreams, prioritize auspicious combinations
+            for i, num in enumerate(base_combinations):
+                if num not in used_numbers:
+                    score = 0.98 - (i * 0.05)  # Higher confidence for positive
+                    # Boost numbers with 9, 1, 2 for positive energy
+                    if any(d in num for d in ['9', '1', '2']):
+                        score += 0.02
+                    predicted_numbers.append({
+                        "number": num,
+                        "score": round(score, 2),
+                        "reason": f"จากสัญลักษณ์ '{primary_symbol['name']}' ในบริบทเชิงบวก นำมาซึ่งความมงคลผ่านเลข {num}"
+                    })
+                    used_numbers.add(num)
+        else:
+            # Neutral sentiment
+            for i, num in enumerate(base_combinations):
+                if num not in used_numbers:
+                    score = 0.85 - (i * 0.08)
+                    predicted_numbers.append({
+                        "number": num,
+                        "score": round(score, 2),
+                        "reason": f"เลข {num} มาจากสัญลักษณ์หลัก '{primary_symbol['name']}' ตามตำราโบราณ"
+                    })
+                    used_numbers.add(num)
+        
+        # Add combination numbers from multiple symbols
+        if len(symbols) > 1:
+            secondary_symbol = symbols[1]
+            primary_main = str(primary_symbol['data']['main'])
+            secondary_main = str(secondary_symbol['data']['main'])
+            
+            # Create combination
+            combo1 = f"{primary_main}{secondary_main}"
+            combo2 = f"{secondary_main}{primary_main}"
+            
+            for combo in [combo1, combo2]:
+                if combo not in used_numbers and len(predicted_numbers) < 8:
+                    score = 0.80 if sentiment == "Positive" else 0.70
+                    predicted_numbers.append({
+                        "number": f"{int(combo):02d}",
+                        "score": round(score, 2),
+                        "reason": f"ผสมเลขจาก '{primary_symbol['name']}' และ '{secondary_symbol['name']}' สะท้อนการมีสัญลักษณ์หลายตัวในฝัน"
+                    })
+                    used_numbers.add(combo)
+        
+        # Sort by score and return top results
+        predicted_numbers.sort(key=lambda x: x['score'], reverse=True)
+        return predicted_numbers[:8]
+    
+    def _generate_detailed_interpretation(self, symbols: List[Dict], context: Dict, sentiment: str) -> str:
+        """
+        Generate detailed narrative interpretation
+        """
+        if not symbols:
+            return "ความฝันของคุณมีความหมายที่ลึกลับ แต่ยังไม่ชัดเจนในเรื่องสัญลักษณ์"
+            
+        primary_symbol = symbols[0]
+        interpretation = f"การฝันเห็น{primary_symbol['name']}"
+        
+        # Add contextual descriptors
+        emotions = context.get('emotions', [])
+        size_mods = context.get('size_modifiers', [])
+        
+        if 'fear' in emotions or sentiment == "Negative":
+            if 'big' in size_mods or 'huge' in size_mods:
+                interpretation += "ขนาดใหญ่ในลักษณะที่น่ากลัว"
+            else:
+                interpretation += "ในลักษณะที่น่าหวาดเสียว"
+            interpretation += " เป็นสัญญาณเตือนถึงอุปสรรคหรือความท้าทายที่กำลังจะเผชิญ"
+            
+        elif 'joy' in emotions or 'beautiful' in emotions or sentiment == "Positive":
+            if 'big' in size_mods or 'huge' in size_mods:
+                interpretation += "ขนาดใหญ่อย่างสง่างาม"
+            else:
+                interpretation += "อย่างสวยงาม"
+            interpretation += " เป็นลางดีที่บ่งบอกถึงโชคลาภและความสำเร็จที่กำลังจะมาถึง"
+            
+        else:  # Neutral
+            interpretation += " มีความหมายตามตำราโบราณว่า"
+            
+        # Add symbol meaning
+        interpretation += f" {primary_symbol['data']['meaning']}"
+        
+        # Add secondary symbols context
+        if len(symbols) > 1:
+            secondary_names = [s['name'] for s in symbols[1:3]]
+            interpretation += f" ประกอบกับการมี{', '.join(secondary_names)} ในฝันเดียวกัน ยิ่งเสริมความหมายให้แข็งแกร่งขึ้น"
+            
+        # Add final sentiment conclusion
+        if sentiment == "Positive":
+            interpretation += " โดยรวมแล้วเป็นฝันที่นำมาซึ่งความมงคลและโชคลาภ"
+        elif sentiment == "Negative":
+            interpretation += " ควรระมัดระวังและเตรียมพร้อมรับมือกับสิ่งท้าทายที่อาจเกิดขึ้น"
+        else:
+            interpretation += " เป็นฝันที่มีความหมายเป็นกลาง ควรสังเกตเหตุการณ์ที่จะเกิดขึ้น"
+            
+        return interpretation

@@ -160,7 +160,45 @@ def analyze_news(request, article_id):
     article = get_object_or_404(NewsArticle, id=article_id)
     
     try:
-        # วิเคราะห์เลข
+        # วิเคราะห์เลขด้วย Insight-AI
+        import sys
+        import os
+        MCP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mcp_dream_analysis')
+        if os.path.exists(MCP_DIR):
+            sys.path.insert(0, MCP_DIR)
+            try:
+                from specialized_django_integration import extract_news_numbers_for_django
+                
+                # ใช้ Insight-AI วิเคราะห์
+                insight_result = extract_news_numbers_for_django(article.content)
+                
+                if insight_result and 'extracted_entities' in insight_result:
+                    # Format ผลลัพธ์สำหรับ Django
+                    numbers = [entity['value'] for entity in insight_result['extracted_entities']]
+                    avg_score = sum(entity['significance_score'] for entity in insight_result['extracted_entities']) / len(insight_result['extracted_entities']) if insight_result['extracted_entities'] else 0
+                    
+                    # อัพเดตเลขในบทความ
+                    article.extracted_numbers = ', '.join(numbers[:10])  # เก็บแค่ 10 เลขแรก
+                    article.confidence_score = avg_score * 100  # แปลงเป็นเปอร์เซ็นต์
+                    article.save()
+                    
+                    return JsonResponse({
+                        'success': True,
+                        'numbers': numbers,
+                        'confidence': round(avg_score * 100, 1),
+                        'story_summary': insight_result.get('story_summary', ''),
+                        'story_impact_score': insight_result.get('story_impact_score', 0),
+                        'extracted_entities': insight_result['extracted_entities'],
+                        'is_insight_ai': True,
+                        'message': 'วิเคราะห์ด้วย Insight-AI สำเร็จแล้ว'
+                    })
+                    
+            except Exception as insight_error:
+                print(f"Insight-AI error: {insight_error}")
+                # Fallback ไปใช้ NewsAnalyzer เดิม
+                pass
+        
+        # Fallback: ใช้ NewsAnalyzer เดิม
         analyzer = NewsAnalyzer()
         result = analyzer.analyze_article(article)
         
@@ -174,7 +212,8 @@ def analyze_news(request, article_id):
             'numbers': result['numbers'],
             'confidence': result['confidence'],
             'keywords': result['keywords'],
-            'message': 'วิเคราะห์เสร็จแล้ว'
+            'is_insight_ai': False,
+            'message': 'วิเคราะห์เสร็จแล้ว (Traditional method)'
         })
         
     except Exception as e:
