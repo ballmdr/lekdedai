@@ -9,16 +9,18 @@ import os
 import sys
 
 # Import Specialized AI Services
-MCP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'mcp_dream_analysis')
+MCP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mcp_dream_analysis')
 if os.path.exists(MCP_DIR):
     sys.path.insert(0, MCP_DIR)
     try:
         from specialized_django_integration import interpret_dream_for_django
         DREAM_AI_AVAILABLE = True
+        print(f"✅ Expert Dream AI loaded successfully from {MCP_DIR}")
     except ImportError as e:
         print(f"Warning: Specialized Dream AI not available: {e}")
         DREAM_AI_AVAILABLE = False
 else:
+    print(f"⚠️ MCP_DIR not found: {MCP_DIR}")
     DREAM_AI_AVAILABLE = False
 
 def dream_form(request):
@@ -54,13 +56,24 @@ def analyze_dream(request):
                 'error': 'กรุณากรอกความฝัน'
             }, status=400)
         
-        # วิเคราะห์ความฝัน - ใช้ DreamSymbol_Model ถ้ามี, ไม่งั้นใช้วิธีเดิม
+        # วิเคราะห์ความฝัน - ใช้ Expert AI โมเดลใหม่
         if DREAM_AI_AVAILABLE:
             result = interpret_dream_for_django(dream_text)
+            # แปลงผลจาก Expert AI เป็นรูปแบบเดิม
+            if result and 'main_symbols' in result:
+                result = {
+                    'keywords': result.get('main_symbols', []),
+                    'numbers': [pred['number'] for pred in result.get('predicted_numbers', [])][:12],
+                    'interpretation': result.get('interpretation', ''),
+                    'sentiment': result.get('sentiment', 'Neutral'),
+                    'predicted_numbers': result.get('predicted_numbers', [])[:8],
+                    'is_expert_ai': True
+                }
         else:
             result = analyze_dream_text(dream_text)
+            result['is_expert_ai'] = False
         
-        # บันทึกผลการตีความ
+        # บันทึกผลการตีความ (รวมข้อมูล sentiment และ predicted_numbers)
         interpretation = DreamInterpretation.objects.create(
             user=request.user if request.user.is_authenticated else None,
             dream_text=dream_text,
@@ -75,7 +88,10 @@ def analyze_dream(request):
             'result': {
                 'keywords': result['keywords'],
                 'numbers': result['numbers'],
-                'interpretation': result['interpretation']
+                'interpretation': result['interpretation'],
+                'sentiment': result.get('sentiment', 'Neutral'),
+                'predicted_numbers': result.get('predicted_numbers', []),
+                'is_expert_ai': result.get('is_expert_ai', False)
             }
         })
         

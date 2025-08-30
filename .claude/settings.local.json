@@ -6,7 +6,8 @@
       "Bash(docker compose:*)",
       "Bash(python manage.py collectstatic:*)",
       "Bash(docker-compose restart:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

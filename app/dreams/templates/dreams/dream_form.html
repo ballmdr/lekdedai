@@ -76,15 +76,36 @@
                             <div class="border-t pt-6">
                                 <h3 class="text-xl font-serif font-bold text-foreground mb-4">ผลการตีความฝัน</h3>
                                 
+                                <!-- Sentiment Badge -->
+                                <div id="sentimentBadge" class="hidden mb-4">
+                                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium">
+                                        <i id="sentimentIcon" class=""></i>
+                                        <span id="sentimentText"></span>
+                                    </div>
+                                </div>
+                                
                                 <div class="bg-primary/10 rounded-lg p-6 mb-6">
                                     <h4 class="font-semibold text-primary mb-3 flex items-center gap-2">
                                         <i class="fas fa-magic"></i>
-                                        คำทำนาย
+                                        คำทำนายจากอาจารย์ AI
+                                        <span id="aiModelBadge" class="hidden ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                                            Expert AI
+                                        </span>
                                     </h4>
                                     <p id="interpretation" class="text-foreground whitespace-pre-line leading-relaxed"></p>
                                 </div>
                                 
-                                <div class="bg-muted/50 rounded-lg p-6 mb-6">
+                                <!-- Expert AI Numbers with Reasoning -->
+                                <div id="expertNumbers" class="hidden bg-muted/50 rounded-lg p-6 mb-6">
+                                    <h4 class="font-semibold text-foreground mb-4 flex items-center gap-2">
+                                        <i class="fas fa-brain text-secondary"></i>
+                                        เลขมงคลพร้อมเหตุผล
+                                    </h4>
+                                    <div id="expertNumbersList" class="space-y-3"></div>
+                                </div>
+                                
+                                <!-- Traditional Numbers -->
+                                <div id="traditionalNumbers" class="bg-muted/50 rounded-lg p-6 mb-6">
                                     <h4 class="font-semibold text-foreground mb-4 flex items-center gap-2">
                                         <i class="fas fa-star text-secondary"></i>
                                         เลขมงคลจากความฝัน
@@ -236,19 +257,89 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
         const data = await response.json();
         
         if (data.success) {
-            // Show results
-            document.getElementById('interpretation').textContent = data.result.interpretation;
+            const result = data.result;
             
-            // Show numbers
-            const numbersList = document.getElementById('numbersList');
-            numbersList.innerHTML = '';
+            // Show sentiment badge if Expert AI is used
+            if (result.is_expert_ai && result.sentiment) {
+                const sentimentBadge = document.getElementById('sentimentBadge');
+                const sentimentIcon = document.getElementById('sentimentIcon');
+                const sentimentText = document.getElementById('sentimentText');
+                
+                // Set sentiment styling
+                const badge = sentimentBadge.querySelector('div');
+                
+                if (result.sentiment === 'Positive') {
+                    badge.className = 'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800';
+                    sentimentIcon.className = 'fas fa-smile-beam';
+                    sentimentText.textContent = 'ความฝันเป็นมงคล';
+                } else if (result.sentiment === 'Negative') {
+                    badge.className = 'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800';
+                    sentimentIcon.className = 'fas fa-frown';
+                    sentimentText.textContent = 'ควรระวัง';
+                } else {
+                    badge.className = 'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800';
+                    sentimentIcon.className = 'fas fa-meh';
+                    sentimentText.textContent = 'เป็นกลาง';
+                }
+                
+                sentimentBadge.classList.remove('hidden');
+            }
             
-            data.result.numbers.forEach(number => {
-                const div = document.createElement('div');
-                div.className = 'bg-card border border-border rounded-lg p-4 text-center hover:bg-muted/50 transition-colors';
-                div.innerHTML = `<span class="text-2xl font-bold text-primary">${number}</span>`;
-                numbersList.appendChild(div);
-            });
+            // Show AI model badge
+            if (result.is_expert_ai) {
+                document.getElementById('aiModelBadge').classList.remove('hidden');
+            }
+            
+            // Show interpretation
+            document.getElementById('interpretation').textContent = result.interpretation;
+            
+            // Show Expert AI numbers with reasoning
+            if (result.is_expert_ai && result.predicted_numbers && result.predicted_numbers.length > 0) {
+                const expertNumbers = document.getElementById('expertNumbers');
+                const expertNumbersList = document.getElementById('expertNumbersList');
+                expertNumbersList.innerHTML = '';
+                
+                result.predicted_numbers.slice(0, 6).forEach((pred, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'border border-border rounded-lg p-4 bg-card hover:bg-muted/30 transition-colors';
+                    div.innerHTML = `
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
+                                    ${pred.number}
+                                </div>
+                                <div class="text-sm text-green-600 font-semibold">
+                                    ${Math.round(pred.score * 100)}%
+                                </div>
+                            </div>
+                            <div class="text-xs text-muted-foreground text-right">
+                                อันดับ ${index + 1}
+                            </div>
+                        </div>
+                        <div class="mt-3 text-sm text-muted-foreground leading-relaxed">
+                            ${pred.reason}
+                        </div>
+                    `;
+                    expertNumbersList.appendChild(div);
+                });
+                
+                expertNumbers.classList.remove('hidden');
+                // Hide traditional numbers if Expert AI is available
+                document.getElementById('traditionalNumbers').classList.add('hidden');
+            } else {
+                // Show traditional numbers
+                const numbersList = document.getElementById('numbersList');
+                numbersList.innerHTML = '';
+                
+                result.numbers.forEach(number => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-card border border-border rounded-lg p-4 text-center hover:bg-muted/50 transition-colors';
+                    div.innerHTML = `<span class="text-2xl font-bold text-primary">${number}</span>`;
+                    numbersList.appendChild(div);
+                });
+                
+                document.getElementById('traditionalNumbers').classList.remove('hidden');
+            }
             
             document.getElementById('results').classList.remove('hidden');
         } else {
@@ -265,6 +356,12 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
 function resetForm() {
     document.getElementById('dreamForm').reset();
     document.getElementById('results').classList.add('hidden');
+    
+    // Reset Expert AI elements
+    document.getElementById('sentimentBadge').classList.add('hidden');
+    document.getElementById('aiModelBadge').classList.add('hidden');
+    document.getElementById('expertNumbers').classList.add('hidden');
+    document.getElementById('traditionalNumbers').classList.remove('hidden');
 }
 
 function getCookie(name) {

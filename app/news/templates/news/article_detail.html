@@ -77,44 +77,86 @@
                         เลขที่วิเคราะห์ได้จากข่าว
                     </h3>
                     
-                    {% if extracted_numbers %}
-                    <!-- มีเลขวิเคราะห์แล้ว -->
-                    <div class="bg-primary/10 rounded-lg p-6">
-                        <div class="grid grid-cols-5 md:grid-cols-10 gap-3 mb-4">
-                            {% for num in extracted_numbers %}
-                            <div class="bg-card border-2 border-primary rounded-lg p-3 text-center">
-                                <span class="text-xl font-bold text-primary">{{ num }}</span>
+                    <!-- Analysis Results Container -->
+                    <div id="analysisResults">
+                        {% if extracted_numbers %}
+                        <!-- มีเลขวิเคราะห์แล้ว -->
+                        <div class="bg-primary/10 rounded-lg p-6">
+                            <div class="grid grid-cols-5 md:grid-cols-10 gap-3 mb-4" id="numbersGrid">
+                                {% for num in extracted_numbers %}
+                                <div class="bg-card border-2 border-primary rounded-lg p-3 text-center">
+                                    <span class="text-xl font-bold text-primary">{{ num }}</span>
+                                </div>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-muted-foreground" id="confidenceDisplay">
+                                    ความน่าเชื่อถือ: 
+                                    <span class="font-bold text-lg text-foreground">{{ article.confidence_score|default:0 }}%</span>
+                                </span>
+                                {% if user.is_staff %}
+                                <button onclick="analyzeAgain({{ article.id }})" 
+                                        class="btn btn-primary" id="analyzeButton">
+                                    <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-muted-foreground">
-                                ความน่าเชื่อถือ: 
-                                <span class="font-bold text-lg text-foreground">{{ article.confidence_score|default:0 }}%</span>
-                            </span>
+                        {% else %}
+                        <!-- ยังไม่มีเลขวิเคราะห์ -->
+                        <div class="bg-muted/50 rounded-lg p-6 text-center">
+                            <div class="text-muted-foreground mb-4">
+                                <i class="fas fa-info-circle text-2xl mb-2"></i>
+                                <p>ยังไม่มีการวิเคราะห์เลขจากข่าวนี้</p>
+                            </div>
                             {% if user.is_staff %}
                             <button onclick="analyzeAgain({{ article.id }})" 
-                                    class="btn btn-primary">
-                                <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
+                                    class="btn btn-primary" id="analyzeButton">
+                                <i class="fas fa-magic mr-2"></i>วิเคราะห์เลขเด็ด
                             </button>
                             {% endif %}
                         </div>
-                    </div>
-                    {% else %}
-                    <!-- ยังไม่มีเลขวิเคราะห์ -->
-                    <div class="bg-muted/50 rounded-lg p-6 text-center">
-                        <div class="text-muted-foreground mb-4">
-                            <i class="fas fa-info-circle text-2xl mb-2"></i>
-                            <p>ยังไม่มีการวิเคราะห์เลขจากข่าวนี้</p>
-                        </div>
-                        {% if user.is_staff %}
-                        <button onclick="analyzeAgain({{ article.id }})" 
-                                class="btn btn-primary">
-                            <i class="fas fa-magic mr-2"></i>วิเคราะห์เลขเด็ด
-                        </button>
                         {% endif %}
                     </div>
-                    {% endif %}
+                    
+                    <!-- Insight-AI Analysis Details (Hidden by default) -->
+                    <div id="insightAnalysis" class="hidden mt-4">
+                        <!-- Story Impact -->
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <h4 class="font-bold text-blue-900 mb-2">
+                                <i class="fas fa-chart-line mr-2"></i>Insight-AI Analysis
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <span class="text-sm text-blue-700">📊 Story Impact Score:</span>
+                                    <div class="mt-1">
+                                        <div class="bg-blue-200 rounded-full h-3 w-full">
+                                            <div id="impactBar" class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                        </div>
+                                        <span id="impactScore" class="text-sm font-bold text-blue-800">0%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-blue-700">⏱️ วิธีการวิเคราะห์:</span>
+                                    <div id="analysisMethod" class="font-medium text-blue-800 mt-1">Insight-AI</div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <span class="text-sm text-blue-700">📝 Story Summary:</span>
+                                <div id="storySummary" class="text-sm text-gray-700 mt-1 p-2 bg-white/50 rounded border"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Detailed Numbers Analysis -->
+                        <div id="detailedNumbers" class="bg-white border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-bold text-gray-900 mb-3">
+                                <i class="fas fa-list-ol mr-2"></i>รายละเอียดเลขที่วิเคราะห์ได้
+                            </h4>
+                            <div id="numbersList" class="space-y-3">
+                                <!-- Numbers will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             
                 <!-- Lucky Hints -->
@@ -233,10 +275,14 @@ async function analyzeAgain(articleId) {
     
     try {
         // แสดง loading
-        const button = event.target;
+        const button = document.getElementById('analyzeButton');
         const originalText = button.innerHTML;
         button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังวิเคราะห์...';
         button.disabled = true;
+        
+        // ซ่อนส่วนผลลัพธ์เดิม
+        const insightAnalysis = document.getElementById('insightAnalysis');
+        insightAnalysis.classList.add('hidden');
         
         const response = await fetch(`/news/api/analyze/${articleId}/`, {
             method: 'POST',
@@ -247,20 +293,180 @@ async function analyzeAgain(articleId) {
         
         const data = await response.json();
         if (data.success) {
-            const successMessage = hasNumbers ? 'วิเคราะห์เสร็จแล้ว กรุณารีเฟรชหน้า' : 'วิเคราะห์เลขเด็ดเสร็จแล้ว กรุณารีเฟรชหน้า';
-            alert(successMessage);
-            location.reload();
+            // อัปเดตผลลัพธ์บนหน้าจอ
+            if (data.is_insight_ai) {
+                updateInsightAIResults(data);
+            } else {
+                updateTraditionalResults(data);
+            }
+            
+            // แสดงข้อความสำเร็จ
+            showSuccessMessage(data.message);
+            
         } else {
-            alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถวิเคราะห์ได้'));
+            showErrorMessage('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถวิเคราะห์ได้'));
         }
     } catch (error) {
-        alert('เกิดข้อผิดพลาด: ' + error.message);
+        showErrorMessage('เกิดข้อผิดพลาด: ' + error.message);
     } finally {
         // คืนค่าปุ่มเดิม
-        const button = event.target;
+        const button = document.getElementById('analyzeButton');
         button.innerHTML = originalText;
         button.disabled = false;
     }
+}
+
+function updateInsightAIResults(data) {
+    const analysisResults = document.getElementById('analysisResults');
+    const insightAnalysis = document.getElementById('insightAnalysis');
+    
+    // อัปเดตเลขหลัก
+    if (data.numbers && data.numbers.length > 0) {
+        const numbersHTML = data.numbers.slice(0, 10).map(num => 
+            `<div class="bg-card border-2 border-primary rounded-lg p-3 text-center">
+                <span class="text-xl font-bold text-primary">${num}</span>
+            </div>`
+        ).join('');
+        
+        analysisResults.innerHTML = `
+            <div class="bg-primary/10 rounded-lg p-6">
+                <div class="grid grid-cols-5 md:grid-cols-10 gap-3 mb-4" id="numbersGrid">
+                    ${numbersHTML}
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-muted-foreground">
+                        ความน่าเชื่อถือ: 
+                        <span class="font-bold text-lg text-foreground">${Math.round(data.confidence)}%</span>
+                    </span>
+                    <button onclick="analyzeAgain({{ article.id }})" class="btn btn-primary" id="analyzeButton">
+                        <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // อัปเดต Insight-AI Analysis
+    const storyImpact = (data.story_impact_score * 100).toFixed(1);
+    document.getElementById('impactBar').style.width = storyImpact + '%';
+    document.getElementById('impactScore').textContent = storyImpact + '%';
+    document.getElementById('storySummary').textContent = data.story_summary || 'ไม่มีสรุป';
+    document.getElementById('analysisMethod').textContent = 'Insight-AI';
+    
+    // อัปเดตรายละเอียดเลข
+    if (data.extracted_entities && data.extracted_entities.length > 0) {
+        const numbersListHTML = data.extracted_entities.slice(0, 8).map((entity, i) => {
+            const scorePercent = (entity.significance_score * 100).toFixed(0);
+            const entityTypeMap = {
+                'license_plate': 'ทะเบียนรถ',
+                'age': 'อายุ',
+                'house_number': 'เลขบ้าน',
+                'quantity': 'จำนวน',
+                'date': 'วันที่',
+                'time': 'เวลา',
+                'money_amount': 'จำนวนเงิน',
+                'coffin_number': 'เลขฝาโลง'
+            };
+            
+            return `
+                <div class="flex items-start justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl font-bold text-blue-600">${entity.value}</span>
+                            <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                                ${entityTypeMap[entity.entity_type] || entity.entity_type}
+                            </span>
+                            <div class="flex items-center">
+                                <span class="text-sm font-bold text-green-600">${scorePercent}%</span>
+                                <div class="ml-2 w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-green-500 transition-all duration-300" style="width: ${scorePercent}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">${entity.reasoning}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        document.getElementById('numbersList').innerHTML = numbersListHTML;
+    }
+    
+    // แสดงส่วน Insight-AI Analysis
+    insightAnalysis.classList.remove('hidden');
+}
+
+function updateTraditionalResults(data) {
+    const analysisResults = document.getElementById('analysisResults');
+    
+    if (data.numbers && data.numbers.length > 0) {
+        const numbersHTML = data.numbers.slice(0, 10).map(num => 
+            `<div class="bg-card border-2 border-primary rounded-lg p-3 text-center">
+                <span class="text-xl font-bold text-primary">${num}</span>
+            </div>`
+        ).join('');
+        
+        analysisResults.innerHTML = `
+            <div class="bg-primary/10 rounded-lg p-6">
+                <div class="grid grid-cols-5 md:grid-cols-10 gap-3 mb-4">
+                    ${numbersHTML}
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-muted-foreground">
+                        ความน่าเชื่อถือ: 
+                        <span class="font-bold text-lg text-foreground">${Math.round(data.confidence)}%</span>
+                    </span>
+                    <button onclick="analyzeAgain({{ article.id }})" class="btn btn-primary" id="analyzeButton">
+                        <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // ซ่อนส่วน Insight-AI Analysis สำหรับ traditional method
+    const insightAnalysis = document.getElementById('insightAnalysis');
+    insightAnalysis.classList.add('hidden');
+}
+
+function showSuccessMessage(message) {
+    // สร้างข้อความแจ้งเตือนแบบสีเขียว
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300';
+    alertDiv.innerHTML = `
+        <div class="flex items-center gap-2">
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // ลบข้อความหลัง 4 วินาที
+    setTimeout(() => {
+        alertDiv.style.transform = 'translateX(100%)';
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 4000);
+}
+
+function showErrorMessage(message) {
+    // สร้างข้อความแจ้งเตือนแบบสีแดง
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300';
+    alertDiv.innerHTML = `
+        <div class="flex items-center gap-2">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // ลบข้อความหลัง 5 วินาที
+    setTimeout(() => {
+        alertDiv.style.transform = 'translateX(100%)';
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 5000);
 }
 </script>
 {% endblock %}
