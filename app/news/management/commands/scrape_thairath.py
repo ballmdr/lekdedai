@@ -179,18 +179,16 @@ class Command(BaseCommand):
                                     # หาเลขจากหัวข้อ
                                     numbers = re.findall(r'\b\d{2,3}\b', title)
                                     
-                                    # หารูปภาพจาก element นี้
-                                    image_url = self.extract_image_url(elem)
-                                    
-                                    # ถ้าไม่พบรูปภาพ ให้ลองดึงจากรายละเอียดข่าว
-                                    if not image_url:
-                                        image_url = self.get_image_from_news_detail(full_url)
+                                    # ดึงเนื้อหาข่าวและรูปภาพจากรายละเอียด
+                                    content_data = self.get_news_content_and_image(full_url)
                                     
                                     news_item = {
                                         'title': title,
                                         'url': full_url,
                                         'numbers': numbers,
-                                        'image_url': image_url,
+                                        'content': content_data['content'],
+                                        'intro': content_data['intro'],
+                                        'image_url': content_data['image_url'],
                                         'source': 'thairath',
                                         'scraped_at': timezone.now().isoformat()
                                     }
@@ -309,8 +307,8 @@ class Command(BaseCommand):
             )
             return None
     
-    def get_image_from_news_detail(self, news_url):
-        """ดึงรูปภาพจากรายละเอียดข่าว"""
+    def get_news_content_and_image(self, news_url):
+        """ดึงเนื้อหาข่าวและรูปภาพจากรายละเอียดข่าว"""
         try:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -322,38 +320,112 @@ class Command(BaseCommand):
             
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # ลองหารูปภาพในหลายรูปแบบ
+            content = ""
+            intro = ""
+            image_url = None
+            
+            # ดึงเนื้อหาข่าว
+            content_selectors = [
+                '.css-1shj5k7 p',  # Thairath main content
+                '.article-content p',
+                '.content p',
+                '.news-content p',
+                'div[data-module="ArticleContent"] p',
+                '.entry-content p'
+            ]
+            
+            for selector in content_selectors:
+                content_elements = soup.select(selector)
+                if content_elements:
+                    # รวบรวมข้อความจากทุกย่อหน้า
+                    paragraphs = []
+                    for elem in content_elements:
+                        text = elem.get_text(strip=True)
+                        if text and len(text) > 20:  # กรองย่อหน้าที่มีข้อความเพียงพอ
+                            paragraphs.append(text)
+                    
+                    if paragraphs:
+                        content = '\n\n'.join(paragraphs)
+                        intro = paragraphs[0] if paragraphs else ""
+                        break
+            
+            # หาเนื้อหาเพิ่มเติมถ้ายังไม่พอ
+            if not content:
+                # ลองหาจาก div หลัก
+                main_content_selectors = [
+                    '.css-1shj5k7',
+                    '.article-body',
+                    '.entry-content',
+                    '[data-module="ArticleContent"]',
+                    '.article-content'
+                ]
+                
+                for selector in main_content_selectors:
+                    main_elem = soup.select_one(selector)
+                    if main_elem:
+                        # ลบ script และ style tags
+                        for script in main_elem(["script", "style"]):
+                            script.decompose()
+                        
+                        text = main_elem.get_text(strip=True)
+                        if text and len(text) > 50:
+                            content = text
+                            # หาคำนำ (ย่อหน้าแรก)
+                            first_paragraph = text.split('\n')[0]
+                            if len(first_paragraph) > 20:
+                                intro = first_paragraph[:300]
+                            break
+            
+            # ดึงรูปภาพ
             image_selectors = [
                 '.css-1shj5k7 img',
                 '.article-content img',
                 '.content img',
                 '.news-content img',
                 'img[data-src]',
-                'img[src*="thairath"]'
+                'img[src*="static.thairath"]',
+                'figure img',
+                '.entry-content img'
             ]
             
             for selector in image_selectors:
                 img_elem = soup.select_one(selector)
                 if img_elem:
                     src = img_elem.get('src') or img_elem.get('data-src')
-                    if src:
+                    if src and 'static.thairath' in src:
                         # สร้าง URL เต็ม
                         if src.startswith('//'):
-                            return 'https:' + src
+                            image_url = 'https:' + src
                         elif src.startswith('/'):
-                            return 'https://www.thairath.co.th' + src
+                            image_url = 'https://www.thairath.co.th' + src
                         elif src.startswith('http'):
-                            return src
+                            image_url = src
                         else:
-                            return 'https://www.thairath.co.th/' + src
+                            image_url = 'https://www.thairath.co.th/' + src
+                        break
             
-            return None
+            # หาอีนทรู ถ้ายังไม่มี
+            if not intro and content:
+                sentences = content.split('.')
+                if sentences:
+                    intro = sentences[0][:300] + "..."
+            
+            return {
+                'content': content[:3000] if content else "",  # จำกัด 3000 ตัวอักษร
+                'intro': intro[:500] if intro else "",  # จำกัด 500 ตัวอักษร
+                'image_url': image_url
+            }
             
         except Exception as e:
-            return None
+            self.stdout.write(f'⚠️ ไม่สามารถดึงเนื้อหาได้จาก {news_url}: {e}')
+            return {
+                'content': "",
+                'intro': "",
+                'image_url': None
+            }
     
     def save_news_to_db(self, news_items, category_name):
-        """บันทึกข่าวลงฐานข้อมูล"""
+        """บันทึกข่าวลงฐานข้อมูล พร้อมประเมินความเหมาะสมสำหรับหาเลขเด็ด"""
         # หาหรือสร้างหมวดหมู่
         category, created = NewsCategory.objects.get_or_create(
             name=category_name,
@@ -377,37 +449,52 @@ class Command(BaseCommand):
             try:
                 # ตรวจสอบว่าไม่ซ้ำ
                 if not NewsArticle.objects.filter(source_url=news_item['url']).exists():
-                    # สร้าง slug จากหัวข้อ
-                    slug = self.generate_slug(news_item['title'])
                     
-                    # ดาวน์โหลดรูปภาพ
-                    featured_image = None
-                    if news_item.get('image_url'):
-                        self.stdout.write(f'กำลังดาวน์โหลดรูปภาพ: {news_item["image_url"]}')
-                        featured_image = self.download_image(news_item['image_url'], news_item['title'])
+                    # ประเมินความเหมาะสมของข่าวสำหรับหาเลขเด็ด
+                    lottery_assessment = self.assess_news_for_lottery(news_item)
                     
-                    # สร้างข่าวใหม่
-                    article = NewsArticle.objects.create(
-                        title=news_item['title'],
-                        slug=slug,
-                        category=category,
-                        author=admin_user,
-                        intro=news_item['title'][:200] + "...",
-                        content=f"ข่าวจาก: {news_item['url']}\n\n{news_item['title']}",
-                        extracted_numbers=','.join(news_item['numbers']) if news_item['numbers'] else '',
-                        source_url=news_item['url'],
-                        featured_image=featured_image,
-                        status='published',
-                        published_date=timezone.now(),
-                        meta_description=news_item['title'][:160]
-                    )
+                    # แสดงผลการประเมิน
+                    self.stdout.write(f"\n📰 ประเมินข่าว: {news_item['title'][:60]}...")
+                    self.stdout.write(f"🎯 ความเหมาะสมสำหรับหาเลขเด็ด: {lottery_assessment['score']}/10")
+                    self.stdout.write(f"🔍 เหตุผล: {lottery_assessment['reasons']}")
+                    self.stdout.write(f"🔢 เลขที่พบ: {', '.join(lottery_assessment['all_numbers']) if lottery_assessment['all_numbers'] else 'ไม่พบ'}")
                     
-                    saved_count += 1
-                    self.stdout.write(f'บันทึกข่าว: {article.title[:50]}...')
+                    # ตัดสินใจว่าจะบันทึกหรือไม่ (บันทึกเฉพาะข่าวที่มีความเหมาะสม >= 1/10)
+                    if lottery_assessment['score'] >= 1:
+                        # สร้าง slug จากหัวข้อ
+                        slug = self.generate_slug(news_item['title'])
+                        
+                        # ดาวน์โหลดรูปภาพ
+                        featured_image = None
+                        if news_item.get('image_url'):
+                            self.stdout.write(f'📸 กำลังดาวน์โหลดรูปภาพ: {news_item["image_url"]}')
+                            featured_image = self.download_image(news_item['image_url'], news_item['title'])
+                        
+                        # สร้างข่าวใหม่
+                        article = NewsArticle.objects.create(
+                            title=news_item['title'],
+                            slug=slug,
+                            category=category,
+                            author=admin_user,
+                            intro=news_item.get('intro', news_item['title'][:200]) + "...",
+                            content=news_item.get('content', '') + f"\n\n---\nแหล่งข่าว: {news_item['url']}\n\nการประเมินสำหรับหาเลขเด็ด:\n{lottery_assessment['reasons']}",
+                            extracted_numbers=','.join(lottery_assessment['all_numbers']) if lottery_assessment['all_numbers'] else '',
+                            confidence_score=min(50 + (lottery_assessment['score'] * 5), 95),  # แปลงคะแนนเป็น %
+                            source_url=news_item['url'],
+                            featured_image=featured_image,
+                            status='published',
+                            published_date=timezone.now(),
+                            meta_description=news_item.get('intro', news_item['title'])[:160]
+                        )
+                        
+                        saved_count += 1
+                        self.stdout.write(self.style.SUCCESS(f'✅ บันทึกข่าว (เหมาะสมสำหรับหาเลขเด็ด): {article.title[:50]}...'))
+                    else:
+                        self.stdout.write(self.style.WARNING(f'⏭️ ข้ามข่าว (ไม่เหมาะสมสำหรับหาเลขเด็ด): {news_item["title"][:50]}...'))
                 
             except Exception as e:
                 self.stdout.write(
-                    self.style.ERROR(f'เกิดข้อผิดพลาดในการบันทึกข่าว: {e}')
+                    self.style.ERROR(f'❌ เกิดข้อผิดพลาดในการบันทึกข่าว: {e}')
                 )
                 continue
         
@@ -678,3 +765,114 @@ class Command(BaseCommand):
             slug = slug[:50]
         
         return slug
+    
+    def assess_news_for_lottery(self, news_item):
+        """ประเมินความเหมาะสมของข่าวสำหรับหาเลขเด็ด"""
+        title = news_item['title'].lower()
+        content = news_item.get('content', '').lower()
+        full_text = title + ' ' + content  # รวมหัวข้อและเนื้อหา
+        
+        score = 0
+        reasons = []
+        all_numbers = []
+        
+        # 1. ตรวจสอบคำสำคัญที่เกี่ยวข้องกับหวย/โชคลาภ (3 คะแนน)
+        lottery_keywords = [
+            'หวย', 'เลขเด็ด', 'โชคลาภ', 'รวย', 'เศรษฐี', 'ลอตเตอรี่',
+            'เงินล้าน', 'โชคดี', 'เฮง', 'มั่งคั่ง', 'ร่ำรวย'
+        ]
+        
+        found_lottery_keywords = [kw for kw in lottery_keywords if kw in full_text]
+        if found_lottery_keywords:
+            score += 3
+            reasons.append(f"มีคำเกี่ยวข้องกับโชคลาภ: {', '.join(found_lottery_keywords)}")
+        
+        # 2. ตรวจสอบคำสำคัญจาก DreamKeyword (2 คะแนน)
+        try:
+            from dreams.models import DreamKeyword
+            
+            dream_keywords = DreamKeyword.objects.all()
+            found_dream_keywords = []
+            
+            for dk in dream_keywords:
+                if dk.keyword.lower() in full_text:
+                    found_dream_keywords.append(dk.keyword)
+                    all_numbers.extend(dk.get_numbers_list())
+            
+            if found_dream_keywords:
+                score += 2
+                reasons.append(f"พบคำสำคัญตีความฝัน: {', '.join(found_dream_keywords[:3])}")
+                
+        except Exception as e:
+            pass
+        
+        # 3. ตรวจสอบการปรากฏของตัวเลข (1-2 คะแนน)
+        direct_numbers = re.findall(r'\b\d{2,3}\b', full_text)
+        if direct_numbers:
+            filtered_numbers = []
+            for num in direct_numbers:
+                # กรองเลขที่น่าสนใจ (ไม่เอาปี)
+                if len(num) == 2:
+                    filtered_numbers.append(num)
+                elif len(num) == 3 and not (num.startswith('25') or num.startswith('20')):
+                    filtered_numbers.append(num)
+            
+            if filtered_numbers:
+                all_numbers.extend(filtered_numbers)
+                if len(filtered_numbers) >= 2:
+                    score += 2
+                    reasons.append(f"พบตัวเลขหลายตัว: {', '.join(filtered_numbers[:5])}")
+                else:
+                    score += 1
+                    reasons.append(f"พบตัวเลข: {', '.join(filtered_numbers)}")
+        
+        # 4. ตรวจสอบเหตุการณ์พิเศษ/อุบัติเหตุ (1-3 คะแนน)
+        special_events = [
+            'อุบัติเหตุ', 'เกิดเหตุ', 'ประหลาด', 'แปลก', 'พิศดาร', 'ปาฏิหาริย์',
+            'มหัศจรรย์', 'น่าอัศจรรย์', 'แม่นยำ', 'ตรงจริง', 'เป็นจริง'
+        ]
+        
+        found_special = [kw for kw in special_events if kw in full_text]
+        if found_special:
+            if 'อุบัติเหตุ' in found_special or 'เกิดเหตุ' in found_special:
+                score += 3
+                reasons.append(f"เหตุการณ์พิเศษ (อุบัติเหตุ): {', '.join(found_special)}")
+            else:
+                score += 1
+                reasons.append(f"เหตุการณ์พิเศษ: {', '.join(found_special)}")
+        
+        # 5. ตรวจสอบสถานที่ศักดิ์สิทธิ์/วัด (2 คะแนน)
+        sacred_places = [
+            'วัด', 'โบสถ์', 'ศาล', 'ศาลเจ้า', 'สำนักสงฆ์', 'อาศรม',
+            'พระ', 'หลวงพ่อ', 'หลวงปู่', 'เณร', 'แม่ชี'
+        ]
+        
+        found_sacred = [kw for kw in sacred_places if kw in full_text]
+        if found_sacred:
+            score += 2
+            reasons.append(f"เกี่ยวข้องกับสถานที่ศักดิ์สิทธิ์: {', '.join(found_sacred[:2])}")
+        
+        # 6. ตรวจสอบธรรมชาติ/สัตว์แปลก (1 คะแนน)  
+        nature_animals = [
+            'งู', 'ปลา', 'ช้าง', 'เสือ', 'มด', 'แมลง', 'นก', 'กบ',
+            'ต้นไม้', 'ดอกไม้', 'ฟ้าผา', 'ฝน', 'พายุ', 'แผ่นดินไหว'
+        ]
+        
+        found_nature = [kw for kw in nature_animals if kw in full_text]
+        if found_nature:
+            score += 1
+            reasons.append(f"เกี่ยวข้องกับธรรมชาติ/สัตว์: {', '.join(found_nature[:2])}")
+        
+        # ลบเลขซ้ำ
+        all_numbers = list(dict.fromkeys(all_numbers))
+        
+        # รวมเลขที่พบตรงๆ เข้ากับเลข dream keywords
+        news_item['numbers'] = news_item.get('numbers', [])
+        all_numbers.extend(news_item['numbers'])
+        all_numbers = list(dict.fromkeys(all_numbers))  # ลบซ้ำอีกครั้ง
+        
+        return {
+            'score': score,
+            'reasons': '; '.join(reasons) if reasons else 'ไม่พบคำสำคัญที่เกี่ยวข้องกับการหาเลขเด็ด',
+            'all_numbers': all_numbers
+        }
