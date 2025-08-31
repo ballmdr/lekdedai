@@ -41,7 +41,7 @@ def ai_prediction_page(request):
     
     # ดึง feedback
     feedbacks = UserFeedback.objects.filter(
-        prediction=today_prediction
+        old_prediction=today_prediction
     ).order_by('-created_at')[:10]
     
     # คำนวณ rating เฉลี่ย
@@ -50,12 +50,16 @@ def ai_prediction_page(request):
         total_rating = sum(f.rating for f in feedbacks)
         avg_rating = total_rating / len(feedbacks)
     
+    # Get the factors used for the prediction
+    factors_used_codes = today_prediction.factors_used.keys()
+    factors = PredictionFactor.objects.filter(code__in=factors_used_codes, is_active=True)
+
     context = {
         'prediction': today_prediction,
         'past_predictions': past_predictions,
         'feedbacks': feedbacks,
         'avg_rating': avg_rating,
-        'factors': PredictionFactor.objects.filter(is_active=True),
+        'factors': factors,
     }
     
     return render(request, 'ai_engine/prediction.html', context)

@@ -779,7 +779,7 @@ class Command(BaseCommand):
         # 1. ตรวจสอบคำสำคัญที่เกี่ยวข้องกับหวย/โชคลาภ (3 คะแนน)
         lottery_keywords = [
             'หวย', 'เลขเด็ด', 'โชคลาภ', 'รวย', 'เศรษฐี', 'ลอตเตอรี่',
-            'เงินล้าน', 'โชคดี', 'เฮง', 'มั่งคั่ง', 'ร่ำรวย'
+            'เงินล้าน', 'โชคดี', 'เฮง', 'มั่งคั่ง', 'ร่ำรวย', 'ทะเบียนบ้าน'
         ]
         
         found_lottery_keywords = [kw for kw in lottery_keywords if kw in full_text]
@@ -826,7 +826,7 @@ class Command(BaseCommand):
                     score += 1
                     reasons.append(f"พบตัวเลข: {', '.join(filtered_numbers)}")
         
-        # 4. ตรวจสอบเหตุการณ์พิเศษ/อุบัติเหตุ (1-3 คะแนน)
+        # 4. ตรวจสอบเหตุการณ์พิเศษ/อุบัติเหตุ (1-4 คะแนน)
         special_events = [
             'อุบัติเหตุ', 'เกิดเหตุ', 'ประหลาด', 'แปลก', 'พิศดาร', 'ปาฏิหาริย์',
             'มหัศจรรย์', 'น่าอัศจรรย์', 'แม่นยำ', 'ตรงจริง', 'เป็นจริง'
@@ -835,8 +835,11 @@ class Command(BaseCommand):
         found_special = [kw for kw in special_events if kw in full_text]
         if found_special:
             if 'อุบัติเหตุ' in found_special or 'เกิดเหตุ' in found_special:
-                score += 3
+                score += 2
                 reasons.append(f"เหตุการณ์พิเศษ (อุบัติเหตุ): {', '.join(found_special)}")
+                if 'ทะเบียนรถ' in full_text:
+                    score += 2
+                    reasons.append("พบทะเบียนรถในข่าวอุบัติเหตุ")
             else:
                 score += 1
                 reasons.append(f"เหตุการณ์พิเศษ: {', '.join(found_special)}")
@@ -852,16 +855,21 @@ class Command(BaseCommand):
             score += 2
             reasons.append(f"เกี่ยวข้องกับสถานที่ศักดิ์สิทธิ์: {', '.join(found_sacred[:2])}")
         
-        # 6. ตรวจสอบธรรมชาติ/สัตว์แปลก (1 คะแนน)  
+        # 6. ตรวจสอบธรรมชาติ/สัตว์แปลก (1-3 คะแนน)  
         nature_animals = [
             'งู', 'ปลา', 'ช้าง', 'เสือ', 'มด', 'แมลง', 'นก', 'กบ',
             'ต้นไม้', 'ดอกไม้', 'ฟ้าผา', 'ฝน', 'พายุ', 'แผ่นดินไหว'
         ]
-        
+        strange_animal_keywords = ['สองหัว', '2หัว', 'ประหลาด']
+
         found_nature = [kw for kw in nature_animals if kw in full_text]
         if found_nature:
             score += 1
             reasons.append(f"เกี่ยวข้องกับธรรมชาติ/สัตว์: {', '.join(found_nature[:2])}")
+            if any(kw in full_text for kw in strange_animal_keywords):
+                score += 2
+                reasons.append("พบสัตว์ประหลาด")
+
         
         # ลบเลขซ้ำ
         all_numbers = list(dict.fromkeys(all_numbers))

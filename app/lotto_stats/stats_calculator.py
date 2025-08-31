@@ -30,6 +30,9 @@ class StatsCalculator:
         """คำนวณเลขที่ออกบ่อย (เลขฮอต)"""
         cutoff_date = datetime.now().date() - timedelta(days=days)
         recent_draws = self.all_draws.filter(draw_date__gte=cutoff_date)
+
+        if not recent_draws:
+            return []
         
         number_counter = Counter()
         

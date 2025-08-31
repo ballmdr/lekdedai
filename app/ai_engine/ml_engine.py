@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 import random
 from collections import Counter
 from lotto_stats.models import LotteryDraw
+from news.models import NewsArticle
+from news.news_analyzer import NewsAnalyzer
 
 class LotteryAIEngine:
     """AI Engine สำหรับทำนายเลขเด็ด"""
@@ -73,6 +75,24 @@ class LotteryAIEngine:
         
         # Special events
         features['is_holiday'] = self._is_holiday(target_date)
+
+        # News analysis
+        last_draw_date = LotteryDraw.objects.order_by('-draw_date').first().draw_date if LotteryDraw.objects.exists() else target_date - timedelta(days=15)
+        recent_news = NewsArticle.objects.filter(published_date__gte=last_draw_date, published_date__lte=target_date)
+        
+        news_analysis_results = []
+        analyzer = NewsAnalyzer()
+        for article in recent_news:
+            analysis = analyzer.analyze_article(article)
+            if analysis['numbers']:
+                news_analysis_results.append({
+                    'title': article.title,
+                    'numbers': analysis['numbers'],
+                    'keywords': analysis['keywords'],
+                    'confidence': analysis['confidence']
+                })
+        
+        features['news_analysis'] = news_analysis_results
         
         # User personalization
         if user_data:
@@ -100,6 +120,11 @@ class LotteryAIEngine:
         # วิเคราะห์รูปแบบพิเศษ
         special_patterns = self._analyze_special_patterns(features)
         predictions['two_digit'].extend(special_patterns)
+
+        # วิเคราะห์จากข่าว
+        if 'news_analysis' in features:
+            for analysis in features['news_analysis']:
+                predictions['two_digit'].extend(analysis['numbers'])
         
         # สร้างเลข 3 ตัว
         predictions['three_digit'] = self._generate_three_digits(predictions['two_digit'])
@@ -216,7 +241,7 @@ class LotteryAIEngine:
     def _analyze_hot_cold_pattern(self, features):
         """วิเคราะห์เลขฮอต/เย็น"""
         try:
-            from stats.stats_calculator import StatsCalculator
+            from lotto_stats.stats_calculator import StatsCalculator
             calculator = StatsCalculator()
             
             hot_numbers = calculator.get_hot_numbers(limit=10, days=90, number_type='2D')
@@ -340,6 +365,11 @@ class LotteryAIEngine:
         hot_numbers = features.get('hot_numbers', [])
         if hot_numbers:
             reasoning.append(f"เลขฮอตช่วงนี้: {', '.join(hot_numbers[:3])}")
+
+        if features.get('news_analysis'):
+            reasoning.append("เลขเด่นจากข่าวดัง:")
+            for analysis in features['news_analysis'][:3]: # Show top 3 news
+                reasoning.append(f"- ข่าว '{analysis['title'][:30]}...' ให้เลขเด่น {', '.join(analysis['numbers'][:3])}")
         
         return reasoning
     
@@ -475,4 +505,3 @@ class LotteryAIEngine:
             'frequent_numbers': ['23', '45', '67', '89', '12', '34', '56', '78'],
             'rare_numbers': ['01', '10', '20', '30', '40']
         }
-

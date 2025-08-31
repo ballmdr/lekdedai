@@ -35,8 +35,9 @@ def home(request):
         if old_prediction:
             latest_prediction = {
                 'is_old_system': True,
-                'get_three_digit_list': old_prediction.get_three_digit_list(),
-                'get_two_digit_list': old_prediction.get_two_digit_list(),
+                'get_top_three_digit_numbers': [{'number': num} for num in old_prediction.get_three_digit_list()],
+                'get_top_two_digit_numbers': [{'number': num} for num in old_prediction.get_two_digit_list()],
+                'prediction_summary': old_prediction.prediction_details.get('reasoning', ''),
                 'overall_confidence': old_prediction.overall_confidence,
                 'session': {'for_draw_date': old_prediction.for_draw_date}
             }

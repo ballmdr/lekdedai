@@ -12,45 +12,47 @@ class NewsAnalyzer:
         """วิเคราะห์บทความข่าว ใช้ระบบเดียวกับความฝัน"""
         text = f"{article.title} {article.content}".lower()
         
-        found_numbers = []
         keywords_found = []
         confidence = 50  # เริ่มต้นที่ 50%
+        
+        priority_numbers = {
+            'high': [],
+            'medium': [],
+            'low': []
+        }
         
         print(f"🔍 เริ่มวิเคราะห์ข่าว: {article.title[:50]}...")
         print(f"📝 ข้อความที่วิเคราะห์: {text[:100]}...")
         
         try:
-            # Import DreamKeyword ในฟังก์ชันเพื่อหลีกเลี่ยง circular import
-            from dreams.models import DreamKeyword
-            
-            # 1. หาเลขที่ปรากฏในข่าว
+            # 1. หาเลขที่ปรากฏในข่าว (low priority)
             direct_numbers = self.extract_direct_numbers(text)
             print(f"🔢 เลขที่พบตรงๆ: {direct_numbers}")
-            found_numbers.extend(direct_numbers)
+            priority_numbers['low'].extend(direct_numbers)
             
-            # 2. หาเลขจากคำสำคัญ (ใช้ DreamKeyword)
+            # 2. หาเลขจากคำสำคัญ (medium priority)
             keyword_numbers, keywords = self.extract_dream_keyword_numbers(text)
             print(f"🔑 เลขจากคำสำคัญ: {keyword_numbers}")
             print(f"📚 คำสำคัญที่พบ: {keywords}")
-            found_numbers.extend(keyword_numbers)
+            priority_numbers['medium'].extend(keyword_numbers)
             keywords_found.extend(keywords)
             
-            # 3. หาทะเบียนรถ
+            # 3. หาทะเบียนรถ (high priority)
             plate_numbers = self.extract_plate_numbers(text)
             print(f"🚗 เลขทะเบียนรถ: {plate_numbers}")
-            found_numbers.extend(plate_numbers)
+            priority_numbers['high'].extend(plate_numbers)
             if plate_numbers:
-                confidence += 10
+                confidence += 20 # Increase confidence for high priority numbers
             
-            # 4. หาเลขบ้าน
+            # 4. หาเลขบ้าน (high priority)
             house_numbers = self.extract_house_numbers(text)
             print(f"🏠 เลขบ้าน: {house_numbers}")
-            found_numbers.extend(house_numbers)
+            priority_numbers['high'].extend(house_numbers)
             if house_numbers:
-                confidence += 5
-            
-            # 5. ลบเลขซ้ำและจัดเรียง
-            unique_numbers = self.process_numbers(found_numbers)
+                confidence += 15 # Increase confidence for high priority numbers
+
+            # 5. จัดเรียงเลขตามความสำคัญ
+            unique_numbers = self._get_prioritized_numbers(priority_numbers)
             print(f"✨ เลขที่ประมวลผลแล้ว: {unique_numbers}")
             
             # 6. คำนวณความน่าเชื่อถือ
@@ -69,7 +71,29 @@ class NewsAnalyzer:
             # ถ้าเกิดข้อผิดพลาด ให้ใช้ระบบเดิม
             print(f"❌ Error using DreamKeyword: {e}")
             return self.analyze_article_fallback(article)
-    
+
+    def _get_prioritized_numbers(self, priority_numbers):
+        """จัดเรียงเลขตามความสำคัญและลบเลขซ้ำ"""
+        
+        high_priority = list(dict.fromkeys(priority_numbers['high']))
+        medium_priority = list(dict.fromkeys(priority_numbers['medium']))
+        low_priority = list(dict.fromkeys(priority_numbers['low']))
+        
+        # เรียงลำดับความสำคัญ: high -> medium -> low
+        # ตัวเลขที่อยู่ใน priority สูงกว่า จะไม่ถูกเอามาซ้ำใน priority ที่ต่ำกว่า
+        
+        final_numbers = high_priority
+        
+        for num in medium_priority:
+            if num not in final_numbers:
+                final_numbers.append(num)
+                
+        for num in low_priority:
+            if num not in final_numbers:
+                final_numbers.append(num)
+                
+        return final_numbers
+
     def analyze_article_fallback(self, article):
         """ระบบวิเคราะห์แบบเดิม (fallback)"""
         text = f"{article.title} {article.content}".lower()
