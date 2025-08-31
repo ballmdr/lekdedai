@@ -74,12 +74,13 @@ def analyze_dream(request):
             result['is_expert_ai'] = False
         
         # บันทึกผลการตีความ (รวมข้อมูล sentiment และ predicted_numbers)
-        interpretation = DreamInterpretation.objects.create(
+        DreamInterpretation.objects.create(
             user=request.user if request.user.is_authenticated else None,
             dream_text=dream_text,
-            keywords_found=', '.join(result['keywords']),
-            suggested_numbers=', '.join(result['numbers']),
             interpretation=result['interpretation'],
+            sentiment=result.get('sentiment', 'Neutral'),
+            predicted_numbers_json=result if result.get('is_expert_ai') else None,
+            main_symbols=', '.join(result.get('keywords', [])),
             ip_address=get_client_ip(request)
         )
         

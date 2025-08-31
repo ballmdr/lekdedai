@@ -1,0 +1,654 @@
+[
+  {
+    "model": "dreams.dreamcategory",
+    "pk": 1,
+    "fields": {
+      "name": "🐘 หมวดสัตว์",
+      "description": "ความฝันเกี่ยวกับสัตว์ต่างๆ"
+    }
+  },
+  {
+    "model": "dreams.dreamcategory",
+    "pk": 2,
+    "fields": {
+      "name": "👑 หมวดบุคคล",
+      "description": "ความฝันเกี่ยวกับบุคคลต่างๆ"
+    }
+  },
+  {
+    "model": "dreams.dreamcategory",
+    "pk": 3,
+    "fields": {
+      "name": "🏠 หมวดสิ่งของ / สถานที่",
+      "description": "ความฝันเกี่ยวกับสิ่งของและสถานที่"
+    }
+  },
+  {
+    "model": "dreams.dreamcategory",
+    "pk": 4,
+    "fields": {
+      "name": "💪 หมวดอวัยวะและร่างกาย",
+      "description": "ความฝันเกี่ยวกับอวัยวะและร่างกาย"
+    }
+  },
+  {
+    "model": "dreams.dreamcategory",
+    "pk": 5,
+    "fields": {
+      "name": "🎨 หมวดสี",
+      "description": "ความฝันเกี่ยวกับสีต่างๆ"
+    }
+  },
+  {
+    "model": "dreams.dreamcategory",
+    "pk": 6,
+    "fields": {
+      "name": "🌿 หมวดธรรมชาติ",
+      "description": "ความฝันเกี่ยวกับธรรมชาติ"
+    }
+  },
+  {
+    "model": "dreams.dreamcategory",
+    "pk": 7,
+    "fields": {
+      "name": "🛠 หมวดเครื่องมือ / อุปกรณ์",
+      "description": "ความฝันเกี่ยวกับเครื่องมือและอุปกรณ์"
+    }
+  },
+  {
+    "model": "dreams.dreamcategory",
+    "pk": 8,
+    "fields": {
+      "name": "⚙ หมวดยานพาหนะอื่น ๆ",
+      "description": "ความฝันเกี่ยวกับยานพาหนะ"
+    }
+  },
+  {
+    "model": "dreams.dreamcategory",
+    "pk": 9,
+    "fields": {
+      "name": "🔮 หมวดสิ่งลี้ลับ / ความเชื่อ",
+      "description": "ความฝันเกี่ยวกับสิ่งลี้ลับและความเชื่อ"
+    }
+  },
+  {
+    "model": "dreams.dreamcategory",
+    "pk": 10,
+    "fields": {
+      "name": "🎉 หมวดกิจกรรม / งานบุญ",
+      "description": "ความฝันเกี่ยวกับกิจกรรมและงานบุญ"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 1,
+    "fields": {
+      "keyword": "กบ",
+      "category": 1,
+      "main_number": "8",
+      "secondary_number": "9",
+      "common_numbers": "89,59"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 2,
+    "fields": {
+      "keyword": "ไก่",
+      "category": 1,
+      "main_number": "0",
+      "secondary_number": "9",
+      "common_numbers": "09,19"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 3,
+    "fields": {
+      "keyword": "ควาย",
+      "category": 1,
+      "main_number": "4",
+      "secondary_number": "2",
+      "common_numbers": "42,82"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 4,
+    "fields": {
+      "keyword": "คางคก",
+      "category": 1,
+      "main_number": "8",
+      "secondary_number": "9",
+      "common_numbers": "89,59"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 5,
+    "fields": {
+      "keyword": "งู",
+      "category": 1,
+      "main_number": "5",
+      "secondary_number": "6",
+      "common_numbers": "56,65,59"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 6,
+    "fields": {
+      "keyword": "งูเล็ก",
+      "category": 1,
+      "main_number": "5",
+      "secondary_number": "6",
+      "common_numbers": "56,65,59"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 7,
+    "fields": {
+      "keyword": "กษัตริย์",
+      "category": 2,
+      "main_number": "9",
+      "secondary_number": "5",
+      "common_numbers": "59,95,19"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 8,
+    "fields": {
+      "keyword": "คนแก่",
+      "category": 2,
+      "main_number": "8",
+      "secondary_number": "9",
+      "common_numbers": "89,90,509"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 9,
+    "fields": {
+      "keyword": "คนตาย",
+      "category": 2,
+      "main_number": "0",
+      "secondary_number": "4",
+      "common_numbers": "04,40,07"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 10,
+    "fields": {
+      "keyword": "เณร",
+      "category": 2,
+      "main_number": "8",
+      "secondary_number": "9",
+      "common_numbers": "88,89,289"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 11,
+    "fields": {
+      "keyword": "เด็ก",
+      "category": 2,
+      "main_number": "1",
+      "secondary_number": "3",
+      "common_numbers": "11,13,33"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 12,
+    "fields": {
+      "keyword": "เด็กทารก",
+      "category": 2,
+      "main_number": "1",
+      "secondary_number": "3",
+      "common_numbers": "11,13,33"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 13,
+    "fields": {
+      "keyword": "เครื่องประดับ",
+      "category": 3,
+      "main_number": "0",
+      "secondary_number": "9",
+      "common_numbers": "09,60,10"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 14,
+    "fields": {
+      "keyword": "เงิน",
+      "category": 3,
+      "main_number": "8",
+      "secondary_number": "2",
+      "common_numbers": "28,82,68"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 15,
+    "fields": {
+      "keyword": "ดาบ",
+      "category": 3,
+      "main_number": "3",
+      "secondary_number": "8",
+      "common_numbers": "38,83,03"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 16,
+    "fields": {
+      "keyword": "ทอง",
+      "category": 3,
+      "main_number": "8",
+      "secondary_number": "2",
+      "common_numbers": "28,82,68"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 17,
+    "fields": {
+      "keyword": "ที่อยู่อาศัย",
+      "category": 3,
+      "main_number": "1",
+      "secondary_number": "4",
+      "common_numbers": "14,41,47"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 18,
+    "fields": {
+      "keyword": "น้ำ",
+      "category": 3,
+      "main_number": "0",
+      "secondary_number": "2",
+      "common_numbers": "02,29,32"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 19,
+    "fields": {
+      "keyword": "ขา",
+      "category": 4,
+      "main_number": "1",
+      "secondary_number": "2",
+      "common_numbers": "12,14"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 20,
+    "fields": {
+      "keyword": "แขน",
+      "category": 4,
+      "main_number": "1",
+      "secondary_number": "5",
+      "common_numbers": "15,50,52"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 21,
+    "fields": {
+      "keyword": "เท้า",
+      "category": 4,
+      "main_number": "1",
+      "secondary_number": "2",
+      "common_numbers": "12,14"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 22,
+    "fields": {
+      "keyword": "ฟัน",
+      "category": 4,
+      "main_number": "7",
+      "secondary_number": "8",
+      "common_numbers": "78,87,07"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 23,
+    "fields": {
+      "keyword": "มือ",
+      "category": 4,
+      "main_number": "1",
+      "secondary_number": "5",
+      "common_numbers": "15,50,52"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 24,
+    "fields": {
+      "keyword": "เลือด",
+      "category": 4,
+      "main_number": "0",
+      "secondary_number": "2",
+      "common_numbers": "02,22"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 25,
+    "fields": {
+      "keyword": "ขาว",
+      "category": 5,
+      "main_number": "9",
+      "secondary_number": "0",
+      "common_numbers": "09,90,19"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 26,
+    "fields": {
+      "keyword": "เขียว",
+      "category": 5,
+      "main_number": "7",
+      "secondary_number": "3",
+      "common_numbers": "73,37,03"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 27,
+    "fields": {
+      "keyword": "ดำ",
+      "category": 5,
+      "main_number": "0",
+      "secondary_number": "8",
+      "common_numbers": "08,80,18"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 28,
+    "fields": {
+      "keyword": "แดง",
+      "category": 5,
+      "main_number": "5",
+      "secondary_number": "2",
+      "common_numbers": "52,25,02"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 29,
+    "fields": {
+      "keyword": "น้ำเงิน",
+      "category": 5,
+      "main_number": "6",
+      "secondary_number": "4",
+      "common_numbers": "64,46,06"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 30,
+    "fields": {
+      "keyword": "สีขาว",
+      "category": 5,
+      "main_number": "9",
+      "secondary_number": "0",
+      "common_numbers": "09,90,19"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 31,
+    "fields": {
+      "keyword": "ดอกไม้",
+      "category": 6,
+      "main_number": "3",
+      "secondary_number": "7",
+      "common_numbers": "37,73"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 32,
+    "fields": {
+      "keyword": "ต้นไม้",
+      "category": 6,
+      "main_number": "2",
+      "secondary_number": "5",
+      "common_numbers": "25,52"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 33,
+    "fields": {
+      "keyword": "ท้องฟ้า",
+      "category": 6,
+      "main_number": "1",
+      "secondary_number": "4",
+      "common_numbers": "14,41"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 34,
+    "fields": {
+      "keyword": "ฝน",
+      "category": 6,
+      "main_number": "0",
+      "secondary_number": "6",
+      "common_numbers": "06,60"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 35,
+    "fields": {
+      "keyword": "ฟ้า",
+      "category": 6,
+      "main_number": "1",
+      "secondary_number": "4",
+      "common_numbers": "14,41"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 36,
+    "fields": {
+      "keyword": "หิน",
+      "category": 6,
+      "main_number": "4",
+      "secondary_number": "8",
+      "common_numbers": "48,84"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 37,
+    "fields": {
+      "keyword": "กรรไกร",
+      "category": 7,
+      "main_number": "3",
+      "secondary_number": "8",
+      "common_numbers": "38,83"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 38,
+    "fields": {
+      "keyword": "กระเป๋า",
+      "category": 7,
+      "main_number": "5",
+      "secondary_number": "9",
+      "common_numbers": "59,95"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 39,
+    "fields": {
+      "keyword": "เชือก",
+      "category": 7,
+      "main_number": "2",
+      "secondary_number": "5",
+      "common_numbers": "25,52"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 40,
+    "fields": {
+      "keyword": "โทรศัพท์",
+      "category": 7,
+      "main_number": "6",
+      "secondary_number": "7",
+      "common_numbers": "67,76"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 41,
+    "fields": {
+      "keyword": "มีด",
+      "category": 7,
+      "main_number": "3",
+      "secondary_number": "8",
+      "common_numbers": "38,83"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 42,
+    "fields": {
+      "keyword": "เครื่องบิน",
+      "category": 8,
+      "main_number": "1",
+      "secondary_number": "5",
+      "common_numbers": "15,51"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 43,
+    "fields": {
+      "keyword": "รถจักรยานยนต์",
+      "category": 8,
+      "main_number": "7",
+      "secondary_number": "8",
+      "common_numbers": "78,87"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 44,
+    "fields": {
+      "keyword": "เรือ",
+      "category": 8,
+      "main_number": "4",
+      "secondary_number": "9",
+      "common_numbers": "49,94"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 45,
+    "fields": {
+      "keyword": "เงินทอง",
+      "category": 9,
+      "main_number": "8",
+      "secondary_number": "2",
+      "common_numbers": "82,28"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 46,
+    "fields": {
+      "keyword": "โชคลาภ",
+      "category": 9,
+      "main_number": "8",
+      "secondary_number": "2",
+      "common_numbers": "82,28"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 47,
+    "fields": {
+      "keyword": "ผี",
+      "category": 9,
+      "main_number": "0",
+      "secondary_number": "4",
+      "common_numbers": "04,40"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 48,
+    "fields": {
+      "keyword": "พระเครื่อง",
+      "category": 9,
+      "main_number": "8",
+      "secondary_number": "9",
+      "common_numbers": "89,98"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 49,
+    "fields": {
+      "keyword": "วิญญาณ",
+      "category": 9,
+      "main_number": "0",
+      "secondary_number": "4",
+      "common_numbers": "04,40"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 50,
+    "fields": {
+      "keyword": "งานแต่งงาน",
+      "category": 10,
+      "main_number": "7",
+      "secondary_number": "1",
+      "common_numbers": "71,17"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 51,
+    "fields": {
+      "keyword": "งานบวช",
+      "category": 10,
+      "main_number": "8",
+      "secondary_number": "9",
+      "common_numbers": "89,98"
+    }
+  },
+  {
+    "model": "dreams.dreamkeyword",
+    "pk": 52,
+    "fields": {
+      "keyword": "งานศพ",
+      "category": 10,
+      "main_number": "0",
+      "secondary_number": "4",
+      "common_numbers": "04,40"
+    }
+  }
+]

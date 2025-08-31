@@ -84,19 +84,49 @@ class DreamInterpretation(models.Model):
     )
     dream_text = models.TextField("รายละเอียดความฝัน")
     interpreted_at = models.DateTimeField("วันที่ตีความ", auto_now_add=True)
-    
-    # ผลการตีความ
-    keywords_found = models.TextField("คำสำคัญที่พบ", blank=True)
-    suggested_numbers = models.CharField("เลขที่แนะนำ", max_length=200, blank=True)
+
+    # --- New Fields for Seer-AI ---
+    sentiment = models.CharField(
+        "อารมณ์ของความฝัน",
+        max_length=20,
+        blank=True,
+        help_text="Positive, Negative, or Neutral"
+    )
+    predicted_numbers_json = models.JSONField(
+        "ผลลัพธ์การทำนาย (JSON)",
+        null=True,
+        blank=True,
+        help_text="เก็บผลลัพธ์ทั้งหมดจาก Seer-AI"
+    )
+    main_symbols = models.TextField(
+        "สัญลักษณ์หลัก",
+        blank=True,
+        help_text="สัญลักษณ์หลักที่พบในความฝัน"
+    )
+
+    # --- Old Fields for backward compatibility ---
+    keywords_found = models.TextField("คำสำคัญที่พบ (Legacy)", blank=True)
+    suggested_numbers = models.CharField("เลขที่แนะนำ (Legacy)", max_length=200, blank=True)
     interpretation = models.TextField("คำทำนาย", blank=True)
-    
-    # ข้อมูลเพิ่มเติม
+
+    # --- Additional Info ---
     ip_address = models.GenericIPAddressField("IP Address", null=True, blank=True)
-    
+
     class Meta:
         verbose_name = "การตีความฝัน"
         verbose_name_plural = "การตีความฝัน"
         ordering = ['-interpreted_at']
-    
+
     def __str__(self):
         return f"ความฝันเมื่อ {self.interpreted_at.strftime('%d/%m/%Y %H:%M')}"
+
+    def save(self, *args, **kwargs):
+        # For backward compatibility, populate old fields from new data if available
+        if self.predicted_numbers_json and isinstance(self.predicted_numbers_json, dict):
+            if 'predicted_numbers' in self.predicted_numbers_json:
+                self.suggested_numbers = ', '.join([
+                    item['number'] for item in self.predicted_numbers_json['predicted_numbers']
+                ])
+        if self.main_symbols:
+            self.keywords_found = self.main_symbols
+        super().save(*args, **kwargs)
