@@ -2,10 +2,29 @@ from django.db.models import Count, Q
 from datetime import datetime, timedelta
 from collections import Counter
 from .models import LotteryDraw, NumberStatistics
+from lottery_checker.models import LottoResult
 
 class StatsCalculator:
     def __init__(self):
         self.all_draws = LotteryDraw.objects.all().order_by('-draw_date')
+        self.lotto_results = LottoResult.objects.all().order_by('-draw_date')
+    
+    def get_hot_numbers_from_lotto_result(self, limit=10, days=90, number_type='2D'):
+        """คำนวณเลขที่ออกบ่อย (เลขฮอต) จาก LottoResult โดยตรง"""
+        cutoff_date = datetime.now().date() - timedelta(days=days)
+        recent_results = self.lotto_results.filter(draw_date__gte=cutoff_date)
+        
+        number_counter = Counter()
+        
+        for result in recent_results:
+            # ดึงข้อมูลจาก result_data (ข้อมูลจาก API กองสลาก)
+            if hasattr(result, 'result_data') and result.result_data:
+                # ข้อมูลจาก GLO API จะมี statusMessage="getLotteryResult - Success" 
+                # แต่ไม่มีข้อมูลรางวัล ให้ข้ามไป
+                continue
+        
+        # ถ้าไม่มีข้อมูลจาก LottoResult ที่มีรางวัล ให้ใช้ LotteryDraw แทน
+        return self.get_hot_numbers(limit, days, number_type)
     
     def get_hot_numbers(self, limit=10, days=90, number_type='2D'):
         """คำนวณเลขที่ออกบ่อย (เลขฮอต)"""

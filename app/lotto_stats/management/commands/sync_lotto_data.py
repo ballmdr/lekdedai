@@ -165,7 +165,20 @@ class Command(BaseCommand):
     
     def _has_lottery_data(self, result_data):
         """ตรวจสอบว่ามีข้อมูลรางวัลหรือไม่"""
-        # ตรวจสอบรูปแบบต่างๆ
+        # รูปแบบใหม่: response.result.data (GLO API format)
+        if ('response' in result_data and result_data['response'] and
+            isinstance(result_data['response'], dict) and
+            'result' in result_data['response'] and
+            result_data['response']['result'] and
+            isinstance(result_data['response']['result'], dict) and
+            'data' in result_data['response']['result'] and
+            result_data['response']['result']['data']):
+            
+            data = result_data['response']['result']['data']
+            if isinstance(data, dict) and ('first' in data or 'fifth' in data):
+                return True
+        
+        # รูปแบบเดิม        
         if 'first' in result_data and result_data['first']:
             return True
         if 'response' in result_data and result_data['response']:
@@ -180,7 +193,28 @@ class Command(BaseCommand):
     
     def _extract_first_prize(self, result_data):
         """ดึงรางวัลที่ 1 จากข้อมูล"""
-        # รูปแบบที่ 1: first อยู่ในระดับบน
+        # รูปแบบใหม่: response.result.data.first (GLO API format)
+        if ('response' in result_data and result_data['response'] and
+            isinstance(result_data['response'], dict) and
+            'result' in result_data['response'] and
+            result_data['response']['result'] and
+            isinstance(result_data['response']['result'], dict) and
+            'data' in result_data['response']['result'] and
+            result_data['response']['result']['data']):
+            
+            data = result_data['response']['result']['data']
+            if isinstance(data, dict) and 'first' in data and data['first']:
+                first_data = data['first']
+                if isinstance(first_data, dict) and 'number' in first_data:
+                    numbers = first_data['number']
+                    if isinstance(numbers, list) and numbers:
+                        return numbers[0].get('value', '')
+                    elif isinstance(numbers, str):
+                        return numbers
+                elif isinstance(first_data, str):
+                    return first_data
+        
+        # รูปแบบเดิม: first อยู่ในระดับบน
         if 'first' in result_data and result_data['first']:
             first_data = result_data['first']
             if isinstance(first_data, dict) and 'number' in first_data:
@@ -192,7 +226,7 @@ class Command(BaseCommand):
             elif isinstance(first_data, str):
                 return first_data
         
-        # รูปแบบที่ 2: first อยู่ใน response
+        # รูปแบบเดิม: first อยู่ใน response
         if 'response' in result_data and result_data['response']:
             response_data = result_data['response']
             if isinstance(response_data, dict) and 'first' in response_data:
@@ -206,7 +240,7 @@ class Command(BaseCommand):
                 elif isinstance(first_data, str):
                     return first_data
         
-        # รูปแบบที่ 3: first อยู่ใน data
+        # รูปแบบเดิม: first อยู่ใน data
         if 'data' in result_data and result_data['data']:
             data = result_data['data']
             if isinstance(data, dict) and 'first' in data:
@@ -248,19 +282,33 @@ class Command(BaseCommand):
         """ดึงเลขรางวัลตามประเภท"""
         numbers = []
         
-        # รูปแบบที่ 1: อยู่ในระดับบน
+        # รูปแบบใหม่: response.result.data (GLO API format)
+        if ('response' in result_data and result_data['response'] and
+            isinstance(result_data['response'], dict) and
+            'result' in result_data['response'] and
+            result_data['response']['result'] and
+            isinstance(result_data['response']['result'], dict) and
+            'data' in result_data['response']['result'] and
+            result_data['response']['result']['data']):
+            
+            data = result_data['response']['result']['data']
+            if isinstance(data, dict) and prize_type in data and data[prize_type]:
+                prize_data = data[prize_type]
+                numbers.extend(self._parse_prize_data(prize_data))
+        
+        # รูปแบบเดิม: อยู่ในระดับบน
         if prize_type in result_data and result_data[prize_type]:
             prize_data = result_data[prize_type]
             numbers.extend(self._parse_prize_data(prize_data))
         
-        # รูปแบบที่ 2: อยู่ใน response
+        # รูปแบบเดิม: อยู่ใน response
         if 'response' in result_data and result_data['response']:
             response_data = result_data['response']
             if isinstance(response_data, dict) and prize_type in response_data:
                 prize_data = response_data[prize_type]
                 numbers.extend(self._parse_prize_data(prize_data))
         
-        # รูปแบบที่ 3: อยู่ใน data
+        # รูปแบบเดิม: อยู่ใน data
         if 'data' in result_data and result_data['data']:
             data = result_data['data']
             if isinstance(data, dict) and prize_type in data:
