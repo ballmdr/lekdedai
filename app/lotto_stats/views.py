@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 from collections import Counter
 import json
 import logging
+from django.views.decorators.http import require_POST
+from django.contrib.admin.views.decorators import staff_member_required
 
 from .models import LotteryDraw, NumberStatistics, HotColdNumber
 from .stats_calculator import StatsCalculator
@@ -154,14 +156,10 @@ def api_sync_status(request):
             'error': str(e)
         }, status=500)
 
+@require_POST
+@staff_member_required
 def api_sync_data(request):
     """API สำหรับซิงค์ข้อมูลจาก lottery_checker"""
-    if request.method != 'POST':
-        return JsonResponse({
-            'success': False,
-            'error': 'Method not allowed'
-        }, status=405)
-    
     try:
         data = json.loads(request.body)
         days_back = data.get('days_back', 7)
@@ -195,14 +193,10 @@ def api_sync_data(request):
             'error': str(e)
         }, status=500)
 
+@require_POST
+@staff_member_required
 def api_sync_specific_date(request):
     """API สำหรับซิงค์ข้อมูลวันที่เฉพาะ"""
-    if request.method != 'POST':
-        return JsonResponse({
-            'success': False,
-            'error': 'Method not allowed'
-        }, status=405)
-    
     try:
         data = json.loads(request.body)
         date_str = data.get('date')  # Format: 'YYYY-MM-DD'

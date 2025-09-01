@@ -129,32 +129,28 @@ class NewsArticle(models.Model):
     def extract_numbers_from_content(self):
         """วิเคราะห์หาเลขจากเนื้อหาข่าว"""
         text = self.content + " " + self.title
+        numbers = set()
         
         # หาเลข 2-3 หลัก
-        numbers = re.findall(r'\b\d{2,3}\b', text)
+        numbers.update(re.findall(r'\b\d{2,3}\b', text))
         
         # หาคำสำคัญที่อาจบ่งบอกเลข
-        keywords_to_numbers = {
-            'รถทะเบียน': [],
-            'บ้านเลขที่': [],
-            'อายุ': [],
-            'ปี': [],
-            'วันที่': [],
-            'เวลา': [],
-            'บาท': [],
-            'กิโลเมตร': [],
-        }
+        keywords = ['อายุ', 'บ้านเลขที่', 'ทะเบียน', 'วันที่', 'งวดที่', 'เลขที่']
+        for keyword in keywords:
+            # หาตัวเลข (1-4 หลัก) ที่อยู่ตามหลังคำสำคัญในระยะ 10 ตัวอักษร
+            for match in re.finditer(keyword, text, re.IGNORECASE):
+                search_area = text[match.end():match.end() + 10]
+                found = re.findall(r'\b\d{1,4}\b', search_area)
+                numbers.update(num for num in found if len(num) >= 2)
         
         # หาทะเบียนรถ
         car_plates = re.findall(r'[0-9ก-ฮ]{2}\s*[-]?\s*\d{2,4}', text)
         for plate in car_plates:
             plate_numbers = re.findall(r'\d+', plate)
-            numbers.extend(plate_numbers)
+            numbers.update(p[-2:] for p in plate_numbers if len(p) >= 2) # สนใจ 2 ตัวท้าย
         
         # จำกัดและลบซ้ำ
-        unique_numbers = list(dict.fromkeys(numbers))[:20]
-        
-        return unique_numbers
+        return list(numbers)[:20]
 
 class LuckyNumberHint(models.Model):
     """เลขเด็ดจากแหล่งต่างๆ"""
