@@ -273,25 +273,41 @@ async function analyzeAgain(articleId) {
     
     if (!confirm(confirmMessage)) return;
     
-    try {
-        // แสดง loading
-        const button = document.getElementById('analyzeButton');
-        const originalText = button.innerHTML;
+    // แสดง loading
+    const button = document.getElementById('analyzeButton');
+    const originalText = button ? button.innerHTML : '<i class="fas fa-magic mr-2"></i>วิเคราะห์เลขเด็ด';
+    
+    if (button) {
         button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังวิเคราะห์...';
         button.disabled = true;
+    }
+    
+    try {
         
         // ซ่อนส่วนผลลัพธ์เดิม
         const insightAnalysis = document.getElementById('insightAnalysis');
         insightAnalysis.classList.add('hidden');
         
+        console.log('Sending analysis request for article:', articleId);
+        console.log('CSRF Token:', getCsrfToken());
+        
         const response = await fetch(`/news/api/analyze/${articleId}/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json'
             }
         });
         
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('Response data:', data);
         if (data.success) {
             // อัปเดตผลลัพธ์บนหน้าจอ
             if (data.is_insight_ai) {
@@ -307,18 +323,28 @@ async function analyzeAgain(articleId) {
             showErrorMessage('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถวิเคราะห์ได้'));
         }
     } catch (error) {
+        console.error('Fetch error:', error);
         showErrorMessage('เกิดข้อผิดพลาด: ' + error.message);
     } finally {
         // คืนค่าปุ่มเดิม
+        console.log('Finally block - restoring button');
         const button = document.getElementById('analyzeButton');
-        button.innerHTML = originalText;
-        button.disabled = false;
+        if (button) {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        } else {
+            console.error('analyzeButton not found in finally block');
+        }
     }
 }
 
 function updateInsightAIResults(data) {
+    console.log('updateInsightAIResults called with data:', data);
     const analysisResults = document.getElementById('analysisResults');
     const insightAnalysis = document.getElementById('insightAnalysis');
+    const articleId = {{ article.id }};
+    console.log('analysisResults element:', analysisResults);
+    console.log('insightAnalysis element:', insightAnalysis);
     
     // อัปเดตเลขหลัก
     if (data.numbers && data.numbers.length > 0) {
@@ -338,7 +364,30 @@ function updateInsightAIResults(data) {
                         ความน่าเชื่อถือ: 
                         <span class="font-bold text-lg text-foreground">${Math.round(data.confidence)}%</span>
                     </span>
-                    <button onclick="analyzeAgain({{ article.id }})" class="btn btn-primary" id="analyzeButton">
+                    <button onclick="analyzeAgain(${articleId})" class="btn btn-primary" id="analyzeButton">
+                        <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        // แสดงข้อความเมื่อไม่มีเลข
+        analysisResults.innerHTML = `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-info-circle text-xl text-yellow-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-yellow-800">ไม่พบเลขในข่าวนี้</h4>
+                        <p class="text-sm text-yellow-700">AI ไม่สามารถสกัดเลขที่มีความหมายจากเนื้อหาข่าวนี้ได้</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-yellow-700">
+                        การวิเคราะห์เสร็จสมบูรณ์แล้ว (${Math.round(data.confidence)}% confidence)
+                    </span>
+                    <button onclick="analyzeAgain(${articleId})" class="btn btn-primary" id="analyzeButton">
                         <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
                     </button>
                 </div>
@@ -397,7 +446,10 @@ function updateInsightAIResults(data) {
 }
 
 function updateTraditionalResults(data) {
+    console.log('updateTraditionalResults called with data:', data);
     const analysisResults = document.getElementById('analysisResults');
+    const articleId = {{ article.id }};
+    console.log('analysisResults element (traditional):', analysisResults);
     
     if (data.numbers && data.numbers.length > 0) {
         const numbersHTML = data.numbers.slice(0, 10).map(num => 
@@ -416,7 +468,30 @@ function updateTraditionalResults(data) {
                         ความน่าเชื่อถือ: 
                         <span class="font-bold text-lg text-foreground">${Math.round(data.confidence)}%</span>
                     </span>
-                    <button onclick="analyzeAgain({{ article.id }})" class="btn btn-primary" id="analyzeButton">
+                    <button onclick="analyzeAgain(${articleId})" class="btn btn-primary" id="analyzeButton">
+                        <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        // แสดงข้อความเมื่อไม่มีเลข (Traditional method)
+        analysisResults.innerHTML = `
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-search text-xl text-gray-500"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">ไม่พบเลขในข่าวนี้</h4>
+                        <p class="text-sm text-gray-600">ระบบวิเคราะห์แบบดั้งเดิมไม่สามารถสกัดเลขจากข่าวนี้ได้</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">
+                        การวิเคราะห์เสร็จสมบูรณ์แล้ว (${Math.round(data.confidence)}% confidence)
+                    </span>
+                    <button onclick="analyzeAgain(${articleId})" class="btn btn-primary" id="analyzeButton">
                         <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
                     </button>
                 </div>
@@ -467,6 +542,22 @@ function showErrorMessage(message) {
         alertDiv.style.transform = 'translateX(100%)';
         setTimeout(() => alertDiv.remove(), 300);
     }, 5000);
+}
+
+function getCsrfToken() {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 </script>
 {% endblock %}

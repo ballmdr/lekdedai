@@ -1,75 +1,44 @@
 import re
 from collections import Counter
 from django.db import models
+from .news_lottery_scorer import NewsLotteryScorer
 
 class NewsAnalyzer:
-    """วิเคราะห์หาเลขจากข่าว ใช้ระบบเดียวกับความฝัน"""
+    """วิเคราะห์หาเลขจากข่าว ใช้ระบบใหม่ที่เฉพาะเจาะจงสำหรับหวย"""
     
     def __init__(self):
-        pass
+        self.lottery_scorer = NewsLotteryScorer()
     
     def analyze_article(self, article):
-        """วิเคราะห์บทความข่าว ใช้ระบบเดียวกับความฝัน"""
-        text = f"{article.title} {article.content}".lower()
-        
-        keywords_found = []
-        confidence = 50  # เริ่มต้นที่ 50%
-        
-        priority_numbers = {
-            'high': [],
-            'medium': [],
-            'low': []
-        }
+        """วิเคราะห์บทความข่าว ใช้ระบบใหม่เฉพาะสำหรับหวย"""
         
         print(f"🔍 เริ่มวิเคราะห์ข่าว: {article.title[:50]}...")
-        print(f"📝 ข้อความที่วิเคราะห์: {text[:100]}...")
         
         try:
-            # 1. หาเลขที่ปรากฏในข่าว (low priority)
-            direct_numbers = self.extract_direct_numbers(text)
-            print(f"🔢 เลขที่พบตรงๆ: {direct_numbers}")
-            priority_numbers['low'].extend(direct_numbers)
+            # ใช้ระบบให้คะแนนใหม่
+            scoring_result = self.lottery_scorer.score_news_article(article.title, article.content)
             
-            # 2. หาเลขจากคำสำคัญ (medium priority)
-            keyword_numbers, keywords = self.extract_dream_keyword_numbers(text)
-            print(f"🔑 เลขจากคำสำคัญ: {keyword_numbers}")
-            print(f"📚 คำสำคัญที่พบ: {keywords}")
-            priority_numbers['medium'].extend(keyword_numbers)
-            keywords_found.extend(keywords)
+            print(f"🎯 คะแนนข่าว: {scoring_result['score']} ({scoring_result['category']})")
+            print(f"🔢 เลขที่สกัดได้: {len(scoring_result['extracted_numbers'])} เลข")
             
-            # 3. หาทะเบียนรถ (high priority)
-            plate_numbers = self.extract_plate_numbers(text)
-            print(f"🚗 เลขทะเบียนรถ: {plate_numbers}")
-            priority_numbers['high'].extend(plate_numbers)
-            if plate_numbers:
-                confidence += 20 # Increase confidence for high priority numbers
+            # แปลงรูปแบบให้เข้ากับระบบเดิม
+            extracted_numbers = [item['number'] for item in scoring_result['extracted_numbers']]
+            keywords_found = [item['reason'] for item in scoring_result['extracted_numbers']]
             
-            # 4. หาเลขบ้าน (high priority)
-            house_numbers = self.extract_house_numbers(text)
-            print(f"🏠 เลขบ้าน: {house_numbers}")
-            priority_numbers['high'].extend(house_numbers)
-            if house_numbers:
-                confidence += 15 # Increase confidence for high priority numbers
-
-            # 5. จัดเรียงเลขตามความสำคัญ
-            unique_numbers = self._get_prioritized_numbers(priority_numbers)
-            print(f"✨ เลขที่ประมวลผลแล้ว: {unique_numbers}")
-            
-            # 6. คำนวณความน่าเชื่อถือ
-            if len(unique_numbers) > 0:
-                confidence = min(confidence + (len(keywords_found) * 5), 95)
-            
-            print(f"🎯 ผลลัพธ์สุดท้าย: เลข {len(unique_numbers)} ตัว, ความน่าเชื่อถือ {confidence}%")
+            print(f"✨ เลขสุดท้าย: {extracted_numbers}")
+            print(f"📊 เหตุผล: {scoring_result['confidence_details']['reasoning']}")
             
             return {
-                'numbers': unique_numbers[:15],  # จำกัดไม่เกิน 15 เลข
+                'numbers': extracted_numbers[:15],
                 'keywords': keywords_found,
-                'confidence': confidence
+                'confidence': scoring_result['score'],
+                'category': scoring_result['category'],
+                'detailed_analysis': scoring_result
             }
             
         except Exception as e:
             # ถ้าเกิดข้อผิดพลาด ให้ใช้ระบบเดิม
-            print(f"❌ Error using DreamKeyword: {e}")
+            print(f"❌ Error using new lottery scorer: {e}")
             return self.analyze_article_fallback(article)
 
     def _get_prioritized_numbers(self, priority_numbers):

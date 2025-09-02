@@ -1,7 +1,13 @@
 from django.shortcuts import render
 from django.db.models import Q, Sum, Avg
 from django.utils import timezone
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
+from collections import Counter
+import random
+import json
 
 # Import models จาก apps ต่างๆ
 from news.models import NewsArticle
@@ -12,14 +18,71 @@ from ai_engine.models import (
 from lottery_checker.models import LottoResult
 from lucky_spots.models import LuckyLocation
 from utils.lottery_dates import LotteryDates
+from .instant_lucky import get_instant_lucky_numbers
+
+def get_daily_numbers_for_today():
+    """สร้างเลขเด็ดประจำวัน - เลขเดียวกันตลอดวัน"""
+    today = timezone.now().date()
+    # ใช้วันที่เป็น seed เพื่อให้ได้เลขเดียวกันตลอดวัน
+    random.seed(today.toordinal())
+    
+    return {
+        'daily_seed': today.toordinal()
+    }
+
+def get_daily_ritual_content(latest_news, latest_prediction):
+    """สร้างเลขเด็ดประจำวัน - เลขเดียวกันตลอดวัน"""
+    
+    # ตั้งค่า seed ใหม่สำหรับวันนี้
+    today = timezone.now().date()
+    random.seed(today.toordinal())
+    
+    ritual_content = {
+        'title': '🎯 เลขเด็ด AI ประจำวัน',
+        'subtitle': f'วันที่ {today.strftime("%d/%m/%Y")}',
+        'primary_message': 'เลขจากข่าวดัง และการวิเคราะห์ AI',
+        'highlighted_numbers': [],
+        'buzz_numbers': [],
+        'special_message': 'เลขเปลี่ยนใหม่ทุกวัน เวลา 00:01 น.'
+    }
+    
+    # เลขจากข่าวล่าสุด
+    news_numbers = []
+    if latest_news.exists():
+        for article in latest_news[:2]:
+            numbers = article.get_extracted_numbers_list()
+            news_numbers.extend(numbers[:2])
+    
+    # เลขจาก AI prediction
+    ai_numbers = []
+    if latest_prediction:
+        if hasattr(latest_prediction, 'get_top_two_digit_numbers') and latest_prediction.get_top_two_digit_numbers:
+            ai_numbers.extend([item.get('number', item) if isinstance(item, dict) else item 
+                              for item in latest_prediction.get_top_two_digit_numbers[:3]])
+    
+    # รวมเลขทั้งหมด (เฉพาะจากข่าวและ AI)
+    all_numbers = news_numbers + ai_numbers
+    
+    # ใช้เฉพาะเลขจากข่าวและ AI เท่านั้น
+    ritual_content['highlighted_numbers'] = list(set(all_numbers))[:4]
+    ritual_content['buzz_numbers'] = []  # เอาเลขสุ่มออก
+    
+    return ritual_content
 
 def home(request):
     """หน้าแรก - แสดงข้อมูลจริงจาก database"""
     
-    # ดึงข่าวล่าสุด 3 ข่าว
+    # ดึงข่าวล่าสุดที่เหมาะสำหรับหวย (คะแนน >= 70)
     latest_news = NewsArticle.objects.filter(
-        status='published'
-    ).select_related('category').order_by('-published_date')[:3]
+        status='published',
+        lottery_relevance_score__gte=70
+    ).select_related('category').order_by('-lottery_relevance_score', '-published_date')[:3]
+    
+    # ถ้าไม่มีข่าวคะแนนสูง ให้ใช้ข่าวล่าสุดธรรมดา
+    if not latest_news.exists():
+        latest_news = NewsArticle.objects.filter(
+            status='published'
+        ).select_related('category').order_by('-published_date')[:3]
     
     # ดึงการทำนาย AI Ensemble ล่าสุด (ระบบใหม่)
     latest_prediction = EnsemblePrediction.objects.filter(
@@ -90,6 +153,9 @@ def home(request):
             'formatted_date': next_draw_date_obj.strftime('%d %B %Y')
         }
     
+    # สร้าง Daily Ritual Content (เลขเดียวกันตลอดวัน)
+    daily_ritual = get_daily_ritual_content(latest_news, latest_prediction)
+    
     # จัดเตรียม context สำหรับ template
     context = {
         'latest_news': latest_news,
@@ -112,6 +178,107 @@ def home(request):
         },
         'current_date': timezone.now(),
         'thai_current_date': timezone.now().strftime('%d %B %Y'),
+        
+        # 🎯 Daily Ritual Engine (เลขเดียวกันตลอดวัน)
+        'daily_ritual': daily_ritual,
+        'current_date_formatted': timezone.now().strftime('%d/%m/%Y'),
     }
     
     return render(request, 'home/index.html', context)
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def instant_lucky_numbers_api(request):
+    """
+    API endpoint สำหรับ Instant Lucky Numbers
+    GET: ใช้วันที่ปัจจุบัน
+    POST: รับ significant_date จาก body
+    """
+    
+    try:
+        significant_date = None
+        
+        selected_news_ids = None
+        
+        if request.method == "POST":
+            try:
+                data = json.loads(request.body.decode('utf-8'))
+                significant_date = data.get('significant_date')
+                selected_news_ids = data.get('selected_news_ids')
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                # ถ้า JSON ไม่ถูกต้อง ใช้วันปัจจุบัน
+                pass
+        
+        # เรียก service function
+        result = get_instant_lucky_numbers(significant_date, selected_news_ids)
+        
+        return JsonResponse({
+            'success': True,
+            'data': result
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'message': 'เกิดข้อผิดพลาดในการสร้างเลขเด็ด กรุณาลองใหม่'
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_recent_news_for_selection_api(request):
+    """
+    API endpoint สำหรับดึงข่าวล่าสุดให้ผู้ใช้เลือก
+    """
+    
+    try:
+        # ดึงข่าวล่าสุด 24-48 ชั่วโมง
+        recent_cutoff = timezone.now() - timedelta(hours=48)
+        
+        # ข่าวคะแนนสูงก่อน
+        high_score_news = NewsArticle.objects.filter(
+            status='published',
+            lottery_relevance_score__gte=70,
+            published_date__gte=recent_cutoff
+        ).select_related('category').order_by('-lottery_relevance_score', '-published_date')[:10]
+        
+        # ถ้าไม่มีข่าวคะแนนสูง ใช้ข่าวล่าสุดธรรมดา
+        if not high_score_news.exists():
+            high_score_news = NewsArticle.objects.filter(
+                status='published',
+                published_date__gte=recent_cutoff
+            ).select_related('category').order_by('-published_date')[:8]
+        
+        # แปลงเป็น JSON format
+        news_list = []
+        for article in high_score_news:
+            extracted_nums = article.get_extracted_numbers_list()
+            
+            news_list.append({
+                'id': article.id,
+                'title': article.title[:80] + ('...' if len(article.title) > 80 else ''),
+                'category': article.category.name if article.category else 'ทั่วไป',
+                'lottery_category': article.get_lottery_category_display() if hasattr(article, 'get_lottery_category_display') else article.lottery_category,
+                'lottery_relevance_score': article.lottery_relevance_score,
+                'extracted_numbers': extracted_nums[:5],  # แสดงแค่ 5 เลขแรก
+                'published_date': article.published_date.strftime('%d/%m/%Y %H:%M'),
+                'confidence_level': 'สูง' if article.lottery_relevance_score >= 90 else 'ปานกลาง' if article.lottery_relevance_score >= 70 else 'พอใช้'
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'news_articles': news_list,
+                'total_count': len(news_list),
+                'time_range': '24-48 ชั่วโมงล่าสุด'
+            }
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'message': 'เกิดข้อผิดพลาดในการดึงข่าว กรุณาลองใหม่'
+        }, status=500)

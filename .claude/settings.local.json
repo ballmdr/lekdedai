@@ -10,7 +10,11 @@
       "Bash(curl:*)",
       "Bash(find:*)",
       "Bash(css-tree-validate:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(gemini:*)",
+      "Bash(exit)",
+      "Bash(docker exec:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []

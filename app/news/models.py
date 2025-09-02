@@ -79,6 +79,25 @@ class NewsArticle(models.Model):
         help_text="0-100"
     )
     
+    # คะแนนความเหมาะสมสำหรับหวย (ระบบใหม่)
+    lottery_relevance_score = models.IntegerField(
+        "คะแนนความเหมาะสมหวย",
+        default=0,
+        help_text="0-100 คะแนนจากระบบวิเคราะห์ใหม่"
+    )
+    lottery_category = models.CharField(
+        "หมวดหมู่สำหรับหวย",
+        max_length=20,
+        choices=[
+            ('accident', 'อุบัติเหตุ'),
+            ('celebrity', 'คนดัง'),
+            ('economic', 'เศรษฐกิจ'),
+            ('general', 'ทั่วไป')
+        ],
+        blank=True,
+        help_text="หมวดหมู่ที่วิเคราะห์โดยระบบใหม่"
+    )
+    
     # การเผยแพร่
     status = models.CharField(
         "สถานะ",

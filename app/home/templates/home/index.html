@@ -7,7 +7,7 @@
 
 {% block content %}
 
-  <!-- AI Lottery Highlight Section -->
+  <!-- AI Lottery Highlight Section - Daily Ritual -->
   <section class="py-16 bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 relative overflow-hidden border-b-2 border-primary/20">
     <!-- Background Effects -->
     <div class="absolute inset-0" style="background: radial-gradient(circle at 70% 30%, rgba(255, 193, 7, 0.15), transparent 60%);"></div>
@@ -15,85 +15,178 @@
     
     <div class="container mx-auto px-4 relative z-10">
       <div class="max-w-4xl mx-auto">
-        <!-- Header -->
+        <!-- Dynamic Header based on Time Period -->
         <div class="text-center mb-10">
           <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full text-primary font-semibold mb-4">
-            <i class="fas fa-robot"></i>
-            <span>AI PREDICTION</span>
+            {% if time_period == 'morning' %}
+              <i class="fas fa-sun"></i>
+              <span>MORNING RITUAL</span>
+            {% elif time_period == 'afternoon' %}
+              <i class="fas fa-chart-line"></i>
+              <span>TRENDING NOW</span>
+            {% else %}
+              <i class="fas fa-moon"></i>
+              <span>EVENING SUMMARY</span>
+            {% endif %}
             <i class="fas fa-sparkles"></i>
+            <span class="text-xs opacity-75">{{ current_hour }}:00</span>
           </div>
+          
           <h1 class="text-4xl md:text-6xl font-serif font-bold text-foreground mb-4 leading-tight">
-            <span class="text-primary">เลขเด็ด AI</span><br>
-            <span class="text-2xl md:text-4xl text-muted-foreground">ประจำงวดนี้</span>
+            <span class="text-primary">{{ daily_ritual.title }}</span><br>
+            <span class="text-2xl md:text-4xl text-muted-foreground">{{ daily_ritual.subtitle }}</span>
           </h1>
+          
+          <p class="text-lg text-muted-foreground mb-2">{{ daily_ritual.primary_message }}</p>
+          
           {% if ai_prediction %}
-          <p class="text-lg text-muted-foreground">
+          <p class="text-base text-muted-foreground">
             งวดวันที่ {{ ai_prediction.session.for_draw_date|date:"j F Y" }} 
             <span class="inline-flex items-center gap-1 ml-2 text-green-600">
               <i class="fas fa-check-circle text-sm"></i>
               <span class="font-semibold">{{ ai_prediction.overall_confidence|floatformat:1 }}% มั่นใจ</span>
             </span>
           </p>
-          {% else %}
-          <p class="text-lg text-muted-foreground">การทำนายด้วย AI อัจฉริยะ</p>
+          {% endif %}
+          
+          {% if daily_ritual.special_message %}
+            <div class="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-accent/20 rounded-full text-accent text-sm">
+              <i class="fas fa-clock"></i>
+              {{ daily_ritual.special_message }}
+            </div>
           {% endif %}
         </div>
 
-        <!-- Highlighted Numbers -->
-        <div class="grid md:grid-cols-2 gap-8 mb-10">
-          <!-- Top 2-Digit -->
-          <div class="card border-2 border-primary/30 bg-primary/5 hover:shadow-xl transition-all duration-300">
-            <div class="p-8 text-center">
-              <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-dice-two text-2xl text-white"></i>
-              </div>
-              <h3 class="text-xl font-bold text-foreground mb-4">เลข 2 ตัวท็อป</h3>
-              <div class="flex justify-center gap-3 mb-4">
-                {% if ai_prediction and ai_prediction.get_top_two_digit_numbers %}
-                  {% for item in ai_prediction.get_top_two_digit_numbers|slice:":2" %}
-                  <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">
-                    {{ item.number }}
+        <!-- Dynamic Numbers Display based on Time Period -->
+        <div class="{% if time_period == 'afternoon' %}grid md:grid-cols-1{% else %}grid md:grid-cols-2{% endif %} gap-8 mb-10">
+          
+          {% if time_period == 'morning' %}
+            <!-- Morning: เลขเด็ดประจำวัน -->
+            <div class="card border-2 border-amber-300/50 bg-gradient-to-br from-amber-50 to-yellow-50 hover:shadow-xl transition-all duration-300">
+              <div class="p-8 text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="fas fa-sun text-2xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-foreground mb-2">🌅 เลขเด็ดเช้านี้</h3>
+                <p class="text-sm text-muted-foreground mb-4">จากข่าวดังและ AI</p>
+                <div class="flex justify-center gap-3 flex-wrap mb-4">
+                  {% for number in daily_ritual.highlighted_numbers %}
+                  <div class="w-14 h-14 bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg hover:scale-110 transition-transform">
+                    {{ number }}
                   </div>
+                  {% empty %}
+                  <div class="w-14 h-14 bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">42</div>
+                  <div class="w-14 h-14 bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">89</div>
                   {% endfor %}
-                {% else %}
-                  <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">47</div>
-                  <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">89</div>
+                </div>
+                <p class="text-xs text-muted-foreground">📅 อัปเดตเช้า 09:00 น.</p>
+              </div>
+            </div>
+            
+            <!-- Morning: AI Prediction -->
+            <div class="card border-2 border-primary/30 bg-primary/5 hover:shadow-xl transition-all duration-300">
+              <div class="p-8 text-center">
+                <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="fas fa-brain text-2xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-foreground mb-2">🤖 AI ทำนาย</h3>
+                <p class="text-sm text-muted-foreground mb-4">โมเดลรวม 3 ตัว</p>
+                <div class="flex justify-center gap-3 mb-4">
+                  {% if ai_prediction and ai_prediction.get_top_two_digit_numbers %}
+                    {% for item in ai_prediction.get_top_two_digit_numbers|slice:":2" %}
+                    <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">
+                      {{ item.number }}
+                    </div>
+                    {% endfor %}
+                  {% else %}
+                    <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">47</div>
+                    <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">89</div>
+                  {% endif %}
+                </div>
+                {% if ai_prediction %}
+                <p class="text-sm text-muted-foreground">ความมั่นใจ {{ ai_prediction.overall_confidence|floatformat:1 }}%</p>
                 {% endif %}
               </div>
-              {% if ai_prediction %}
-              <p class="text-sm text-muted-foreground">
-                ความมั่นใจ {{ ai_prediction.get_top_two_digit_numbers.0.confidence|default:54|floatformat:1 }}%
-              </p>
-              {% endif %}
             </div>
-          </div>
-
-          <!-- Top 3-Digit -->
-          <div class="card border-2 border-secondary/30 bg-secondary/5 hover:shadow-xl transition-all duration-300">
-            <div class="p-8 text-center">
-              <div class="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-dice-three text-2xl text-white"></i>
-              </div>
-              <h3 class="text-xl font-bold text-foreground mb-4">เลข 3 ตัวท็อป</h3>
-              <div class="flex justify-center gap-2 mb-4">
-                {% if ai_prediction and ai_prediction.get_top_three_digit_numbers %}
-                  {% for item in ai_prediction.get_top_three_digit_numbers|slice:":2" %}
-                  <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">
-                    {{ item.number }}
+            
+          {% elif time_period == 'afternoon' %}
+            <!-- Afternoon: Community Buzz -->
+            <div class="card border-2 border-orange-300/50 bg-gradient-to-br from-orange-50 to-red-50 hover:shadow-xl transition-all duration-300">
+              <div class="p-10 text-center">
+                <div class="w-20 h-20 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <i class="fas fa-fire text-3xl text-white"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-foreground mb-3">🔥 เลขที่คนพูดถึงมากที่สุด</h3>
+                <p class="text-base text-muted-foreground mb-6">กระแสและความนิยมจากชุมชน</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  {% for number in daily_ritual.buzz_numbers %}
+                  <div class="relative group">
+                    <div class="w-18 h-18 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg hover:scale-110 transition-all duration-300 group-hover:shadow-2xl">
+                      {{ number }}
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold opacity-75">
+                      🔥
+                    </div>
                   </div>
+                  {% empty %}
+                  <div class="w-18 h-18 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg">15</div>
+                  <div class="w-18 h-18 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg">42</div>
+                  <div class="w-18 h-18 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg">67</div>
+                  <div class="w-18 h-18 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg">89</div>
                   {% endfor %}
-                {% else %}
-                  <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">065</div>
-                  <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">052</div>
-                {% endif %}
+                </div>
+                <p class="text-sm text-muted-foreground">📊 อัปเดตบ่าย 14:00 น.</p>
               </div>
-              {% if ai_prediction %}
-              <p class="text-sm text-muted-foreground">
-                ความมั่นใจ {{ ai_prediction.get_top_three_digit_numbers.0.confidence|default:24|floatformat:1 }}%
-              </p>
-              {% endif %}
             </div>
-          </div>
+            
+          {% else %}
+            <!-- Evening: Daily Summary -->
+            <div class="card border-2 border-purple-300/50 bg-gradient-to-br from-purple-50 to-indigo-50 hover:shadow-xl transition-all duration-300">
+              <div class="p-8 text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="fas fa-chart-pie text-2xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-foreground mb-2">🌙 สรุปเลขเด่นวันนี้</h3>
+                <p class="text-sm text-muted-foreground mb-4">ภาพรวมและการเตรียมตัว</p>
+                <div class="flex justify-center gap-3 mb-4">
+                  {% for number in daily_ritual.highlighted_numbers %}
+                  <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">
+                    {{ number }}
+                  </div>
+                  {% empty %}
+                  <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">27</div>
+                  <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">54</div>
+                  {% endfor %}
+                </div>
+                <p class="text-xs text-muted-foreground">🌅 พรุ่งนี้ 09:00 น. มีเลขใหม่</p>
+              </div>
+            </div>
+            
+            <!-- Evening: Tomorrow Preview -->
+            <div class="card border-2 border-secondary/30 bg-secondary/5 hover:shadow-xl transition-all duration-300">
+              <div class="p-8 text-center">
+                <div class="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="fas fa-calendar-plus text-2xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-foreground mb-2">🔮 Preview งวดหน้า</h3>
+                <p class="text-sm text-muted-foreground mb-4">เตรียมตัวล่วงหน้า</p>
+                <div class="flex justify-center gap-2 mb-4">
+                  {% if ai_prediction and ai_prediction.get_top_three_digit_numbers %}
+                    {% for item in ai_prediction.get_top_three_digit_numbers|slice:":2" %}
+                    <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">
+                      {{ item.number }}
+                    </div>
+                    {% endfor %}
+                  {% else %}
+                    <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">065</div>
+                    <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">052</div>
+                  {% endif %}
+                </div>
+                <p class="text-sm text-muted-foreground">เลข 3 ตัวแนวโน้ม</p>
+              </div>
+            </div>
+          {% endif %}
+          
         </div>
 
         <!-- AI Reasoning Summary -->
@@ -126,6 +219,192 @@
           <p class="text-sm text-muted-foreground mt-3">
             พร้อมรายละเอียดการวิเคราะห์จาก 3 โมเดล AI และเลขเพิ่มเติม
           </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Instant Lucky Numbers Section -->
+  <section class="py-16 bg-gradient-to-br from-green-50 to-emerald-100 border-y border-green-200">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-full text-green-700 font-semibold mb-4">
+            <i class="fas fa-bolt"></i>
+            <span>INSTANT LUCKY</span>
+            <i class="fas fa-sparkles"></i>
+          </div>
+          
+          <h2 class="text-4xl md:text-5xl font-serif font-bold text-green-800 mb-4">
+            🎯 เลขเด็ดทันใจ
+          </h2>
+          
+          <p class="text-lg text-green-700 mb-2">สร้างเลขเด็ดส่วนตัว ไม่เก็บข้อมูลใดๆ</p>
+          <p class="text-base text-green-600">รวมข่าวล่าสุด + วันที่สำคัญของคุณ</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-green-200">
+          <div class="max-w-2xl mx-auto">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">
+              💫 ใส่วันที่สำคัญ (เลือกได้)
+            </h3>
+            
+            <div class="space-y-4">
+              <!-- Date Selection -->
+              <div class="flex flex-col md:flex-row gap-4 items-center justify-center">
+                <div class="w-full md:w-auto">
+                  <input 
+                    type="date" 
+                    id="significantDate"
+                    class="w-full px-4 py-3 border-2 border-green-300 rounded-lg focus:border-green-500 focus:outline-none text-center text-lg"
+                    placeholder="วันเกิด, วันครบรอบ หรือวันที่สำคัญ"
+                  >
+                  <p class="text-sm text-gray-500 mt-1 text-center">ไม่ระบุ = วันปัจจุบัน</p>
+                </div>
+                
+                <button 
+                  id="generateBtn"
+                  class="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg rounded-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  <i class="fas fa-magic"></i>
+                  <span>สร้างเลขเด็ด</span>
+                </button>
+              </div>
+
+              <!-- News Selection -->
+              <div class="border-t border-gray-200 pt-4">
+                <h4 class="text-lg font-semibold text-gray-800 mb-3 text-center">
+                  📰 เลือกข่าวเฉพาะ (เลือกได้)
+                </h4>
+                
+                <div class="flex items-center justify-center gap-3 mb-3">
+                  <button 
+                    id="loadNewsBtn"
+                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                  >
+                    <i class="fas fa-newspaper"></i>
+                    <span>ดูข่าวล่าสุด</span>
+                  </button>
+                  
+                  <button 
+                    id="clearNewsBtn" 
+                    class="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors hidden"
+                  >
+                    <i class="fas fa-times"></i>
+                    <span>ยกเลิก</span>
+                  </button>
+                </div>
+
+                <!-- News Loading State -->
+                <div id="newsLoadingState" class="hidden text-center py-2">
+                  <div class="inline-flex items-center gap-2 text-blue-600">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                    <span class="text-sm">กำลังโหลดข่าว...</span>
+                  </div>
+                </div>
+
+                <!-- News Selection Area -->
+                <div id="newsSelectionArea" class="hidden">
+                  <p class="text-sm text-gray-600 mb-3 text-center">
+                    เลือกข่าวที่ต้องการ (ไม่เลือก = ใช้ข่าวล่าสุดอัตโนมัติ)
+                  </p>
+                  
+                  <div id="newsCheckboxList" class="max-h-60 overflow-y-auto space-y-2 bg-gray-50 rounded-lg p-3">
+                    <!-- News items will be loaded here -->
+                  </div>
+                  
+                  <div class="mt-3 text-center">
+                    <span id="selectedNewsCount" class="text-sm text-green-600 font-medium">เลือกแล้ว: 0 ข่าว</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-center">
+              <p class="text-xs text-gray-500 flex items-center justify-center gap-1">
+                <i class="fas fa-shield-alt text-green-500"></i>
+                ไม่เก็บข้อมูล • ปลอดภัย • ใช้ฟรี
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="instantLuckyResults" class="hidden">
+          <div class="bg-white rounded-2xl shadow-xl p-8 border-2 border-green-300">
+            <!-- Header -->
+            <div class="text-center mb-6">
+              <h3 class="text-2xl font-bold text-green-800 mb-2">
+                ✨ เลขเด็ดของคุณ
+              </h3>
+              <p id="resultsSubtitle" class="text-green-600"></p>
+            </div>
+
+            <!-- Lucky Numbers Display -->
+            <div id="luckyNumbersGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <!-- Numbers will be inserted here via JavaScript -->
+            </div>
+
+            <!-- Insights -->
+            <div id="insights" class="grid md:grid-cols-2 gap-6 mb-6">
+              <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                <h4 class="font-semibold text-green-800 mb-2">
+                  <i class="fas fa-chart-bar"></i> สถิติ
+                </h4>
+                <div id="insightStats" class="text-sm text-green-700">
+                  <!-- Stats will be inserted here -->
+                </div>
+              </div>
+              
+              <div class="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                <h4 class="font-semibold text-emerald-800 mb-2">
+                  <i class="fas fa-lightbulb"></i> ความหมาย
+                </h4>
+                <div id="thaiMessage" class="text-sm text-emerald-700">
+                  <!-- Thai message will be inserted here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Components Breakdown -->
+            <div id="breakdown" class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <h4 class="font-semibold text-gray-800 mb-3">
+                <i class="fas fa-cogs"></i> เลขมาจากไหน
+              </h4>
+              <div id="numberSources" class="space-y-2">
+                <!-- Sources will be inserted here -->
+              </div>
+            </div>
+            
+            <!-- Generate Again Button -->
+            <div class="text-center mt-6">
+              <button 
+                id="generateAgainBtn"
+                class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              >
+                <i class="fas fa-redo"></i>
+                สร้างใหม่
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden text-center py-8">
+          <div class="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-lg shadow-lg">
+            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
+            <span class="text-green-700 font-medium">กำลังสร้างเลขเด็ด...</span>
+          </div>
+        </div>
+
+        <!-- Privacy Notice -->
+        <div class="text-center mt-8">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/50 rounded-lg text-green-700 text-sm">
+            <i class="fas fa-info-circle"></i>
+            <span>เลขเด็ดสำหรับความบันเทิง • ไม่เก็บข้อมูลส่วนตัว</span>
+          </div>
         </div>
       </div>
     </div>
@@ -557,6 +836,397 @@
 
 
 <script>
+// Instant Lucky Numbers Functionality
+class InstantLuckyNumbers {
+    constructor() {
+        this.apiEndpoint = '/api/instant-lucky-numbers/';
+        this.newsApiEndpoint = '/api/recent-news-selection/';
+        this.selectedNewsIds = [];
+        this.init();
+    }
+
+    init() {
+        const generateBtn = document.getElementById('generateBtn');
+        const generateAgainBtn = document.getElementById('generateAgainBtn');
+        const loadNewsBtn = document.getElementById('loadNewsBtn');
+        const clearNewsBtn = document.getElementById('clearNewsBtn');
+        
+        if (generateBtn) {
+            generateBtn.addEventListener('click', () => this.generateNumbers());
+        }
+        
+        if (generateAgainBtn) {
+            generateAgainBtn.addEventListener('click', () => this.generateNumbers());
+        }
+        
+        if (loadNewsBtn) {
+            loadNewsBtn.addEventListener('click', () => this.loadRecentNews());
+        }
+        
+        if (clearNewsBtn) {
+            clearNewsBtn.addEventListener('click', () => this.clearNewsSelection());
+        }
+    }
+
+    async generateNumbers() {
+        const dateInput = document.getElementById('significantDate');
+        const loadingState = document.getElementById('loadingState');
+        const resultsSection = document.getElementById('instantLuckyResults');
+
+        // Show loading
+        this.showLoading(true);
+        resultsSection.classList.add('hidden');
+
+        try {
+            const payload = {};
+            if (dateInput && dateInput.value) {
+                payload.significant_date = dateInput.value;
+            }
+            if (this.selectedNewsIds && this.selectedNewsIds.length > 0) {
+                payload.selected_news_ids = this.selectedNewsIds;
+            }
+
+            const response = await fetch(this.apiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCsrfToken()
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.displayResults(data.data);
+            } else {
+                this.showError(data.message || 'เกิดข้อผิดพลาด');
+            }
+
+        } catch (error) {
+            console.error('Error generating lucky numbers:', error);
+            this.showError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    displayResults(data) {
+        // Update subtitle
+        const subtitle = document.getElementById('resultsSubtitle');
+        subtitle.textContent = `สำหรับวันที่ ${this.formatThaiDate(data.significant_date)}`;
+
+        // Display lucky numbers
+        this.displayLuckyNumbers(data.lucky_numbers);
+
+        // Display insights
+        this.displayInsights(data.insights);
+
+        // Display thai fortune message
+        const thaiMessage = document.getElementById('thaiMessage');
+        thaiMessage.textContent = data.insights.thai_message;
+
+        // Display number sources
+        this.displayNumberSources(data.lucky_numbers);
+
+        // Show results
+        document.getElementById('instantLuckyResults').classList.remove('hidden');
+        
+        // Smooth scroll to results
+        document.getElementById('instantLuckyResults').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    }
+
+    displayLuckyNumbers(numbers) {
+        const grid = document.getElementById('luckyNumbersGrid');
+        grid.innerHTML = '';
+
+        numbers.forEach((numberInfo, index) => {
+            const numberElement = document.createElement('div');
+            numberElement.className = 'relative group';
+            
+            // Animate appearance
+            numberElement.style.animationDelay = `${index * 100}ms`;
+            numberElement.className += ' animate-fade-in';
+
+            numberElement.innerHTML = `
+                <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-lg hover:scale-110 transition-all duration-300 group-hover:shadow-2xl cursor-pointer"
+                     title="${numberInfo.reason}">
+                    ${numberInfo.number}
+                </div>
+                <div class="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                    ${Math.round(numberInfo.confidence / 10)}
+                </div>
+                <div class="mt-2 text-xs text-center text-green-700 font-medium">
+                    ${this.getSourceIcon(numberInfo.source)} ${this.getSourceName(numberInfo.source)}
+                </div>
+            `;
+
+            grid.appendChild(numberElement);
+        });
+    }
+
+    displayInsights(insights) {
+        const statsDiv = document.getElementById('insightStats');
+        
+        statsDiv.innerHTML = `
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span>เลขทั้งหมด:</span>
+                    <span class="font-semibold">${insights.total_numbers} ตัว</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>ความเชื่อมั่นเฉลี่ย:</span>
+                    <span class="font-semibold">${Math.round(insights.confidence_range.average)}%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>ความเชื่อมั่นสูงสุด:</span>
+                    <span class="font-semibold">${insights.confidence_range.highest}%</span>
+                </div>
+                ${insights.special_patterns.length > 0 ? `
+                <div class="mt-2 pt-2 border-t border-green-200">
+                    <div class="text-xs text-green-600">
+                        ${insights.special_patterns.join(' • ')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    displayNumberSources(numbers) {
+        const sourcesDiv = document.getElementById('numberSources');
+        const sourceGroups = {};
+
+        // Group numbers by source
+        numbers.forEach(num => {
+            if (!sourceGroups[num.source]) {
+                sourceGroups[num.source] = [];
+            }
+            sourceGroups[num.source].push(num);
+        });
+
+        sourcesDiv.innerHTML = '';
+        Object.entries(sourceGroups).forEach(([source, nums]) => {
+            const sourceDiv = document.createElement('div');
+            sourceDiv.className = 'flex items-center justify-between p-2 bg-white rounded border border-gray-100';
+            
+            sourceDiv.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">${this.getSourceIcon(source)}</span>
+                    <span class="text-sm font-medium">${this.getSourceName(source)}</span>
+                </div>
+                <div class="flex gap-1">
+                    ${nums.map(num => `
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-mono">
+                            ${num.number}
+                        </span>
+                    `).join('')}
+                </div>
+            `;
+            
+            sourcesDiv.appendChild(sourceDiv);
+        });
+    }
+
+    getSourceIcon(source) {
+        const icons = {
+            'day': '📅',
+            'month': '🗓️',
+            'year': '⏰',
+            'date_sum': '➕',
+            'weekday': '📆',
+            'news': '📰',
+            'mixed_sum': '🔢',
+            'mixed_diff': '➖',
+            'hash': '🔮'
+        };
+        return icons[source] || '🎯';
+    }
+
+    getSourceName(source) {
+        const names = {
+            'day': 'วันที่',
+            'day_tens': 'หลักสิบ',
+            'month': 'เดือน',
+            'year': 'ปี',
+            'date_sum': 'รวมวัน+เดือน',
+            'weekday': 'วันในสัปดาห์',
+            'news': 'ข่าวล่าสุด',
+            'mixed_sum': 'ผลรวม',
+            'mixed_diff': 'ผลต่าง',
+            'hash': 'อัลกอริทึม'
+        };
+        return names[source] || source;
+    }
+
+    showLoading(show) {
+        const loadingState = document.getElementById('loadingState');
+        if (show) {
+            loadingState.classList.remove('hidden');
+        } else {
+            loadingState.classList.add('hidden');
+        }
+    }
+
+    showError(message) {
+        alert(message);
+    }
+
+    formatThaiDate(dateStr) {
+        const date = new Date(dateStr);
+        const thaiMonths = [
+            'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+            'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+        ];
+        
+        const day = date.getDate();
+        const month = thaiMonths[date.getMonth()];
+        const year = date.getFullYear() + 543; // Convert to Buddhist Era
+        
+        return `${day} ${month} ${year}`;
+    }
+
+    getCsrfToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async loadRecentNews() {
+        const loadingState = document.getElementById('newsLoadingState');
+        const selectionArea = document.getElementById('newsSelectionArea');
+        const loadNewsBtn = document.getElementById('loadNewsBtn');
+        const clearNewsBtn = document.getElementById('clearNewsBtn');
+
+        // Show loading
+        loadingState.classList.remove('hidden');
+        loadNewsBtn.disabled = true;
+
+        try {
+            const response = await fetch(this.newsApiEndpoint, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.displayNewsOptions(data.data.news_articles);
+                selectionArea.classList.remove('hidden');
+                clearNewsBtn.classList.remove('hidden');
+                loadNewsBtn.textContent = 'โหลดใหม่';
+            } else {
+                this.showError(data.message || 'เกิดข้อผิดพลาดในการโหลดข่าว');
+            }
+
+        } catch (error) {
+            console.error('Error loading news:', error);
+            this.showError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่');
+        } finally {
+            loadingState.classList.add('hidden');
+            loadNewsBtn.disabled = false;
+        }
+    }
+
+    displayNewsOptions(newsArticles) {
+        const container = document.getElementById('newsCheckboxList');
+        container.innerHTML = '';
+
+        newsArticles.forEach(article => {
+            const newsItem = document.createElement('div');
+            newsItem.className = 'flex items-start gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors';
+            
+            // Confidence color
+            const confidenceColor = article.lottery_relevance_score >= 90 ? 'text-red-600' : 
+                                   article.lottery_relevance_score >= 70 ? 'text-orange-600' : 'text-yellow-600';
+            
+            newsItem.innerHTML = `
+                <input type="checkbox" id="news_${article.id}" value="${article.id}" 
+                       class="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                       onchange="instantLucky.handleNewsSelection(this)">
+                <label for="news_${article.id}" class="flex-1 cursor-pointer">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-900 line-clamp-2">${article.title}</span>
+                        <span class="text-xs ${confidenceColor} font-semibold ml-2">${article.confidence_level}</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs text-gray-500">
+                        <span class="bg-blue-100 px-2 py-1 rounded">${article.category}</span>
+                        <span>${article.published_date}</span>
+                        <span>คะแนน: ${article.lottery_relevance_score}</span>
+                    </div>
+                    <div class="mt-2 text-xs text-green-700">
+                        เลขที่สกัดได้: ${article.extracted_numbers.join(', ') || 'ไม่มี'}
+                    </div>
+                </label>
+            `;
+            
+            container.appendChild(newsItem);
+        });
+    }
+
+    handleNewsSelection(checkbox) {
+        const newsId = parseInt(checkbox.value);
+        
+        if (checkbox.checked) {
+            if (!this.selectedNewsIds.includes(newsId)) {
+                this.selectedNewsIds.push(newsId);
+            }
+        } else {
+            this.selectedNewsIds = this.selectedNewsIds.filter(id => id !== newsId);
+        }
+        
+        this.updateNewsSelectionCount();
+    }
+
+    updateNewsSelectionCount() {
+        const countElement = document.getElementById('selectedNewsCount');
+        if (countElement) {
+            countElement.textContent = `เลือกแล้ว: ${this.selectedNewsIds.length} ข่าว`;
+        }
+    }
+
+    clearNewsSelection() {
+        // Clear selection
+        this.selectedNewsIds = [];
+        
+        // Clear checkboxes
+        const checkboxes = document.querySelectorAll('#newsCheckboxList input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+        
+        // Hide selection area
+        document.getElementById('newsSelectionArea').classList.add('hidden');
+        document.getElementById('clearNewsBtn').classList.add('hidden');
+        
+        // Reset button text
+        const loadNewsBtn = document.getElementById('loadNewsBtn');
+        loadNewsBtn.textContent = 'ดูข่าวล่าสุด';
+        
+        // Update count
+        this.updateNewsSelectionCount();
+    }
+}
+
+// Initialize when DOM is loaded
+let instantLucky;
+document.addEventListener('DOMContentLoaded', function() {
+    instantLucky = new InstantLuckyNumbers();
+});
+
 // Dream Interpretation Functions
 async function interpretDream() {
     const dreamInput = document.getElementById('dreamInput');

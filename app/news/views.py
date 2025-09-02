@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -148,8 +149,16 @@ def add_comment(request, slug):
     messages.success(request, 'ส่งความคิดเห็นแล้ว รอการอนุมัติ')
     return redirect('news:article_detail', slug=slug)
 
+@csrf_exempt
+@require_POST
 def analyze_news(request, article_id):
     """API วิเคราะห์เลขจากข่าว"""
+    
+    # Debug info (remove in production)
+    # print(f"DEBUG: analyze_news called for article_id: {article_id}")
+    # print(f"DEBUG: user authenticated: {request.user.is_authenticated}")
+    # print(f"DEBUG: user is staff: {request.user.is_staff}")
+    
     # ตรวจสอบสิทธิ์แอดมิน
     if not request.user.is_staff:
         return JsonResponse({
@@ -194,13 +203,15 @@ def analyze_news(request, article_id):
                     })
                     
             except Exception as insight_error:
-                print(f"Insight-AI error: {insight_error}")
+                # print(f"DEBUG: Insight-AI error: {insight_error}")
                 # Fallback ไปใช้ NewsAnalyzer เดิม
                 pass
         
         # Fallback: ใช้ NewsAnalyzer เดิม
+        # print(f"DEBUG: Using fallback NewsAnalyzer for article {article_id}")
         analyzer = NewsAnalyzer()
         result = analyzer.analyze_article(article)
+        # print(f"DEBUG: NewsAnalyzer result: {result}")
         
         # อัพเดตเลขในบทความ
         article.extracted_numbers = ', '.join(result['numbers'])
@@ -217,6 +228,9 @@ def analyze_news(request, article_id):
         })
         
     except Exception as e:
+        # print(f"DEBUG: Exception in analyze_news: {str(e)}")
+        # import traceback
+        # traceback.print_exc()
         return JsonResponse({
             'success': False,
             'error': f'เกิดข้อผิดพลาดในการวิเคราะห์: {str(e)}'
