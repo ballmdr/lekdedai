@@ -14,7 +14,8 @@
       "Bash(gemini:*)",
       "Bash(exit)",
       "Bash(docker exec:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []

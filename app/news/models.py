@@ -145,6 +145,65 @@ class NewsArticle(models.Model):
             return [num.strip() for num in self.extracted_numbers.split(',') if num.strip()]
         return []
     
+    def get_formatted_content(self):
+        """จัดรูปแบบเนื้อหาให้เป็นย่อหน้า"""
+        from django.utils.safestring import mark_safe
+        import re
+        
+        if not self.content:
+            return ""
+        
+        # แยกประโยคที่จบด้วยจุด ตามด้วยช่องว่าง และตัวอักษรตัวใหญ่
+        paragraphs = []
+        sentences = self.content.split('.')
+        current_para = ""
+        
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+                
+            current_para += sentence + ". "
+            
+            # สร้างย่อหน้าใหม่เมื่อมีความยาวเหมาะสม (200-400 ตัวอักษร)
+            if len(current_para) > 200 and (
+                len(current_para) > 400 or 
+                any(keyword in sentence.lower() for keyword in ['เมื่อ', 'นอกจากนี้', 'อย่างไรก็ตาม', 'ในขณะที่', 'ทั้งนี้', 'จากนั้น'])
+            ):
+                paragraphs.append(current_para.strip())
+                current_para = ""
+        
+        if current_para.strip():
+            paragraphs.append(current_para.strip())
+        
+        # ถ้าไม่สามารถแยกได้ดี ใช้วิธีพื้นฐาน
+        if len(paragraphs) <= 1 and self.content:
+            # แยกเนื้อหาทุก 300 ตัวอักษร
+            content = self.content.strip()
+            paragraphs = []
+            while content:
+                if len(content) <= 300:
+                    paragraphs.append(content)
+                    break
+                
+                # หาจุดตัดที่เหมาะสม (หลังจุด หรือช่องว่าง)
+                cut_point = 300
+                for i in range(280, min(320, len(content))):
+                    if content[i] in '.!? ' and i < len(content) - 1:
+                        cut_point = i + 1
+                        break
+                
+                paragraphs.append(content[:cut_point].strip())
+                content = content[cut_point:].strip()
+        
+        # สร้าง HTML
+        html_paragraphs = []
+        for para in paragraphs:
+            if para.strip():
+                html_paragraphs.append(f'<p class="mb-4">{para.strip()}</p>')
+        
+        return mark_safe('\n'.join(html_paragraphs))
+    
     def extract_numbers_from_content(self):
         """วิเคราะห์หาเลขจากเนื้อหาข่าว"""
         text = self.content + " " + self.title

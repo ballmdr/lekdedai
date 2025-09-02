@@ -67,7 +67,25 @@
             <div class="card p-8">
                 <div class="prose max-w-none mb-8">
                     <p class="text-lg font-medium text-muted-foreground mb-6">{{ article.intro }}</p>
-                    <div class="text-foreground">{{ article.content|linebreaks }}</div>
+                    <div class="text-foreground leading-relaxed">
+                        {{ article.get_formatted_content }}
+                        
+                        <!-- Source Link -->
+                        {% if article.source_url %}
+                        <div class="mt-6 p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
+                            <p class="text-sm text-muted-foreground mb-2">
+                                <i class="fas fa-external-link-alt mr-2"></i>
+                                อ้างอิงจาก:
+                            </p>
+                            <a href="{{ article.source_url }}" 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               class="text-primary hover:text-accent transition-colors underline break-all">
+                                {{ article.source_url }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
                 
                 <!-- Extracted Numbers -->

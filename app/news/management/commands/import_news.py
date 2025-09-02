@@ -49,14 +49,19 @@ class Command(BaseCommand):
                 continue
 
             try:
+                # ใช้เนื้อหาจาก JSON หรือ placeholder หากไม่มี
+                content = article_data.get('content', f"เนื้อหาข่าวจาก {url}")
+                if not content or content.strip() == "":
+                    content = f"เนื้อหาข่าวจาก {url}"
+                
                 article = NewsArticle(
                     title=article_data['title'],
                     source_url=url,
                     category=category,
                     status='draft',  # Import as draft to be reviewed later
                     intro=article_data.get('title'),
-                    content=f"เนื้อหาข่าวจาก {url}", # Placeholder, full content scraping can be added later
-                    extracted_numbers=','.join(article_data.get('numbers', [])),
+                    content=content,
+                    extracted_numbers=','.join(article_data.get('extracted_numbers', [])),
                 )
                 article.save()  # Slug will be generated automatically
                 imported_count += 1
