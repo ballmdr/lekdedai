@@ -137,8 +137,8 @@
                         {% endif %}
                     </div>
                     
-                    <!-- Insight-AI Analysis Details (Hidden by default) -->
-                    <div id="insightAnalysis" class="hidden mt-4">
+                    <!-- Insight-AI Analysis Details -->
+                    <div id="insightAnalysis" class="{% if not insight_analysis %}hidden{% endif %} mt-4">
                         <!-- Story Impact -->
                         <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-4">
                             <h4 class="font-bold text-blue-900 mb-2">
@@ -577,5 +577,22 @@ function getCsrfToken() {
     }
     return cookieValue;
 }
+
+// แสดงข้อมูล Insight-AI โดยอัตโนมัติเมื่อโหลดหน้า
+document.addEventListener('DOMContentLoaded', function() {
+    {% if insight_analysis %}
+    const insightData = {
+        story_summary: "{{ insight_analysis.story_summary|escapejs }}",
+        story_impact_score: {{ insight_analysis.story_impact_score }},
+        extracted_entities: {{ insight_analysis.extracted_entities|safe }},
+        numbers: {{ insight_analysis.numbers|safe }},
+        confidence: {{ insight_analysis.confidence }},
+        is_insight_ai: true
+    };
+    
+    console.log('Auto-loading Insight-AI analysis:', insightData);
+    updateInsightAIResults(insightData);
+    {% endif %}
+});
 </script>
 {% endblock %}

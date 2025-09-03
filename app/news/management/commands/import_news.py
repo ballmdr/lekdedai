@@ -1,6 +1,8 @@
 import json
 import os
+import sys
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 from news.models import NewsArticle, NewsCategory
 
 class Command(BaseCommand):
@@ -8,6 +10,27 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('json_file_path', type=str, help='The path to the JSON file to import.')
+        parser.add_argument('--no-insight', action='store_true', help='Skip Insight-AI analysis')
+
+    def analyze_with_insight_ai(self, article_title, article_content):
+        """วิเคราะห์ข่าวด้วย Insight-AI"""
+        try:
+            # Import Insight-AI
+            sys.path.append('/app/mcp_dream_analysis/models')
+            from insight_ai_news_analyzer import analyze_news_for_django
+            
+            # วิเคราะห์ข่าว
+            full_text = f"{article_title} {article_content}"
+            result = analyze_news_for_django(full_text)
+            
+            return {
+                'summary': result.get('story_summary', ''),
+                'impact_score': result.get('story_impact_score', 0),
+                'entities': result.get('extracted_entities', [])
+            }
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f'Insight-AI analysis failed: {str(e)}'))
+            return None
 
     def handle(self, *args, **options):
         json_file_path = options['json_file_path']
@@ -34,6 +57,7 @@ class Command(BaseCommand):
 
         imported_count = 0
         skipped_count = 0
+        skip_insight = options.get('no_insight', False)
 
         for article_data in data:
             url = article_data.get('url')
@@ -63,6 +87,17 @@ class Command(BaseCommand):
                     content=content,
                     extracted_numbers=','.join(article_data.get('extracted_numbers', [])),
                 )
+                
+                # วิเคราะห์ด้วย Insight-AI (ถ้าไม่ skip)
+                if not skip_insight:
+                    insight_result = self.analyze_with_insight_ai(article.title, article.content)
+                    if insight_result:
+                        article.insight_summary = insight_result['summary']
+                        article.insight_impact_score = insight_result['impact_score']
+                        article.insight_entities = insight_result['entities']
+                        article.insight_analyzed_at = timezone.now()
+                        self.stdout.write(self.style.SUCCESS(f"🧠 Insight-AI analyzed: {len(insight_result['entities'])} entities found"))
+                
                 article.save()  # Slug will be generated automatically
                 imported_count += 1
                 self.stdout.write(self.style.SUCCESS(f"Successfully imported: {article.title}"))

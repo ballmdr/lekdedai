@@ -118,6 +118,12 @@ class NewsArticle(models.Model):
     # URL แหล่งที่มา
     source_url = models.URLField("URL แหล่งที่มา", blank=True, null=True)
     
+    # Insight-AI Analysis Results
+    insight_summary = models.TextField("สรุปเหตุการณ์ (Insight-AI)", blank=True)
+    insight_impact_score = models.FloatField("คะแนนผลกระทบ (Insight-AI)", default=0.0, help_text="0.0-1.0")
+    insight_entities = models.JSONField("เลขจาก Insight-AI", default=list, blank=True)
+    insight_analyzed_at = models.DateTimeField("วิเคราะห์ Insight-AI เมื่อ", blank=True, null=True)
+    
     class Meta:
         verbose_name = "บทความข่าว"
         verbose_name_plural = "บทความข่าว"

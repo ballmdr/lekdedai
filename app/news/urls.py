@@ -10,4 +10,5 @@ urlpatterns = [
     path('lucky-hints/', views.lucky_hints, name='lucky_hints'),
     path('article/<str:slug>/comment/', views.add_comment, name='add_comment'), 
     path('api/analyze/<int:article_id>/', views.analyze_news, name='analyze_news'),
+    path('api/insight/<int:article_id>/', views.insight_ai_analysis, name='insight_ai_analysis'),
 ]
