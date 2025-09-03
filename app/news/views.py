@@ -68,6 +68,66 @@ def article_detail(request, slug):
     article.views += 1
     article.save(update_fields=['views'])
     
+    # วิเคราะห์เลขด้วย Insight-AI หากยังไม่เคยวิเคราะห์
+    insight_analysis = None
+    if not article.extracted_numbers or article.extracted_numbers.strip() == "":
+        try:
+            import sys
+            import os
+            MCP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mcp_dream_analysis')
+            if os.path.exists(MCP_DIR):
+                sys.path.insert(0, MCP_DIR)
+                from specialized_django_integration import extract_news_numbers_for_django
+                
+                # ใช้ Insight-AI วิเคราะห์
+                insight_result = extract_news_numbers_for_django(article.content)
+                
+                if insight_result and 'extracted_entities' in insight_result:
+                    numbers = [entity['value'] for entity in insight_result['extracted_entities']]
+                    avg_score = sum(entity['significance_score'] for entity in insight_result['extracted_entities']) / len(insight_result['extracted_entities']) if insight_result['extracted_entities'] else 0
+                    
+                    # อัพเดตเลขในบทความ
+                    article.extracted_numbers = ', '.join(numbers[:10])
+                    article.confidence_score = avg_score * 100
+                    article.save(update_fields=['extracted_numbers', 'confidence_score'])
+                    
+                    # เตรียมข้อมูลสำหรับแสดงผล
+                    insight_analysis = {
+                        'numbers': numbers,
+                        'confidence': round(avg_score * 100, 1),
+                        'story_summary': insight_result.get('story_summary', ''),
+                        'story_impact_score': round(insight_result.get('story_impact_score', 0) * 100, 1),
+                        'extracted_entities': insight_result['extracted_entities'],
+                        'is_insight_ai': True
+                    }
+                    
+        except Exception as e:
+            # Fallback ใช้วิธีเดิมหากมีปัญหา
+            print(f"Insight-AI error: {e}")
+            pass
+    else:
+        # หากมีเลขอยู่แล้ว พยายามดึงข้อมูล analysis จาก Insight-AI อีกครั้ง
+        try:
+            import sys
+            import os
+            MCP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mcp_dream_analysis')
+            if os.path.exists(MCP_DIR):
+                sys.path.insert(0, MCP_DIR)
+                from specialized_django_integration import extract_news_numbers_for_django
+                
+                insight_result = extract_news_numbers_for_django(article.content)
+                if insight_result:
+                    insight_analysis = {
+                        'numbers': article.get_extracted_numbers_list(),
+                        'confidence': article.confidence_score or 0,
+                        'story_summary': insight_result.get('story_summary', ''),
+                        'story_impact_score': insight_result.get('story_impact_score', 0),
+                        'extracted_entities': insight_result.get('extracted_entities', []),
+                        'is_insight_ai': True
+                    }
+        except:
+            pass
+    
     # ดึงข่าวที่เกี่ยวข้อง
     related_articles = NewsArticle.objects.filter(
         category=article.category,
@@ -86,6 +146,7 @@ def article_detail(request, slug):
         'lucky_hints': lucky_hints,
         'comments': comments,
         'extracted_numbers': article.get_extracted_numbers_list(),
+        'insight_analysis': insight_analysis,
     }
     
     return render(request, 'news/article_detail.html', context)
