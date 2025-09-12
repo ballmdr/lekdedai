@@ -68,22 +68,40 @@ def article_detail(request, slug):
     article.views += 1
     article.save(update_fields=['views'])
     
-    # เตรียม Insight-AI analysis จากข้อมูลในฐานข้อมูล
+    # เตรียมข้อมูลการวิเคราะห์ (ใช้ Gemini AI ก่อน ถ้าไม่มีค่อยใช้ News Analyzer)
     insight_analysis = None
-    if article.insight_analyzed_at:
-        # มีข้อมูล Insight-AI ในฐานข้อมูลแล้ว
+    
+    if article.insight_entities:
+        # ใช้ข้อมูลจาก Gemini AI
+        numbers = [entity['value'] for entity in article.insight_entities]
+        avg_score = sum(entity['significance_score'] for entity in article.insight_entities) / len(article.insight_entities) if article.insight_entities else 0
+        
         insight_analysis = {
-            'numbers': [entity['value'] for entity in article.insight_entities] if article.insight_entities else [],
-            'confidence': round(sum(entity['significance_score'] for entity in article.insight_entities) / len(article.insight_entities) * 100, 1) if article.insight_entities else 0,
-            'story_summary': article.insight_summary or '',
-            'story_impact_score': round(article.insight_impact_score * 100, 1) if article.insight_impact_score else 0,
-            'extracted_entities': article.insight_entities or [],
-            'is_insight_ai': True
+            'numbers': numbers,
+            'confidence': round(avg_score * 100, 1),
+            'story_summary': article.insight_summary or f'วิเคราะห์ด้วย Gemini AI พบ {len(numbers)} เลข',
+            'story_impact_score': round(avg_score * 100, 1),
+            'category': 'Gemini AI',
+            'is_insight_ai': True,  # แสดงว่าเป็น Gemini AI
+            'extracted_entities': article.insight_entities  # ส่งข้อมูลรายละเอียดไป JavaScript
+        }
+        
+    elif article.extracted_numbers:
+        # ใช้ข้อมูลจาก News Analyzer (fallback)
+        numbers = [num.strip() for num in article.extracted_numbers.split(',') if num.strip()]
+        
+        insight_analysis = {
+            'numbers': numbers,
+            'confidence': article.confidence_score or 0,
+            'story_summary': f'วิเคราะห์ด้วย News Analyzer Enhanced พบ {len(numbers)} เลข',
+            'story_impact_score': article.confidence_score or 0,
+            'category': 'News Analyzer Enhanced',
+            'is_insight_ai': False  # แสดงว่าเป็น News Analyzer
         }
         
         # อัพเดตเลขหลักถ้ายังไม่มี
         if not article.extracted_numbers and article.insight_entities:
-            numbers = [entity['value'] for entity in article.insight_entities]
+            numbers = [entity['number'] for entity in article.insight_entities]
             avg_score = sum(entity['significance_score'] for entity in article.insight_entities) / len(article.insight_entities) if article.insight_entities else 0
             article.extracted_numbers = ', '.join(numbers[:10])
             article.confidence_score = avg_score * 100
@@ -181,53 +199,45 @@ def analyze_news(request, article_id):
     # print(f"DEBUG: user authenticated: {request.user.is_authenticated}")
     # print(f"DEBUG: user is staff: {request.user.is_staff}")
     
-    # ตรวจสอบสิทธิ์แอดมิน
-    if not request.user.is_staff:
-        return JsonResponse({
-            'success': False,
-            'error': 'ไม่มีสิทธิ์ในการวิเคราะห์'
-        }, status=403)
+    # เอาการตรวจสอบสิทธิ์ออก - ให้ทุกคนใช้ได้
+    # if not request.user.is_staff:
+    #     return JsonResponse({
+    #         'success': False,
+    #         'error': 'ไม่มีสิทธิ์ในการวิเคราะห์'
+    #     }, status=403)
     
     article = get_object_or_404(NewsArticle, id=article_id)
     
     try:
-        # วิเคราะห์เลขด้วย Insight-AI
-        import sys
-        import os
-        MCP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mcp_dream_analysis')
-        if os.path.exists(MCP_DIR):
-            sys.path.insert(0, MCP_DIR)
-            try:
-                from specialized_django_integration import extract_news_numbers_for_django
-                
-                # ใช้ Insight-AI วิเคราะห์
-                insight_result = extract_news_numbers_for_django(article.content)
-                
-                if insight_result and 'extracted_entities' in insight_result:
-                    # Format ผลลัพธ์สำหรับ Django
-                    numbers = [entity['value'] for entity in insight_result['extracted_entities']]
-                    avg_score = sum(entity['significance_score'] for entity in insight_result['extracted_entities']) / len(insight_result['extracted_entities']) if insight_result['extracted_entities'] else 0
-                    
-                    # อัพเดตเลขในบทความ
-                    article.extracted_numbers = ', '.join(numbers[:10])  # เก็บแค่ 10 เลขแรก
-                    article.confidence_score = avg_score * 100  # แปลงเป็นเปอร์เซ็นต์
-                    article.save()
-                    
-                    return JsonResponse({
-                        'success': True,
-                        'numbers': numbers,
-                        'confidence': round(avg_score * 100, 1),
-                        'story_summary': insight_result.get('story_summary', ''),
-                        'story_impact_score': insight_result.get('story_impact_score', 0),
-                        'extracted_entities': insight_result['extracted_entities'],
-                        'is_insight_ai': True,
-                        'message': 'วิเคราะห์ด้วย Insight-AI สำเร็จแล้ว'
-                    })
-                    
-            except Exception as insight_error:
-                # print(f"DEBUG: Insight-AI error: {insight_error}")
-                # Fallback ไปใช้ NewsAnalyzer เดิม
-                pass
+        # ใช้ News Analyzer ปรับปรุงใหม่แทน Insight-AI
+        from .news_analyzer import NewsAnalyzer
+        from types import SimpleNamespace
+        
+        # สร้าง mock article object สำหรับ analyzer
+        mock_article = SimpleNamespace()
+        mock_article.title = article.title
+        mock_article.content = article.content
+        
+        # วิเคราะห์ด้วย News Analyzer ใหม่
+        analyzer = NewsAnalyzer()
+        analysis_result = analyzer.analyze_article(mock_article)
+        
+        # อัพเดตข้อมูลในบทความ
+        article.extracted_numbers = ','.join(analysis_result['numbers'][:15])
+        article.confidence_score = analysis_result['confidence']
+        article.save()
+        
+        return JsonResponse({
+            'success': True,
+            'numbers': analysis_result['numbers'][:15],
+            'confidence': analysis_result['confidence'],
+            'category': analysis_result['category'],
+            'basic_numbers': analysis_result.get('basic_numbers', []),
+            'advanced_numbers': analysis_result.get('advanced_numbers', []),
+            'advanced_analysis': analysis_result.get('advanced_analysis', {}),
+            'is_insight_ai': False,  # แสดงว่าเป็น News Analyzer
+            'message': f'วิเคราะห์ด้วย News Analyzer ใหม่สำเร็จ - พบ {len(analysis_result["numbers"])} เลข'
+        })
         
         # Fallback: ใช้ NewsAnalyzer เดิม
         # print(f"DEBUG: Using fallback NewsAnalyzer for article {article_id}")

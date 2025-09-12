@@ -2,12 +2,14 @@ import re
 from collections import Counter
 from django.db import models
 from .news_lottery_scorer import NewsLotteryScorer
+from .advanced_number_extractor import AdvancedNumberExtractor
 
 class NewsAnalyzer:
     """วิเคราะห์หาเลขจากข่าว ใช้ระบบใหม่ที่เฉพาะเจาะจงสำหรับหวย"""
     
     def __init__(self):
         self.lottery_scorer = NewsLotteryScorer()
+        self.advanced_extractor = AdvancedNumberExtractor()
     
     def analyze_article(self, article):
         """วิเคราะห์บทความข่าว ใช้ระบบใหม่เฉพาะสำหรับหวย"""
@@ -22,18 +24,36 @@ class NewsAnalyzer:
             print(f"🔢 เลขที่สกัดได้: {len(scoring_result['extracted_numbers'])} เลข")
             
             # แปลงรูปแบบให้เข้ากับระบบเดิม
-            extracted_numbers = [item['number'] for item in scoring_result['extracted_numbers']]
+            basic_numbers = [item['number'] for item in scoring_result['extracted_numbers']]
             keywords_found = [item['reason'] for item in scoring_result['extracted_numbers']]
             
-            print(f"✨ เลขสุดท้าย: {extracted_numbers}")
+            print(f"✨ เลขพื้นฐาน: {basic_numbers}")
+            
+            # ใช้ Advanced Number Extractor เพิ่มเติม
+            advanced_result = self.advanced_extractor.extract_advanced_numbers(
+                article.title, article.content, basic_numbers
+            )
+            
+            # รวมเลขทั้งหมด
+            all_numbers = list(dict.fromkeys(basic_numbers + advanced_result['advanced_numbers']))
+            
+            print(f"🚀 เลขขั้นสูง: {advanced_result['advanced_numbers']}")
+            print(f"💎 เลขสุดท้าย: {all_numbers}")
             print(f"📊 เหตุผล: {scoring_result['confidence_details']['reasoning']}")
             
+            # เพิ่มคำอธิบายขั้นสูง
+            if advanced_result['explanations']:
+                print(f"🔍 วิเคราะห์ขั้นสูง: {' | '.join(advanced_result['explanations'])}")
+            
             return {
-                'numbers': extracted_numbers[:15],
+                'numbers': all_numbers[:20],  # เพิ่มเป็น 20 เลข
+                'basic_numbers': basic_numbers,
+                'advanced_numbers': advanced_result['advanced_numbers'],
                 'keywords': keywords_found,
                 'confidence': scoring_result['score'],
                 'category': scoring_result['category'],
-                'detailed_analysis': scoring_result
+                'detailed_analysis': scoring_result,
+                'advanced_analysis': advanced_result
             }
             
         except Exception as e:

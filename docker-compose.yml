@@ -31,6 +31,7 @@ services:
       - DEBUG=True
       - SECRET_KEY=your-secret-key-here
       - DATABASE_URL=postgres://lekdedai_user:lekdedai_pass123@db:5432/lekdedai
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
       db:
         condition: service_healthy

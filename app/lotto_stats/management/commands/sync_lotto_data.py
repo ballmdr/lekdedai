@@ -137,8 +137,11 @@ class Command(BaseCommand):
             if not first_prize:
                 return None
             
-            # ดึงเลข 2 ตัว (เลขท้ายของรางวัลที่ 1)
-            two_digit = first_prize[-2:] if len(first_prize) >= 2 else ''
+            # ดึงเลข 2 ตัว (จาก last2 field ใน API)
+            two_digit = self._extract_last2_digit(result_data)
+            if not two_digit:
+                # fallback: ใช้เลขท้ายของรางวัลที่ 1
+                two_digit = first_prize[-2:] if len(first_prize) >= 2 else ''
             
             # ดึงเลข 3 ตัวหน้า (จากรางวัลที่ 2, 3) - จำกัดจำนวนเพื่อไม่ให้เกิน field length
             three_digit_front = self._extract_three_digit_front(result_data)
@@ -253,6 +256,43 @@ class Command(BaseCommand):
                         return numbers
                 elif isinstance(first_data, str):
                     return first_data
+        
+        return None
+    
+    def _extract_last2_digit(self, result_data):
+        """ดึงเลข 2 ตัวท้าย จาก last2 field ใน API"""
+        # รูปแบบใหม่: response.result.data.last2 (GLO API format)
+        if ('response' in result_data and result_data['response'] and
+            isinstance(result_data['response'], dict) and
+            'result' in result_data['response'] and
+            result_data['response']['result'] and
+            isinstance(result_data['response']['result'], dict) and
+            'data' in result_data['response']['result'] and
+            result_data['response']['result']['data']):
+            
+            data = result_data['response']['result']['data']
+            if isinstance(data, dict) and 'last2' in data and data['last2']:
+                last2_data = data['last2']
+                if isinstance(last2_data, dict) and 'number' in last2_data:
+                    numbers = last2_data['number']
+                    if isinstance(numbers, list) and numbers:
+                        return numbers[0].get('value', '')
+                    elif isinstance(numbers, str):
+                        return numbers
+                elif isinstance(last2_data, str):
+                    return last2_data
+        
+        # รูปแบบเดิม: last2 อยู่ในระดับบน
+        if 'last2' in result_data and result_data['last2']:
+            last2_data = result_data['last2']
+            if isinstance(last2_data, dict) and 'number' in last2_data:
+                numbers = last2_data['number']
+                if isinstance(numbers, list) and numbers:
+                    return numbers[0].get('value', '')
+                elif isinstance(numbers, str):
+                    return numbers
+            elif isinstance(last2_data, str):
+                return last2_data
         
         return None
     

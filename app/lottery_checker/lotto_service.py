@@ -140,15 +140,19 @@ class LottoService:
                 existing_result.save()
             else:
                 logger.info(f"💾 บันทึกข้อมูลหวยใหม่สำหรับวันที่ {draw_date.strftime('%d/%m/%Y')}")
+                
+                # ตรวจสอบความถูกต้องของข้อมูล
+                validation_result = self.validate_lotto_data(lotto_data)
+                
                 # สร้างข้อมูลใหม่
                 LottoResult.objects.create(
                     draw_date=draw_date,
                     result_data=lotto_data,
                     source="GLO API",
-                    is_valid=True,
+                    is_valid=validation_result.get('is_valid', False),
                     last_checked=timezone.now(),
                     raw_api_response=lotto_data,
-                    validation_errors=""
+                    validation_errors=validation_result.get('error', '') if not validation_result.get('is_valid') else ""
                 )
             
             return True
@@ -289,35 +293,62 @@ class LottoService:
                     "error": "ข้อมูลไม่ใช่รูปแบบที่ถูกต้อง"
                 }
             
+            # ตรวจสอบ response structure
+            if 'response' not in lotto_data or lotto_data['response'] is None:
+                return {
+                    "is_valid": False,
+                    "error": "ไม่มีข้อมูล response หรือ response เป็น null"
+                }
+            
+            response = lotto_data['response']
+            
+            # ตรวจสอบ result structure
+            if 'result' not in response or response['result'] is None:
+                return {
+                    "is_valid": False,
+                    "error": "ไม่มีข้อมูล result ในงวดนี้"
+                }
+            
+            result = response['result']
+            
+            # ตรวจสอบ data structure (ข้อมูลรางวัล)
+            if 'data' not in result:
+                return {
+                    "is_valid": False,
+                    "error": "ไม่มีข้อมูลรางวัล"
+                }
+            
+            data = result['data']
+            
             # ตรวจสอบว่ามีข้อมูลรางวัลที่จำเป็นหรือไม่
             required_fields = ['first', 'second', 'third', 'fourth', 'fifth']
             missing_fields = []
             
             for field in required_fields:
-                if field not in lotto_data:
+                if field not in data:
                     missing_fields.append(field)
-                elif not isinstance(lotto_data[field], dict) or 'number' not in lotto_data[field]:
+                elif not isinstance(data[field], dict) or 'number' not in data[field]:
                     missing_fields.append(field)
+                elif not data[field]['number'] or len(data[field]['number']) == 0:
+                    missing_fields.append(f"{field} (ว่างเปล่า)")
             
             if missing_fields:
                 return {
                     "is_valid": False,
-                    "error": f"ข้อมูลไม่ครบถ้วน: ขาด {', '.join(missing_fields)}",
+                    "error": f"ข้อมูลรางวัลไม่ครบถ้วน: {', '.join(missing_fields)}",
                     "missing_fields": missing_fields
                 }
             
-            # ตรวจสอบว่าข้อมูลไม่ว่างเปล่า
-            for field in required_fields:
-                if not lotto_data[field]['number'] or len(lotto_data[field]['number']) == 0:
-                    return {
-                        "is_valid": False,
-                        "error": f"ข้อมูล {field} ว่างเปล่า",
-                        "empty_field": field
-                    }
+            # ตรวจสอบรางวัลที่ 1 (สำคัญที่สุด)
+            if not data['first']['number'][0]['value']:
+                return {
+                    "is_valid": False,
+                    "error": "ไม่มีหมายเลขรางวัลที่ 1"
+                }
             
             return {
                 "is_valid": True,
-                "message": "ข้อมูลถูกต้อง"
+                "message": "ข้อมูลครบถ้วนและถูกต้อง"
             }
             
         except Exception as e:

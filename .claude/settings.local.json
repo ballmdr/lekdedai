@@ -19,7 +19,22 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Read(\\/**)"
+      "Read(\\/**)",
+      "Read(/C:\\Users\\ballm\\Dropbox\\lekdedai\\app\\home/**)",
+      "Read(/C:\\Users\\ballm\\Dropbox\\lekdedai\\app\\home/**)",
+      "Read(/C:\\Users\\ballm\\Dropbox\\lekdedai\\app\\home\\templates\\home/**)",
+      "Read(/C:\\Users\\ballm\\Dropbox\\lekdedai\\app/**)",
+      "Read(/C:\\Users\\ballm\\Dropbox\\lekdedai\\app/**)",
+      "Read(/C:\\Users\\ballm\\Dropbox\\lekdedai\\app\\home/**)",
+      "Read(/C:\\Users\\ballm\\Dropbox\\lekdedai\\app\\home/**)",
+      "Read(/C:\\Users\\ballm\\Dropbox\\lekdedai\\app\\home/**)",
+      "Read(/C:\\Users\\ballm\\Dropbox\\lekdedai\\app\\home\\templates\\home/**)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose exec:*)",
+      "WebFetch(domain:www.thairath.co.th)",
+      "WebFetch(domain:localhost)",
+      "Bash(docker-compose:*)",
+      "Bash(docker cp:*)"
     ],
     "deny": [],
     "ask": []

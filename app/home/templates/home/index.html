@@ -1,207 +1,131 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}LekDedAI - เลขเด็ดจาก AI{% endblock %}
+{% block title %}เลขเด็ด AI ประจำวัน - เริ่มต้นวันใหม่ด้วยเลขโชคดี{% endblock %}
 
 {% block extra_css %}{% endblock %}
 
 {% block content %}
 
-  <!-- AI Lottery Highlight Section - Daily Ritual -->
+  <!-- Daily Lucky Numbers Section - New Design -->
   <section class="py-16 bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 relative overflow-hidden border-b-2 border-primary/20">
     <!-- Background Effects -->
     <div class="absolute inset-0" style="background: radial-gradient(circle at 70% 30%, rgba(255, 193, 7, 0.15), transparent 60%);"></div>
     <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary/20 to-transparent rounded-full -translate-y-32 translate-x-32"></div>
     
     <div class="container mx-auto px-4 relative z-10">
-      <div class="max-w-4xl mx-auto">
-        <!-- Dynamic Header based on Time Period -->
-        <div class="text-center mb-10">
+      <div class="max-w-6xl mx-auto">
+        <!-- Main Header -->
+        <div class="text-center mb-12">
           <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full text-primary font-semibold mb-4">
-            {% if time_period == 'morning' %}
-              <i class="fas fa-sun"></i>
-              <span>MORNING RITUAL</span>
-            {% elif time_period == 'afternoon' %}
-              <i class="fas fa-chart-line"></i>
-              <span>TRENDING NOW</span>
-            {% else %}
-              <i class="fas fa-moon"></i>
-              <span>EVENING SUMMARY</span>
-            {% endif %}
+            <i class="fas fa-sun"></i>
+            <span>DAILY LUCKY NUMBERS</span>
             <i class="fas fa-sparkles"></i>
-            <span class="text-xs opacity-75">{{ current_hour }}:00</span>
           </div>
           
           <h1 class="text-4xl md:text-6xl font-serif font-bold text-foreground mb-4 leading-tight">
-            <span class="text-primary">{{ daily_ritual.title }}</span><br>
-            <span class="text-2xl md:text-4xl text-muted-foreground">{{ daily_ritual.subtitle }}</span>
+            <span class="text-primary">เลขเด็ด AI ประจำวัน</span>
           </h1>
           
-          <p class="text-lg text-muted-foreground mb-2">{{ daily_ritual.primary_message }}</p>
+          <p class="text-xl text-muted-foreground mb-2">เริ่มต้นวันใหม่ด้วยเลขโชคดี</p>
+          <p class="text-base text-muted-foreground">งวดวันที่ {{ target_lottery_date }}</p>
           
-          {% if ai_prediction %}
-          <p class="text-base text-muted-foreground">
-            งวดวันที่ {{ ai_prediction.session.for_draw_date|date:"j F Y" }} 
-            <span class="inline-flex items-center gap-1 ml-2 text-green-600">
-              <i class="fas fa-check-circle text-sm"></i>
-              <span class="font-semibold">{{ ai_prediction.overall_confidence|floatformat:1 }}% มั่นใจ</span>
-            </span>
-          </p>
-          {% endif %}
-          
-          {% if daily_ritual.special_message %}
-            <div class="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-accent/20 rounded-full text-accent text-sm">
-              <i class="fas fa-clock"></i>
-              {{ daily_ritual.special_message }}
-            </div>
-          {% endif %}
+          <div class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-accent/20 rounded-full text-accent text-sm">
+            <i class="fas fa-clock"></i>
+            เลขเปลี่ยนใหม่ทุกวัน เวลา 9:00
+          </div>
         </div>
 
-        <!-- Dynamic Numbers Display based on Time Period -->
-        <div class="{% if time_period == 'afternoon' %}grid md:grid-cols-1{% else %}grid md:grid-cols-2{% endif %} gap-8 mb-10">
-          
-          {% if time_period == 'morning' %}
-            <!-- Morning: เลขเด็ดประจำวัน -->
-            <div class="card border-2 border-amber-300/50 bg-gradient-to-br from-amber-50 to-yellow-50 hover:shadow-xl transition-all duration-300">
-              <div class="p-8 text-center">
-                <div class="w-16 h-16 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i class="fas fa-sun text-2xl text-white"></i>
-                </div>
-                <h3 class="text-xl font-bold text-foreground mb-2">🌅 เลขเด็ดเช้านี้</h3>
-                <p class="text-sm text-muted-foreground mb-4">จากข่าวดังและ AI</p>
-                <div class="flex justify-center gap-3 flex-wrap mb-4">
-                  {% for number in daily_ritual.highlighted_numbers %}
-                  <div class="w-14 h-14 bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg hover:scale-110 transition-transform">
-                    {{ number }}
-                  </div>
-                  {% empty %}
-                  <div class="w-14 h-14 bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">42</div>
-                  <div class="w-14 h-14 bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">89</div>
-                  {% endfor %}
-                </div>
-                <p class="text-xs text-muted-foreground">📅 อัปเดตเช้า 09:00 น.</p>
+        <!-- Daily Numbers Section - Full Width -->
+        <div class="max-w-4xl mx-auto mb-10">
+          <div class="card border-2 border-amber-300/50 bg-gradient-to-br from-amber-50 to-yellow-50 hover:shadow-xl transition-all duration-300">
+            <div class="p-12 text-center">
+              <div class="w-20 h-20 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-sun text-3xl text-white"></i>
               </div>
-            </div>
-            
-            <!-- Morning: AI Prediction -->
-            <div class="card border-2 border-primary/30 bg-primary/5 hover:shadow-xl transition-all duration-300">
-              <div class="p-8 text-center">
-                <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i class="fas fa-brain text-2xl text-white"></i>
+              <h3 class="text-3xl font-bold text-foreground mb-4">🌅 เลขเด็ดประจำวัน</h3>
+              <p class="text-lg text-muted-foreground mb-8">จากข่าวในช่วง 24 ชั่วโมงล่าสุด</p>
+              <div class="flex justify-center gap-4 flex-wrap mb-8">
+                {% for number in morning_news_numbers %}
+                <div class="w-20 h-20 bg-gradient-to-br from-amber-500 to-yellow-600 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl hover:scale-110 transition-transform">
+                  {{ number }}
                 </div>
-                <h3 class="text-xl font-bold text-foreground mb-2">🤖 AI ทำนาย</h3>
-                <p class="text-sm text-muted-foreground mb-4">โมเดลรวม 3 ตัว</p>
-                <div class="flex justify-center gap-3 mb-4">
-                  {% if ai_prediction and ai_prediction.get_top_two_digit_numbers %}
-                    {% for item in ai_prediction.get_top_two_digit_numbers|slice:":2" %}
-                    <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">
-                      {{ item.number }}
-                    </div>
-                    {% endfor %}
-                  {% else %}
-                    <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">47</div>
-                    <div class="w-16 h-16 bg-primary text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">89</div>
-                  {% endif %}
+                {% empty %}
+                <div class="text-muted-foreground text-lg">
+                  <i class="fas fa-newspaper mr-2"></i>
+                  ไม่พบข่าวที่มีเลขเด็ดในช่วงนี้
                 </div>
-                {% if ai_prediction %}
-                <p class="text-sm text-muted-foreground">ความมั่นใจ {{ ai_prediction.overall_confidence|floatformat:1 }}%</p>
-                {% endif %}
+                {% endfor %}
               </div>
+              <p class="text-base text-muted-foreground">📅 อัปเดตทุกวัน 9:00 น. • เลขเดียวกันตลอดวัน</p>
             </div>
-            
-          {% elif time_period == 'afternoon' %}
-            <!-- Afternoon: Community Buzz -->
-            <div class="card border-2 border-orange-300/50 bg-gradient-to-br from-orange-50 to-red-50 hover:shadow-xl transition-all duration-300">
-              <div class="p-10 text-center">
-                <div class="w-20 h-20 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <i class="fas fa-fire text-3xl text-white"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-foreground mb-3">🔥 เลขที่คนพูดถึงมากที่สุด</h3>
-                <p class="text-base text-muted-foreground mb-6">กระแสและความนิยมจากชุมชน</p>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  {% for number in daily_ritual.buzz_numbers %}
-                  <div class="relative group">
-                    <div class="w-18 h-18 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg hover:scale-110 transition-all duration-300 group-hover:shadow-2xl">
-                      {{ number }}
-                    </div>
-                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold opacity-75">
-                      🔥
-                    </div>
-                  </div>
-                  {% empty %}
-                  <div class="w-18 h-18 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg">15</div>
-                  <div class="w-18 h-18 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg">42</div>
-                  <div class="w-18 h-18 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg">67</div>
-                  <div class="w-18 h-18 bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-lg">89</div>
-                  {% endfor %}
-                </div>
-                <p class="text-sm text-muted-foreground">📊 อัปเดตบ่าย 14:00 น.</p>
-              </div>
-            </div>
-            
-          {% else %}
-            <!-- Evening: Daily Summary -->
-            <div class="card border-2 border-purple-300/50 bg-gradient-to-br from-purple-50 to-indigo-50 hover:shadow-xl transition-all duration-300">
-              <div class="p-8 text-center">
-                <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i class="fas fa-chart-pie text-2xl text-white"></i>
-                </div>
-                <h3 class="text-xl font-bold text-foreground mb-2">🌙 สรุปเลขเด่นวันนี้</h3>
-                <p class="text-sm text-muted-foreground mb-4">ภาพรวมและการเตรียมตัว</p>
-                <div class="flex justify-center gap-3 mb-4">
-                  {% for number in daily_ritual.highlighted_numbers %}
-                  <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">
-                    {{ number }}
-                  </div>
-                  {% empty %}
-                  <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">27</div>
-                  <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">54</div>
-                  {% endfor %}
-                </div>
-                <p class="text-xs text-muted-foreground">🌅 พรุ่งนี้ 09:00 น. มีเลขใหม่</p>
-              </div>
-            </div>
-            
-            <!-- Evening: Tomorrow Preview -->
-            <div class="card border-2 border-secondary/30 bg-secondary/5 hover:shadow-xl transition-all duration-300">
-              <div class="p-8 text-center">
-                <div class="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i class="fas fa-calendar-plus text-2xl text-white"></i>
-                </div>
-                <h3 class="text-xl font-bold text-foreground mb-2">🔮 Preview งวดหน้า</h3>
-                <p class="text-sm text-muted-foreground mb-4">เตรียมตัวล่วงหน้า</p>
-                <div class="flex justify-center gap-2 mb-4">
-                  {% if ai_prediction and ai_prediction.get_top_three_digit_numbers %}
-                    {% for item in ai_prediction.get_top_three_digit_numbers|slice:":2" %}
-                    <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">
-                      {{ item.number }}
-                    </div>
-                    {% endfor %}
-                  {% else %}
-                    <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">065</div>
-                    <div class="w-12 h-16 bg-secondary text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">052</div>
-                  {% endif %}
-                </div>
-                <p class="text-sm text-muted-foreground">เลข 3 ตัวแนวโน้ม</p>
-              </div>
-            </div>
-          {% endif %}
-          
+          </div>
         </div>
 
-        <!-- AI Reasoning Summary -->
-        <div class="card bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20 mb-8">
+        <!-- News Source Analysis -->
+        <div class="card bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-300/20 mb-8">
           <div class="p-6">
             <div class="flex items-start gap-4">
-              <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-brain text-white"></i>
+              <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-newspaper text-white"></i>
               </div>
               <div class="flex-1">
-                <h4 class="text-lg font-semibold text-foreground mb-2">เหตุผลหลักจาก AI</h4>
-                {% if ai_prediction and ai_prediction.prediction_summary %}
-                <p class="text-foreground">{{ ai_prediction.prediction_summary }}</p>
-                {% else %}
-                <p class="text-foreground">มาจากการวิเคราะห์กระแสข่าวและสถิติเลขที่ไม่ออกนาน รวมกับการตีความฝันและแนวโน้มเทรนด์ปัจจุบัน</p>
+                <h4 class="text-lg font-semibold text-foreground mb-3">แหล่งข่าวที่นำมาวิเคราะห์</h4>
+                <div class="space-y-3">
+                  {% for article in daily_news_sources %}
+                  <div class="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <div class="w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                      {{ forloop.counter }}
+                    </div>
+                    <div class="flex-1">
+                      <h5 class="font-medium text-foreground text-sm mb-1">{{ article.title|truncatechars:80 }}</h5>
+                      <div class="flex items-center gap-4 text-xs text-amber-700">
+                        <span class="flex items-center gap-1">
+                          <i class="fas fa-clock"></i>
+                          {{ article.published_date|timesince }}ที่แล้ว
+                        </span>
+                        <span class="flex items-center gap-1">
+                          <i class="fas fa-tags"></i>
+                          {{ article.category.name|default:"ทั่วไป" }}
+                        </span>
+                        {% if article.lottery_relevance_score %}
+                        <span class="flex items-center gap-1">
+                          <i class="fas fa-star"></i>
+                          คะแนน {{ article.lottery_relevance_score }}
+                        </span>
+                        {% endif %}
+                      </div>
+                      {% if article.get_extracted_numbers_list %}
+                      <div class="mt-2 flex gap-1">
+                        <span class="text-xs text-amber-600 mr-1">เลขที่ได้:</span>
+                        {% for number in article.get_extracted_numbers_list|slice:":3" %}
+                        <span class="px-2 py-1 bg-amber-500 text-white rounded text-xs font-mono">{{ number }}</span>
+                        {% endfor %}
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% empty %}
+                  <div class="text-center py-4 text-muted-foreground">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    ไม่พบข่าวในช่วงเวลานี้
+                  </div>
+                  {% endfor %}
+                </div>
+                
+                {% if daily_news_sources %}
+                <div class="mt-4 pt-3 border-t border-amber-200">
+                  <div class="text-sm text-amber-700 flex items-center justify-between">
+                    <span>
+                      <i class="fas fa-chart-bar mr-1"></i>
+                      รวม {{ daily_news_sources|length }} ข่าว ได้เลข {{ morning_news_numbers|length }} ตัว
+                    </span>
+                    <span class="text-xs">
+                      <i class="fas fa-sync mr-1"></i>
+                      อัปเดตล่าสุด: {{ current_date|date:"H:i" }} น.
+                    </span>
+                  </div>
+                </div>
                 {% endif %}
               </div>
             </div>
@@ -224,8 +148,174 @@
     </div>
   </section>
 
+  <!-- Next Draw Prediction Section -->
+  <section class="py-16 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 relative overflow-hidden border-b-2 border-blue/20">
+    <!-- Background Effects -->
+    <div class="absolute inset-0" style="background: radial-gradient(circle at 30% 70%, rgba(59, 130, 246, 0.15), transparent 60%);"></div>
+    <div class="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-blue-500/20 to-transparent rounded-full -translate-y-32 -translate-x-32"></div>
+    
+    <div class="container mx-auto px-4 relative z-10">
+      <div class="max-w-6xl mx-auto">
+        <!-- Main Header -->
+        <div class="text-center mb-12">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-full text-blue-700 font-semibold mb-4">
+            <i class="fas fa-chart-line"></i>
+            <span>NEXT DRAW PREDICTION</span>
+            <i class="fas fa-crystal-ball"></i>
+          </div>
+          
+          <h2 class="text-4xl md:text-6xl font-serif font-bold text-foreground mb-4 leading-tight">
+            <span class="text-blue-600">🎯 เลขเด็ดหวยงวดหน้า</span>
+          </h2>
+          
+          <p class="text-xl text-muted-foreground mb-2">วิเคราะห์จากสถิติและข่าวใหญ่</p>
+          <p class="text-base text-muted-foreground">{{ next_draw_prediction.data_source_summary|default:"วิเคราะห์จากสถิติเลขที่ออกทั้งหมด + ข่าวใหญ่ตั้งแต่งวดที่แล้ว" }}</p>
+          
+          <div class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 rounded-full text-indigo-700 text-sm">
+            <i class="fas fa-sync"></i>
+            เลขอาจเปลี่ยนเมื่อมีข่าวใหม่
+          </div>
+        </div>
+
+        <!-- Prediction Numbers Display -->
+        <div class="grid md:grid-cols-2 gap-8 mb-10">
+          
+          <!-- Main Numbers -->
+          <div class="card border-2 border-blue-300/50 bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-xl transition-all duration-300">
+            <div class="p-8 text-center">
+              <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-chart-bar text-2xl text-white"></i>
+              </div>
+              <h3 class="text-xl font-bold text-foreground mb-2">📊 จากสถิติ</h3>
+              <p class="text-sm text-muted-foreground mb-4">เลขฮอต เลขเย็น และเลขแนวโน้ม</p>
+              <div class="flex justify-center gap-3 flex-wrap mb-4">
+                {% for item in next_draw_prediction.prediction_numbers %}
+                  {% if item.source == 'hot_stats' or item.source == 'cold_stats' %}
+                  <div class="relative group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg hover:scale-110 transition-transform"
+                         title="{{ item.reason }}">
+                      {{ item.number }}
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                      {{ item.confidence|floatformat:0 }}
+                    </div>
+                  </div>
+                  {% endif %}
+                {% empty %}
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">47</div>
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">23</div>
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">89</div>
+                {% endfor %}
+              </div>
+              <p class="text-xs text-muted-foreground">🔢 สถิติจากงวดที่ผ่านมา</p>
+            </div>
+          </div>
+          
+          <!-- News-based Numbers -->
+          <div class="card border-2 border-purple-300/50 bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-xl transition-all duration-300">
+            <div class="p-8 text-center">
+              <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-newspaper text-2xl text-white"></i>
+              </div>
+              <h3 class="text-xl font-bold text-foreground mb-2">📰 จากข่าวใหญ่</h3>
+              <p class="text-sm text-muted-foreground mb-4">ข่าวคะแนนสูง ≥80 ตั้งแต่งวดที่แล้ว</p>
+              <div class="flex justify-center gap-3 flex-wrap mb-4">
+                {% for item in next_draw_prediction.prediction_numbers %}
+                  {% if item.source == 'major_news' %}
+                  <div class="relative group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg hover:scale-110 transition-transform"
+                         title="{{ item.reason }}">
+                      {{ item.number }}
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                      {{ item.confidence|floatformat:0 }}
+                    </div>
+                  </div>
+                  {% endif %}
+                {% empty %}
+                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">15</div>
+                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">72</div>
+                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">34</div>
+                {% endfor %}
+              </div>
+              <p class="text-xs text-muted-foreground">📈 วิเคราะห์จาก {{ next_draw_prediction.total_news_analyzed|default:"5" }} ข่าวใหญ่</p>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- Combined Top Predictions -->
+        <div class="card bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border-2 border-indigo-300/50 mb-8">
+          <div class="p-8 text-center">
+            <h3 class="text-2xl font-bold text-foreground mb-4">🏆 เลขเด็ดแนะนำสูงสุด</h3>
+            <p class="text-muted-foreground mb-6">รวมทั้งสถิติและข่าว เรียงตามความน่าเชื่อถือ</p>
+            <div class="flex justify-center gap-4 flex-wrap">
+              {% for number in next_draw_numbers|slice:":6" %}
+              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl hover:scale-110 transition-all duration-300">
+                {{ number }}
+              </div>
+              {% empty %}
+              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">47</div>
+              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">23</div>
+              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">89</div>
+              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">15</div>
+              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">72</div>
+              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">34</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Analysis Summary -->
+        <div class="card bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-300/20">
+          <div class="p-6">
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-analytics text-white"></i>
+              </div>
+              <div class="flex-1">
+                <h4 class="text-lg font-semibold text-foreground mb-2">สรุปการวิเคราะห์</h4>
+                <div class="grid md:grid-cols-2 gap-4 text-sm text-foreground">
+                  <div>
+                    <span class="font-medium">📊 ข้อมูลสถิติ:</span> {{ next_draw_prediction.statistical_coverage|default:"10" }} รายการ<br>
+                    <span class="font-medium">📰 ข่าวที่วิเคราะห์:</span> {{ next_draw_prediction.total_news_analyzed|default:"5" }} บทความ<br>
+                    <span class="font-medium">📅 ข้อมูลตั้งแต่:</span> {{ next_draw_prediction.last_draw_date|date:"d/m/Y"|default:"20/08/2025" }}
+                  </div>
+                  <div>
+                    <span class="font-medium">🎯 วิธีการ:</span> สถิติ Hot/Cold + ข่าวคะแนนสูง<br>
+                    <span class="font-medium">🔄 อัปเดต:</span> เมื่อมีข่าวใหม่หรือข้อมูลสถิติ<br>
+                    <span class="font-medium">⚡ สถานะ:</span> <span class="text-green-600 font-semibold">พร้อมใช้งาน</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Call-to-Action -->
+        <div class="text-center mt-8">
+          <a href="{% url 'lotto_stats:statistics' %}" 
+             class="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold text-lg rounded-xl hover:shadow-xl transform hover:scale-105 transition-all duration-300 mr-4">
+            <i class="fas fa-chart-bar"></i>
+            <span>ดูสถิติโดยละเอียด</span>
+            <i class="fas fa-arrow-right"></i>
+          </a>
+          <a href="/news/?category=major" 
+             class="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-700 text-white font-bold text-lg rounded-xl hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+            <i class="fas fa-newspaper"></i>
+            <span>ดูข่าวใหญ่ทั้งหมด</span>
+            <i class="fas fa-external-link-alt"></i>
+          </a>
+          <p class="text-sm text-muted-foreground mt-3">
+            ระบบวิเคราะห์อัตโนมัติ ผสมผสานสถิติและการวิเคราะห์ข่าว
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Instant Lucky Numbers Section -->
-  <section class="py-16 bg-gradient-to-br from-green-50 to-emerald-100 border-y border-green-200">
+  <section id="instantLuckyNumbers" class="py-16 bg-gradient-to-br from-green-50 to-emerald-100 border-y border-green-200">
     <div class="container mx-auto px-4">
       <div class="max-w-4xl mx-auto">
         <!-- Header -->
@@ -1422,6 +1512,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Scroll to Instant Lucky Numbers section
+function scrollToInstantSection() {
+    const section = document.querySelector('#instantLuckyNumbers');
+    if (section) {
+        section.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    }
+}
 </script>
 
 {% block extra_js %}

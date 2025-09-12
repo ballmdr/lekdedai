@@ -15,7 +15,7 @@ if os.path.exists(MCP_DIR):
     try:
         from specialized_django_integration import interpret_dream_for_django
         DREAM_AI_AVAILABLE = True
-        print(f"✅ Expert Dream AI loaded successfully from {MCP_DIR}")
+        print(f"Expert Dream AI loaded successfully from {MCP_DIR}")
     except ImportError as e:
         print(f"Warning: Specialized Dream AI not available: {e}")
         DREAM_AI_AVAILABLE = False

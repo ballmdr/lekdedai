@@ -33,7 +33,7 @@ class Command(BaseCommand):
         source_name = options.get('source')
         
         self.stdout.write(
-            self.style.SUCCESS(f'🚀 เริ่มดึงข่าวจาก RSS feeds (จำกัด {limit} ข่าว/แหล่ง)')
+            self.style.SUCCESS(f'Starting RSS feed scraping (limit {limit} articles per source)')
         )
         
         # กำหนด category หรือสร้างถ้ายังไม่มี
@@ -50,7 +50,7 @@ class Command(BaseCommand):
         
         if not sources:
             self.stdout.write(
-                self.style.WARNING('❌ ไม่พบ RSS feeds ที่ใช้งานอยู่')
+                self.style.WARNING('No active RSS feeds found')
             )
             return
         
@@ -104,23 +104,44 @@ class Command(BaseCommand):
                             
                             analysis = analyzer.analyze_article(temp_article)
                             
-                            # สร้างข่าว
-                            article = NewsArticle.objects.create(
-                                title=title[:200],  # จำกัดความยาว
-                                content=content,
-                                intro=content[:500],
-                                category=category,
-                                source_url=link,
-                                status='published',
-                                published_date=timezone.now(),
-                                # ใช้ข้อมูลจากระบบใหม่
-                                lottery_relevance_score=analysis['confidence'],
-                                lottery_category=analysis.get('category', 'general'),
-                                extracted_numbers=','.join(analysis['numbers'][:10]) if analysis['numbers'] else '',
-                                confidence_score=analysis['confidence']
-                            )
+                            # ใช้ Insight-AI วิเคราะห์เพิ่มเติม
+                            import sys
+                            sys.path.insert(0, '/app/mcp_dream_analysis')
+                            from specialized_django_integration import extract_news_numbers_for_django
                             
-                            source_processed += 1
+                            insight_result = extract_news_numbers_for_django(f"{title}\n\n{content}")
+                            
+                            # เฉพาะข่าวที่มีเลขจากทั้ง 2 ระบบถึงจะบันทึก
+                            has_news_numbers = analysis['numbers'] and len(analysis['numbers']) > 0
+                            has_insight_entities = insight_result.get('extracted_entities') and len(insight_result.get('extracted_entities', [])) > 0
+                            
+                            if has_news_numbers and has_insight_entities:
+                                # สร้างข่าว
+                                article = NewsArticle.objects.create(
+                                    title=title[:200],  # จำกัดความยาว
+                                    content=content,
+                                    intro=content[:500],
+                                    category=category,
+                                    source_url=link,
+                                    status='published',
+                                    published_date=timezone.now(),
+                                    # ใช้ข้อมูลจากระบบใหม่
+                                    lottery_relevance_score=analysis['confidence'],
+                                    lottery_category=analysis.get('category', 'general'),
+                                    extracted_numbers=','.join(analysis['numbers'][:10]),
+                                    confidence_score=analysis['confidence']
+                                )
+                                
+                                source_processed += 1
+                            else:
+                                # ข้ามข่าวที่ไม่มีเลขจากทั้ง 2 ระบบ
+                                if not has_news_numbers:
+                                    self.stdout.write(f'⏭️ ข้ามข่าวไม่มีเลข (NewsAnalyzer): {title[:50]}...')
+                                elif not has_insight_entities:
+                                    self.stdout.write(f'⏭️ ข้ามข่าวไม่มีเลข (Insight-AI): {title[:50]}...')
+                                else:
+                                    self.stdout.write(f'⏭️ ข้ามข่าวไม่มีเลข: {title[:50]}...')
+                                continue
                             
                             # นับข่าวคะแนนสูง
                             if analysis['confidence'] >= 80:
@@ -132,7 +153,7 @@ class Command(BaseCommand):
                                     )
                                 )
                             elif analysis['confidence'] >= 60:
-                                self.stdout.write(f'⭐ {title[:50]}... (คะแนน: {analysis["confidence"]})')
+                                self.stdout.write(f'* {title[:50]}... (Score: {analysis["confidence"]})')
                             else:
                                 self.stdout.write(f'📰 {title[:50]}... (คะแนน: {analysis["confidence"]})')
                             
@@ -149,7 +170,7 @@ class Command(BaseCommand):
                             
                     except Exception as e:
                         self.stdout.write(
-                            self.style.ERROR(f'❌ ข้อผิดพลาด: {entry.title[:30]}... - {str(e)}')
+                            self.style.ERROR(f'Error: {entry.title[:30]}... - {str(e)}')
                         )
                         continue
                 
@@ -161,12 +182,12 @@ class Command(BaseCommand):
                 total_high_score += source_high_score
                 
                 self.stdout.write(
-                    f'✅ {source.name}: {source_processed} ข่าว (คะแนนสูง: {source_high_score})'
+                    f'OK {source.name}: {source_processed} articles (High score: {source_high_score})'
                 )
                 
             except Exception as e:
                 self.stdout.write(
-                    self.style.ERROR(f'❌ ข้อผิดพลาดที่ {source.name}: {str(e)}')
+                    self.style.ERROR(f'Error at {source.name}: {str(e)}')
                 )
                 continue
         
@@ -221,7 +242,7 @@ class Command(BaseCommand):
             self.stdout.write('\\n📊 สถิติหมวดหมู่:')
             category_names = {
                 'accident': '🔥 อุบัติเหตุ',
-                'celebrity': '⭐ คนดัง',
+                'celebrity': '* Celebrity',
                 'economic': '📈 เศรษฐกิจ',
                 'general': '📰 ทั่วไป'
             }
