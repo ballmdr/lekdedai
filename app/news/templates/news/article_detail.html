@@ -70,21 +70,6 @@
                     <div class="text-foreground leading-relaxed">
                         {{ article.get_formatted_content }}
                         
-                        <!-- Source Link -->
-                        {% if article.source_url %}
-                        <div class="mt-6 p-4 bg-muted/50 rounded-lg border-l-4 border-primary">
-                            <p class="text-sm text-muted-foreground mb-2">
-                                <i class="fas fa-external-link-alt mr-2"></i>
-                                อ้างอิงจาก:
-                            </p>
-                            <a href="{{ article.source_url }}" 
-                               target="_blank" 
-                               rel="nofollow noopener noreferrer" 
-                               class="text-primary hover:text-accent transition-colors underline break-all">
-                                {{ article.source_url }}
-                            </a>
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
                 

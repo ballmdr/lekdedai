@@ -21,6 +21,26 @@ api_key = "AIzaSyAjivjnnUo2AL5v4HGVkC4mTIH4kxMyOPU"
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-1.5-flash-8b')  # ใช้ Flash Lite เพื่อประหยัด quota
 
+def _clean_website_junk(content):
+    """ลบขยะเว็บไซต์ออกจากเนื้อหาก่อนบันทึกลงฐานข้อมูล"""
+    import re
+    
+    if not content:
+        return ""
+    
+    # ถ้าเจอขยะในส่วนต้น ลองหาจุดเริ่มต้นเนื้อหาจริง
+    if any(keyword in content[:300].lower() for keyword in ['logo', 'thairath', 'สมาชิก', 'light', 'dark', 'ฟังข่าว']):
+        # หาจุดเริ่มต้นเนื้อหาจริง
+        start_markers = ['อดีตนายกรัฐมนตรี', 'นายกรัฐมนตรี', 'ทักษิณ ชินวัตร', 'ทักษิณ', 'รองนายก', 'รัฐมนตรี']
+        for marker in start_markers:
+            if marker in content:
+                start_pos = content.find(marker)
+                if start_pos > 50:  # ต้องมีขยะอย่างน้อย 50 ตัวอักษรข้างหน้า
+                    content = content[start_pos:]
+                    break
+    
+    return content.strip()
+
 def scrape_thairath_news(url):
     """Scrape ข่าวจาก Thairath URL"""
     print(f"🔍 กำลัง scrape ข่าวจาก: {url}")
@@ -63,9 +83,13 @@ def scrape_thairath_news(url):
                 content = body.get_text(separator=' ', strip=True)
         
         print(f"✅ Scrape สำเร็จ: {len(content)} ตัวอักษร")
+        
+        # Clean content ก่อนบันทึก - ลบขยะเว็บไซต์ออก
+        cleaned_content = _clean_website_junk(content.strip())
+        
         return {
             'title': title.strip(),
-            'content': content.strip()[:2000],  # จำกัด 2000 ตัวอักษร
+            'content': cleaned_content[:2000],  # จำกัด 2000 ตัวอักษร
             'url': url
         }
         
@@ -93,7 +117,9 @@ def analyze_with_gemini(title, content):
 4. หมายเลขคดี - เช่น "คดีชั้น 14" → เลข 14
 5. จำนวนเงิน/คน - เช่น "5 ล้าน" → เลข 5
 
-ห้าม: วันที่ (เช่น 9 ก.ย., วันที่ 12), ปี พ.ศ. (เช่น 2568)
+ห้าม: 
+- วันที่ (เช่น 9 ก.ย., วันที่ 12), ปี พ.ศ. (เช่น 2568)
+- เลขซ้ำกัน: ถ้าเลขเดียวกันมาจากเหตุผลเดียวกัน ให้ใส่แค่ครั้งเดียว
 
 ตอบเป็น JSON เท่านั้น:
 {{
@@ -136,13 +162,38 @@ def analyze_with_gemini(title, content):
         
         try:
             result = json.loads(result_text)
+            
+            # รวบเลขซ้ำกัน (ไม่สนใจ reasoning ต่างกัน)
+            detailed_numbers = result.get('extracted_numbers', [])
+            unique_numbers = {}
+            
+            for item in detailed_numbers:
+                number = item['number']
+                source = item['source'] 
+                confidence = item['confidence']
+                
+                # ถ้าเลขนี้ยังไม่มี หรือมีแต่ confidence ใหม่สูงกว่า
+                if number not in unique_numbers or confidence > unique_numbers[number]['confidence']:
+                    unique_numbers[number] = {
+                        'number': number,
+                        'source': source,  # ใช้ source ที่มี confidence สูงสุด
+                        'confidence': confidence
+                    }
+                elif confidence == unique_numbers[number]['confidence'] and len(source) < len(unique_numbers[number]['source']):
+                    # ถ้า confidence เท่ากัน ใช้ source ที่สั้นกว่า (กระชับกว่า)
+                    unique_numbers[number]['source'] = source
+            
+            # แปลงกลับเป็น list และเรียงตาม confidence
+            final_numbers = list(unique_numbers.values())
+            final_numbers.sort(key=lambda x: x['confidence'], reverse=True)
+            
             return {
                 'success': True,
                 'is_relevant': result.get('is_relevant', False),
                 'category': result.get('category', 'other'),
                 'relevance_score': result.get('relevance_score', 0),
-                'numbers': [item['number'] for item in result.get('extracted_numbers', [])],
-                'detailed_numbers': result.get('extracted_numbers', []),
+                'numbers': [item['number'] for item in final_numbers],
+                'detailed_numbers': final_numbers,
                 'reasoning': result.get('reasoning', ''),
                 'raw_response': result_text
             }
@@ -229,7 +280,7 @@ def save_to_database(news_data, analysis):
     return article
 
 def main():
-    url = "https://www.thairath.co.th/news/politic/2881670"  # URL ข่าวใหม่
+    url = "https://www.thairath.co.th/news/politic/2881640"  # URL ข่าวทักษิณ
     
     print("=== ทดสอบระบบข่าวเดี่ยวด้วย Gemini Flash Lite ===")
     print()

@@ -15,7 +15,7 @@ WORKDIR /app
 # ใช้ requirements แบบง่ายก่อน
 COPY requirements-simple.txt /app/
 RUN pip install --upgrade pip && \
-    pip install -r requirements-simple.txt
+    pip install -r requirements.txt
 
 COPY ./app /app/
 

@@ -152,61 +152,201 @@ class NewsArticle(models.Model):
         return []
     
     def get_formatted_content(self):
-        """จัดรูปแบบเนื้อหาให้เป็นย่อหน้า"""
+        """จัดรูปแบบเนื้อหาด้วย Gemini AI พร้อม filter ขยะ"""
         from django.utils.safestring import mark_safe
+        import google.generativeai as genai
+        import json
         import re
         
         if not self.content:
             return ""
         
-        # แยกประโยคที่จบด้วยจุด ตามด้วยช่องว่าง และตัวอักษรตัวใหญ่
-        paragraphs = []
-        sentences = self.content.split('.')
-        current_para = ""
+        # ถ้ามีเนื้อหาที่จัดรูปแบบแล้วใน formatted_content ให้ใช้เลย
+        if hasattr(self, '_formatted_content_cache'):
+            return mark_safe(self._formatted_content_cache)
         
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if not sentence:
-                continue
-                
-            current_para += sentence + ". "
+        # Pre-filter: เอาขยะเว็บไซต์ออกก่อน
+        cleaned_content = self._remove_website_junk(self.content)
+        
+        try:
+            # Setup Gemini
+            api_key = "AIzaSyAjivjnnUo2AL5v4HGVkC4mTIH4kxMyOPU"
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-flash-8b')
             
-            # สร้างย่อหน้าใหม่เมื่อมีความยาวเหมาะสม (200-400 ตัวอักษร)
-            if len(current_para) > 200 and (
-                len(current_para) > 400 or 
-                any(keyword in sentence.lower() for keyword in ['เมื่อ', 'นอกจากนี้', 'อย่างไรก็ตาม', 'ในขณะที่', 'ทั้งนี้', 'จากนั้น'])
-            ):
-                paragraphs.append(current_para.strip())
-                current_para = ""
-        
-        if current_para.strip():
-            paragraphs.append(current_para.strip())
-        
-        # ถ้าไม่สามารถแยกได้ดี ใช้วิธีพื้นฐาน
-        if len(paragraphs) <= 1 and self.content:
-            # แยกเนื้อหาทุก 300 ตัวอักษร
-            content = self.content.strip()
-            paragraphs = []
-            while content:
-                if len(content) <= 300:
-                    paragraphs.append(content)
-                    break
+            prompt = f"""
+จัดรูปแบบเนื้อหาข่าวนี้ให้อ่านง่าย เรียบเรียงเป็นย่อหน้าที่เหมาะสม:
+
+{cleaned_content}
+
+กฎการจัดรูปแบบ:
+1. แยกย่อหน้าตามหัวข้อย่อยหรือเหตุการณ์
+2. แต่ละย่อหน้า 150-300 คำ
+3. เรียงลำดับเหตุการณ์ให้เป็นเหตุเป็นผล
+4. ใช้ภาษาไทยที่เป็นทางการแต่อ่านง่าย
+5. ลบข้อความซ้ำซ้อนออก
+6. ลบย่อหน้าแรกที่เป็นขยะเว็บไซต์ออก
+
+ตอบเป็น JSON:
+{{
+  "formatted_paragraphs": [
+    "ย่อหน้าที่ 1...",
+    "ย่อหน้าที่ 2...",
+    "ย่อหน้าที่ 3..."
+  ]
+}}
+"""
+            
+            response = model.generate_content(prompt)
+            result_text = response.text.strip()
+            
+            # ทำความสะอาด JSON
+            if result_text.startswith('```json'):
+                result_text = result_text[7:]
+            if result_text.endswith('```'):
+                result_text = result_text[:-3]
+            result_text = result_text.strip()
+            
+            try:
+                result = json.loads(result_text)
+                paragraphs = result.get('formatted_paragraphs', [])
                 
-                # หาจุดตัดที่เหมาะสม (หลังจุด หรือช่องว่าง)
-                cut_point = 300
-                for i in range(280, min(320, len(content))):
-                    if content[i] in '.!? ' and i < len(content) - 1:
-                        cut_point = i + 1
+                # Post-filter: เอาย่อหน้าที่มีขยะออกอีกรอบ
+                filtered_paragraphs = []
+                for para in paragraphs:
+                    if para.strip() and not self._is_junk_paragraph(para):
+                        filtered_paragraphs.append(para.strip())
+                
+                # สร้าง HTML
+                html_paragraphs = []
+                for para in filtered_paragraphs:
+                    html_paragraphs.append(f'<p class="mb-4">{para}</p>')
+                
+                formatted_content = '\n'.join(html_paragraphs)
+                
+                # Cache ผลลัพธ์
+                self._formatted_content_cache = formatted_content
+                
+                return mark_safe(formatted_content)
+                
+            except json.JSONDecodeError:
+                # Fallback to basic formatting
+                return self._get_basic_formatted_content(cleaned_content)
+                
+        except Exception as e:
+            # Fallback to basic formatting
+            return self._get_basic_formatted_content(cleaned_content)
+    
+    def _remove_website_junk(self, content):
+        """ลบขยะเว็บไซต์ออกก่อนส่งให้ Gemini"""
+        import re
+        
+        if not content:
+            return ""
+        
+        # ถ้าเจอขยะในส่วนต้น ลองหาจุดเริ่มต้นเนื้อหาจริง
+        if any(keyword in content[:300].lower() for keyword in ['logo', 'thairath', 'สมาชิก', 'light', 'dark', 'ฟังข่าว']):
+            # หาจุดเริ่มต้นเนื้อหาจริง
+            start_markers = ['อดีตนายกรัฐมนตรี', 'นายกรัฐมนตรี', 'ทักษิณ ชินวัตร', 'ทักษิณ', 'รองนายก', 'รัฐมนตรี']
+            for marker in start_markers:
+                if marker in content:
+                    start_pos = content.find(marker)
+                    if start_pos > 50:  # ต้องมีขยะอย่างน้อย 50 ตัวอักษรข้างหน้า
+                        content = content[start_pos:]
                         break
-                
-                paragraphs.append(content[:cut_point].strip())
-                content = content[cut_point:].strip()
+        
+        # ลบย่อหน้าขยะออกเพิ่มเติม
+        paragraphs = content.split('\n')
+        cleaned_paragraphs = []
+        
+        for para in paragraphs:
+            para = para.strip()
+            if not para:
+                continue
+            
+            # ข้ามย่อหน้าที่มีขยะเว็บไซต์
+            if self._is_junk_paragraph(para):
+                continue
+            
+            cleaned_paragraphs.append(para)
+        
+        
+        return content.strip() if len(cleaned_paragraphs) <= 1 else '\n'.join(cleaned_paragraphs)
+    
+    def _is_junk_paragraph(self, paragraph):
+        """ตรวจสอบว่าย่อหน้านี้เป็นขยะเว็บไซต์หรือไม่"""
+        if not paragraph:
+            return True
+        
+        para_lower = paragraph.lower()
+        
+        # คำที่บ่งบอกว่าเป็นขยะเว็บไซต์
+        junk_keywords = [
+            'logo', 'thairath', 'ไทยรัฐ', 'สมาชิก', 'ค้นหา', 
+            'light', 'dark', 'ฟังข่าว', 'แชร์ข่าว', 'โมง', 'นาที',
+            '-ก ก ก', '+', 'น.', 'ก.ย.', 'โมงเช้า', 'เช้า',
+            'menu', 'search', 'subscribe', 'follow', 'share',
+            'facebook', 'twitter', 'line', 'youtube'
+        ]
+        
+        # ถ้ามีคำขยะมากกว่า 2 คำ ในย่อหน้าสั้นๆ
+        junk_count = sum(1 for keyword in junk_keywords if keyword in para_lower)
+        if junk_count >= 2 and len(paragraph) < 200:
+            return True
+        
+        # ย่อหน้าที่มีแต่เวลาและตัวเลข
+        if re.match(r'^[0-9\s\.\:\-ก\+น\.ย์โมงนาที]+$', paragraph):
+            return True
+        
+        # ย่อหน้าสั้นมากที่มีขยะ
+        if len(paragraph) < 50 and any(keyword in para_lower for keyword in junk_keywords[:10]):
+            return True
+        
+        return False
+    
+    def _get_basic_formatted_content(self, content=None):
+        """Fallback formatting method"""
+        from django.utils.safestring import mark_safe
+        
+        if content is None:
+            content = self.content
+        
+        if not content:
+            return ""
+        
+        # ใช้เนื้อหาที่ผ่าน filter แล้ว
+        if not hasattr(self, '_cleaned_content'):
+            content = self._remove_website_junk(content)
+        
+        # แยกเนื้อหาทุก 300 ตัวอักษร
+        content = content.strip()
+        paragraphs = []
+        
+        while content:
+            if len(content) <= 300:
+                paragraphs.append(content)
+                break
+            
+            # หาจุดตัดที่เหมาะสม (หลังจุด หรือช่องว่าง)
+            cut_point = 300
+            for i in range(280, min(320, len(content))):
+                if content[i] in '.!? ' and i < len(content) - 1:
+                    cut_point = i + 1
+                    break
+            
+            paragraphs.append(content[:cut_point].strip())
+            content = content[cut_point:].strip()
+        
+        # Filter ย่อหน้าขยะออก
+        filtered_paragraphs = []
+        for para in paragraphs:
+            if para.strip() and not self._is_junk_paragraph(para):
+                filtered_paragraphs.append(para.strip())
         
         # สร้าง HTML
         html_paragraphs = []
-        for para in paragraphs:
-            if para.strip():
-                html_paragraphs.append(f'<p class="mb-4">{para.strip()}</p>')
+        for para in filtered_paragraphs:
+            html_paragraphs.append(f'<p class="mb-4">{para}</p>')
         
         return mark_safe('\n'.join(html_paragraphs))
     

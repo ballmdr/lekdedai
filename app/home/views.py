@@ -203,8 +203,8 @@ def home(request):
                 used_articles.append(article)
                 morning_numbers.extend(numbers[:2])  # เอา 2 เลขแรกต่อบทความ
         
-        # เอาเฉพาะเลข 2 หลัก และไม่ซ้ำกัน
-        morning_numbers = list(set([num for num in morning_numbers if len(num) == 2]))[:6]
+        # เอาเฉพาะเลข 2-3 หลัก และไม่ซ้ำกัน (รวม 195 ได้)
+        morning_numbers = list(set([num for num in morning_numbers if len(num) in [2, 3]]))[:6]
         
         if morning_numbers:
             daily_news_sources = used_articles  # เก็บข่าวที่มีเลข
@@ -224,8 +224,8 @@ def home(request):
                 used_articles.append(article)
                 morning_numbers.extend(numbers[:2])
         
-        # เอาเฉพาะเลข 2 หลัก และไม่ซ้ำกัน
-        morning_numbers = list(set([num for num in morning_numbers if len(num) == 2]))[:6]
+        # เอาเฉพาะเลข 2-3 หลัก และไม่ซ้ำกัน (รวม 195 ได้)
+        morning_numbers = list(set([num for num in morning_numbers if len(num) in [2, 3]]))[:6]
         daily_news_sources = used_articles
     
     # AI ทำนาย - จาก EnsemblePrediction ที่มี confidence >= 70%
@@ -241,8 +241,8 @@ def home(request):
                       for item in prediction.get_top_two_digit_numbers[:2]]
             ai_numbers.extend(numbers)
     
-    # เอาเฉพาะเลข 2 หลัก และไม่ซ้ำกัน
-    ai_numbers = list(set([str(num).zfill(2) for num in ai_numbers if str(num).isdigit()]))[:3]
+    # เอาเฉพาะเลข 2-3 หลัก และไม่ซ้ำกัน (รวม 195 ได้)
+    ai_numbers = list(set([str(num) for num in ai_numbers if str(num).isdigit() and len(str(num)) in [2, 3]]))[:3]
     
     # ดึงการทำนาย AI Ensemble ล่าสุด (ระบบใหม่)
     latest_prediction = EnsemblePrediction.objects.filter(
