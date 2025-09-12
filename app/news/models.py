@@ -152,9 +152,8 @@ class NewsArticle(models.Model):
         return []
     
     def get_formatted_content(self):
-        """จัดรูปแบบเนื้อหาด้วย Gemini AI พร้อม filter ขยะ"""
+        """จัดรูปแบบเนื้อหาด้วย AI (Groq/Gemini) พร้อม filter ขยะ"""
         from django.utils.safestring import mark_safe
-        import google.generativeai as genai
         import json
         import re
         
@@ -169,73 +168,68 @@ class NewsArticle(models.Model):
         cleaned_content = self._remove_website_junk(self.content)
         
         try:
-            # Setup Gemini
-            api_key = "AIzaSyAjivjnnUo2AL5v4HGVkC4mTIH4kxMyOPU"
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash-8b')
+            # ใช้ analyzer_switcher แทนการเรียก API โดยตรง
+            from .analyzer_switcher import AnalyzerSwitcher
             
-            prompt = f"""
-จัดรูปแบบเนื้อหาข่าวนี้ให้อ่านง่าย เรียบเรียงเป็นย่อหน้าที่เหมาะสม:
-
-{cleaned_content}
-
-กฎการจัดรูปแบบ:
-1. แยกย่อหน้าตามหัวข้อย่อยหรือเหตุการณ์
-2. แต่ละย่อหน้า 150-300 คำ
-3. เรียงลำดับเหตุการณ์ให้เป็นเหตุเป็นผล
-4. ใช้ภาษาไทยที่เป็นทางการแต่อ่านง่าย
-5. ลบข้อความซ้ำซ้อนออก
-6. ลบย่อหน้าแรกที่เป็นขยะเว็บไซต์ออก
-
-ตอบเป็น JSON:
-{{
-  "formatted_paragraphs": [
-    "ย่อหน้าที่ 1...",
-    "ย่อหน้าที่ 2...",
-    "ย่อหน้าที่ 3..."
-  ]
-}}
-"""
+            switcher = AnalyzerSwitcher(preferred_analyzer='groq')  # ใช้ Groq เป็นหลัก
             
-            response = model.generate_content(prompt)
-            result_text = response.text.strip()
-            
-            # ทำความสะอาด JSON
-            if result_text.startswith('```json'):
-                result_text = result_text[7:]
-            if result_text.endswith('```'):
-                result_text = result_text[:-3]
-            result_text = result_text.strip()
-            
-            try:
-                result = json.loads(result_text)
-                paragraphs = result.get('formatted_paragraphs', [])
+            # ใช้ format_content method ถ้ามี (สำหรับ Groq)
+            analyzer = switcher.get_analyzer()
+            if analyzer and hasattr(analyzer, 'format_content'):
+                formatted_content = analyzer.format_content(cleaned_content)
                 
-                # Post-filter: เอาย่อหน้าที่มีขยะออกอีกรอบ
-                filtered_paragraphs = []
-                for para in paragraphs:
-                    if para.strip() and not self._is_junk_paragraph(para):
-                        filtered_paragraphs.append(para.strip())
-                
-                # สร้าง HTML
+                # แปลงเป็น HTML paragraphs
+                paragraphs = formatted_content.split('\n')
                 html_paragraphs = []
-                for para in filtered_paragraphs:
-                    html_paragraphs.append(f'<p class="mb-4">{para}</p>')
+                for para in paragraphs:
+                    para = para.strip()
+                    if para and not self._is_junk_paragraph(para):
+                        html_paragraphs.append(f'<p class="mb-4">{para}</p>')
                 
-                formatted_content = '\n'.join(html_paragraphs)
-                
-                # Cache ผลลัพธ์
-                self._formatted_content_cache = formatted_content
-                
-                return mark_safe(formatted_content)
-                
-            except json.JSONDecodeError:
-                # Fallback to basic formatting
-                return self._get_basic_formatted_content(cleaned_content)
+                if html_paragraphs:
+                    formatted_html = '\n'.join(html_paragraphs)
+                    self._formatted_content_cache = formatted_html
+                    return mark_safe(formatted_html)
                 
         except Exception as e:
-            # Fallback to basic formatting
-            return self._get_basic_formatted_content(cleaned_content)
+            # Fallback to basic formatting if AI fails
+            pass
+        
+        # Fallback to basic formatting
+        return self._get_basic_formatted_content(cleaned_content)
+    
+    def _get_basic_formatted_content(self, content):
+        """จัดรูปแบบเนื้อหาแบบพื้นฐานเมื่อ AI ไม่ทำงาน"""
+        from django.utils.safestring import mark_safe
+        
+        if not content:
+            return ""
+        
+        # แยกย่อหน้าและจัดรูปแบบ
+        paragraphs = content.split('\n')
+        
+        # Filter ย่อหน้าขยะออก
+        filtered_paragraphs = []
+        for para in paragraphs:
+            para = para.strip()
+            if para and not self._is_junk_paragraph(para):
+                filtered_paragraphs.append(para)
+        
+        # ถ้าไม่มีย่อหน้าที่สะอาด ใช้ทั้งหมด
+        if not filtered_paragraphs:
+            filtered_paragraphs = [para.strip() for para in paragraphs if para.strip()]
+        
+        # สร้าง HTML
+        html_paragraphs = []
+        for para in filtered_paragraphs:
+            html_paragraphs.append(f'<p class="mb-4">{para}</p>')
+        
+        formatted_html = '\n'.join(html_paragraphs)
+        
+        # Cache ผลลัพธ์
+        self._formatted_content_cache = formatted_html
+        
+        return mark_safe(formatted_html)
     
     def _remove_website_junk(self, content):
         """ลบขยะเว็บไซต์ออกก่อนส่งให้ Gemini"""
@@ -303,52 +297,6 @@ class NewsArticle(models.Model):
             return True
         
         return False
-    
-    def _get_basic_formatted_content(self, content=None):
-        """Fallback formatting method"""
-        from django.utils.safestring import mark_safe
-        
-        if content is None:
-            content = self.content
-        
-        if not content:
-            return ""
-        
-        # ใช้เนื้อหาที่ผ่าน filter แล้ว
-        if not hasattr(self, '_cleaned_content'):
-            content = self._remove_website_junk(content)
-        
-        # แยกเนื้อหาทุก 300 ตัวอักษร
-        content = content.strip()
-        paragraphs = []
-        
-        while content:
-            if len(content) <= 300:
-                paragraphs.append(content)
-                break
-            
-            # หาจุดตัดที่เหมาะสม (หลังจุด หรือช่องว่าง)
-            cut_point = 300
-            for i in range(280, min(320, len(content))):
-                if content[i] in '.!? ' and i < len(content) - 1:
-                    cut_point = i + 1
-                    break
-            
-            paragraphs.append(content[:cut_point].strip())
-            content = content[cut_point:].strip()
-        
-        # Filter ย่อหน้าขยะออก
-        filtered_paragraphs = []
-        for para in paragraphs:
-            if para.strip() and not self._is_junk_paragraph(para):
-                filtered_paragraphs.append(para.strip())
-        
-        # สร้าง HTML
-        html_paragraphs = []
-        for para in filtered_paragraphs:
-            html_paragraphs.append(f'<p class="mb-4">{para}</p>')
-        
-        return mark_safe('\n'.join(html_paragraphs))
     
     def extract_numbers_from_content(self):
         """วิเคราะห์หาเลขจากเนื้อหาข่าว"""
