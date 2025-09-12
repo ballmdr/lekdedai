@@ -5,7 +5,7 @@ import random
 from collections import Counter
 from lotto_stats.models import LotteryDraw
 from news.models import NewsArticle
-from news.news_analyzer import NewsAnalyzer
+# from news.news_analyzer import NewsAnalyzer  # แทนที่ด้วย analyzer_switcher
 
 class LotteryAIEngine:
     """AI Engine สำหรับทำนายเลขเด็ด"""
@@ -81,15 +81,17 @@ class LotteryAIEngine:
         recent_news = NewsArticle.objects.filter(published_date__gte=last_draw_date, published_date__lte=target_date)
         
         news_analysis_results = []
-        analyzer = NewsAnalyzer()
+        # analyzer = NewsAnalyzer()  # ใช้ระบบใหม่แทน
+        from news.analyzer_switcher import AnalyzerSwitcher
+        analyzer = AnalyzerSwitcher(preferred_analyzer='groq')
         for article in recent_news:
-            analysis = analyzer.analyze_article(article)
-            if analysis['numbers']:
+            analysis = analyzer.analyze_news_for_lottery(article.title, article.content)
+            if analysis.get('success') and analysis.get('numbers'):
                 news_analysis_results.append({
                     'title': article.title,
                     'numbers': analysis['numbers'],
-                    'keywords': analysis['keywords'],
-                    'confidence': analysis['confidence']
+                    'reasoning': analysis.get('reasoning', ''),
+                    'confidence': analysis.get('relevance_score', 50)
                 })
         
         features['news_analysis'] = news_analysis_results

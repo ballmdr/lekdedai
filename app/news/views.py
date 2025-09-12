@@ -9,7 +9,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 
 from .models import NewsArticle, NewsCategory, LuckyNumberHint, NewsComment
-from .news_analyzer import NewsAnalyzer
+# from .news_analyzer import NewsAnalyzer  # ใช้ analyzer_switcher แทน
 
 def news_list(request):
     """หน้ารวมข่าวทั้งหมด"""
@@ -209,55 +209,48 @@ def analyze_news(request, article_id):
     article = get_object_or_404(NewsArticle, id=article_id)
     
     try:
-        # ใช้ News Analyzer ปรับปรุงใหม่แทน Insight-AI
-        from .news_analyzer import NewsAnalyzer
-        from types import SimpleNamespace
+        # ใช้ Analyzer Switcher (Groq/Gemini) แทน News Analyzer เก่า
+        from .analyzer_switcher import AnalyzerSwitcher
         
-        # สร้าง mock article object สำหรับ analyzer
-        mock_article = SimpleNamespace()
-        mock_article.title = article.title
-        mock_article.content = article.content
+        # วิเคราะห์ด้วย AI Analyzer (Groq หรือ Gemini)
+        switcher = AnalyzerSwitcher(preferred_analyzer='groq')
+        analysis_result = switcher.analyze_news_for_lottery(article.title, article.content)
         
-        # วิเคราะห์ด้วย News Analyzer ใหม่
-        analyzer = NewsAnalyzer()
-        analysis_result = analyzer.analyze_article(mock_article)
-        
-        # อัพเดตข้อมูลในบทความ
-        article.extracted_numbers = ','.join(analysis_result['numbers'][:15])
-        article.confidence_score = analysis_result['confidence']
-        article.save()
-        
-        return JsonResponse({
-            'success': True,
-            'numbers': analysis_result['numbers'][:15],
-            'confidence': analysis_result['confidence'],
-            'category': analysis_result['category'],
-            'basic_numbers': analysis_result.get('basic_numbers', []),
-            'advanced_numbers': analysis_result.get('advanced_numbers', []),
-            'advanced_analysis': analysis_result.get('advanced_analysis', {}),
-            'is_insight_ai': False,  # แสดงว่าเป็น News Analyzer
-            'message': f'วิเคราะห์ด้วย News Analyzer ใหม่สำเร็จ - พบ {len(analysis_result["numbers"])} เลข'
-        })
-        
-        # Fallback: ใช้ NewsAnalyzer เดิม
-        # print(f"DEBUG: Using fallback NewsAnalyzer for article {article_id}")
-        analyzer = NewsAnalyzer()
-        result = analyzer.analyze_article(article)
-        # print(f"DEBUG: NewsAnalyzer result: {result}")
-        
-        # อัพเดตเลขในบทความ
-        article.extracted_numbers = ', '.join(result['numbers'])
-        article.confidence_score = result['confidence']
-        article.save()
-        
-        return JsonResponse({
-            'success': True,
-            'numbers': result['numbers'],
-            'confidence': result['confidence'],
-            'keywords': result['keywords'],
-            'is_insight_ai': False,
-            'message': 'วิเคราะห์เสร็จแล้ว (Traditional method)'
-        })
+        if analysis_result['success']:
+            # อัพเดตข้อมูลในบทความ
+            article.extracted_numbers = ','.join(analysis_result['numbers'][:15])
+            article.confidence_score = min(analysis_result.get('relevance_score', 50), 100)
+            article.lottery_relevance_score = analysis_result.get('relevance_score', 50)
+            article.lottery_category = analysis_result.get('category', 'other')
+            article.save()
+            
+            return JsonResponse({
+                'success': True,
+                'numbers': analysis_result['numbers'][:15],
+                'confidence': analysis_result.get('relevance_score', 50),
+                'category': analysis_result.get('category', 'other'),
+                'reasoning': analysis_result.get('reasoning', ''),
+                'analyzer_type': analysis_result.get('analyzer_type', 'unknown'),
+                'is_insight_ai': True,  # ใช้ AI แล้ว
+                'message': f'วิเคราะห์ด้วย {analysis_result.get("analyzer_type", "AI").upper()} สำเร็จ - พบ {len(analysis_result["numbers"])} เลข'
+            })
+        else:
+            # AI ล้มเหลว - ใช้การวิเคราะห์พื้นฐาน
+            basic_numbers = article.extract_numbers_from_content()[:10]
+            article.extracted_numbers = ','.join(basic_numbers)
+            article.confidence_score = 30  # คะแนนต่ำสำหรับการวิเคราะห์พื้นฐาน
+            article.save()
+            
+            return JsonResponse({
+                'success': True,
+                'numbers': basic_numbers,
+                'confidence': 30,
+                'category': 'other',
+                'reasoning': 'ใช้การวิเคราะห์พื้นฐาน (AI ไม่สามารถใช้งานได้)',
+                'analyzer_type': 'basic',
+                'is_insight_ai': False,
+                'message': f'วิเคราะห์ด้วยระบบพื้นฐาน - พบ {len(basic_numbers)} เลข'
+            })
         
     except Exception as e:
         # print(f"DEBUG: Exception in analyze_news: {str(e)}")

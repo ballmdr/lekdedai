@@ -7,7 +7,7 @@ from django.db import transaction
 from bs4 import BeautifulSoup
 from ai_engine.models import DataSource, DataIngestionRecord
 from news.models import NewsArticle, NewsCategory
-from news.news_analyzer import NewsAnalyzer
+# from news.news_analyzer import NewsAnalyzer  # แทนที่ด้วย analyzer_switcher
 import re
 from datetime import datetime
 
@@ -55,7 +55,9 @@ class Command(BaseCommand):
             return
         
         # สร้าง analyzer สำหรับประเมินข่าว
-        analyzer = NewsAnalyzer()
+        # analyzer = NewsAnalyzer()  # แทนที่ด้วย analyzer_switcher
+        from news.analyzer_switcher import AnalyzerSwitcher
+        analyzer = AnalyzerSwitcher(preferred_analyzer='groq')
         
         total_processed = 0
         total_high_score = 0
@@ -136,7 +138,7 @@ class Command(BaseCommand):
                             else:
                                 # ข้ามข่าวที่ไม่มีเลขจากทั้ง 2 ระบบ
                                 if not has_news_numbers:
-                                    self.stdout.write(f'⏭️ ข้ามข่าวไม่มีเลข (NewsAnalyzer): {title[:50]}...')
+                                    self.stdout.write(f'⏭️ ข้ามข่าวไม่มีเลข (AI Analyzer): {title[:50]}...')
                                 elif not has_insight_entities:
                                     self.stdout.write(f'⏭️ ข้ามข่าวไม่มีเลข (Insight-AI): {title[:50]}...')
                                 else:

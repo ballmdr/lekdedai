@@ -8,7 +8,7 @@ from django.db.models import Q
 from django.core.cache import cache
 
 from news.models import NewsArticle
-from news.news_lottery_scorer import NewsLotteryScorer
+# from news.news_lottery_scorer import NewsLotteryScorer  # ลบไฟล์แล้ว
 
 
 class InstantLuckyNumberGenerator:
@@ -18,7 +18,9 @@ class InstantLuckyNumberGenerator:
     """
     
     def __init__(self):
-        self.lottery_scorer = NewsLotteryScorer()
+        # self.lottery_scorer = NewsLotteryScorer()  # ใช้ AI analyzer แทน
+        from news.analyzer_switcher import AnalyzerSwitcher
+        self.analyzer = AnalyzerSwitcher(preferred_analyzer='groq')
         self.cache_timeout = 300  # 5 นาที
     
     def generate_lucky_numbers(self, significant_date: Optional[str] = None, selected_news_ids: Optional[List[int]] = None) -> Dict:

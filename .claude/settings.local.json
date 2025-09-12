@@ -34,7 +34,8 @@
       "WebFetch(domain:www.thairath.co.th)",
       "WebFetch(domain:localhost)",
       "Bash(docker-compose:*)",
-      "Bash(docker cp:*)"
+      "Bash(docker cp:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
