@@ -230,11 +230,15 @@ class GroqLotteryAnalyzer:
 {content}
 
 หลักเกณฑ์:
-1. ตัดขยะออก (Logo, เมนู, โฆษณา)
-2. จัดย่อหน้าให้เหมาะสม
-3. เก็บข้อมูลสำคัญไว้ครบ (อายุ, ทะเบียนรถ, เวลา, จำนวนเงิน)
-4. ใช้ภาษาเรียบง่าย
-5. ไม่เกิน 1000 คำ
+1. ตัดขยะออก (Logo, เมนู, โฆษณา, ข้อความดิบจาก copy-paste)
+2. ข้ามย่อหน้าแรกถ้าเป็นข้อความดิบยาวๆ ที่ไม่มี formatting
+3. เริ่มจากย่อหน้าที่มี ** หรือ formatting ชัดเจน
+4. จัดย่อหน้าให้เหมาะสม แต่ละย่อหน้า 100-200 คำ
+5. เก็บข้อมูลสำคัญไว้ครบ (อายุ, ทะเบียนรถ, เวลา, จำนวนเงิน, ตัวเลข)
+6. ใช้ภาษาเรียบง่าย เป็นทางการ
+7. ไม่เกิน 800 คำ
+
+⚠️ สำคัญ: ถ้าย่อหน้าแรกยาวมากและไม่มี ** ให้ข้ามไปเลย เริ่มจากย่อหน้าที่มี formatting
 
 เรียบเรียงแล้วตอบเฉพาะเนื้อหาที่จัดรูปแบบแล้ว:
 """
@@ -242,7 +246,7 @@ class GroqLotteryAnalyzer:
         ]
         
         try:
-            formatted_content = self._make_request(messages, temperature=0.3)
+            formatted_content = self._make_request(messages, temperature=0.2)  # ลด temperature ให้เสถียร
             return formatted_content.strip()
         except Exception as e:
             logging.error(f"Groq content formatting error: {e}")

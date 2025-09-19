@@ -8,7 +8,8 @@ import django
 from pathlib import Path
 
 # Add project paths
-sys.path.insert(0, str(Path(__file__).parent / "app"))
+sys.path.append('/app')
+# เฉพาะใน Docker container เท่านั้น - ไม่ใช้ local database
 sys.path.insert(0, str(Path(__file__).parent / "mcp_dream_analysis"))
 
 # Setup Django

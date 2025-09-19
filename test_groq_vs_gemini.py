@@ -6,8 +6,8 @@ import requests
 from bs4 import BeautifulSoup
 
 # --- Setup Django ---
-sys.path.append('/app')  
-sys.path.append('C:/Users/ballm/Dropbox/lekdedai/app')
+sys.path.append('/app')
+# เฉพาะใน Docker container เท่านั้น - ไม่ใช้ local database  
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lekdedai.settings')
 django.setup()
 

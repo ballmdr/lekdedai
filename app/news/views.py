@@ -72,18 +72,44 @@ def article_detail(request, slug):
     insight_analysis = None
     
     if article.insight_entities:
-        # ใช้ข้อมูลจาก Gemini AI
-        numbers = [entity['value'] for entity in article.insight_entities]
-        avg_score = sum(entity['significance_score'] for entity in article.insight_entities) / len(article.insight_entities) if article.insight_entities else 0
+        # เรียงลำดับเลขตามความสำคัญ
+        def get_priority(entity):
+            source = entity.get('source', entity.get('reasoning', '')).lower()
+            # ป้ายทะเบียน = 1 (สำคัญสุด)
+            if 'ทะเบียน' in source or 'ป้าย' in source:
+                return 1
+            # อายุ = 2 
+            elif 'อายุ' in source:
+                return 2
+            # เวลา = 3
+            elif 'เวลา' in source or 'โมง' in source or 'นาที' in source:
+                return 3
+            # จำนวน/ปริมาณ = 4
+            elif 'จำนวน' in source or 'คัน' in source or 'หลัง' in source or 'ต้น' in source:
+                return 4
+            # อื่นๆ = 5
+            else:
+                return 5
+        
+        # เรียงลำดับ entities ตามความสำคัญ
+        sorted_entities = sorted(article.insight_entities, key=get_priority)
+        
+        # ใช้ข้อมูลจาก AI (รองรับทั้ง Gemini และ Groq format)
+        numbers = [entity.get('number', entity.get('value', '')) for entity in sorted_entities]
+        avg_score = sum(entity.get('confidence', entity.get('significance_score', 0)) for entity in sorted_entities) / len(sorted_entities) if sorted_entities else 0
+        
+        # Debug print
+        print(f"DEBUG: Found insight_entities with {len(numbers)} numbers: {numbers}")
+        print(f"DEBUG: Average confidence: {avg_score}")
         
         insight_analysis = {
             'numbers': numbers,
-            'confidence': round(avg_score * 100, 1),
-            'story_summary': article.insight_summary or f'วิเคราะห์ด้วย Gemini AI พบ {len(numbers)} เลข',
-            'story_impact_score': round(avg_score * 100, 1),
-            'category': 'Gemini AI',
-            'is_insight_ai': True,  # แสดงว่าเป็น Gemini AI
-            'extracted_entities': article.insight_entities  # ส่งข้อมูลรายละเอียดไป JavaScript
+            'confidence': round(avg_score, 1),  # ไม่คูณ 100 เพราะ confidence อยู่ในรูป 0-100 แล้ว
+            'story_summary': article.insight_summary or f'วิเคราะห์ด้วย AI พบ {len(numbers)} เลข',
+            'story_impact_score': round(avg_score, 1),
+            'category': 'AI Analysis',
+            'is_insight_ai': True,  # แสดงว่าเป็น AI
+            'extracted_entities': sorted_entities  # ส่งข้อมูลที่เรียงแล้วไป JavaScript
         }
         
     elif article.extracted_numbers:

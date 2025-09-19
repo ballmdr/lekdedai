@@ -6,6 +6,8 @@ import json
 from datetime import datetime
 
 # Setup Django
+sys.path.append('/app')
+# เฉพาะใน Docker container เท่านั้น - ไม่ใช้ local database
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lekdedai.settings')
 django.setup()
 

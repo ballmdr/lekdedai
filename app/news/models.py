@@ -232,40 +232,79 @@ class NewsArticle(models.Model):
         return mark_safe(formatted_html)
     
     def _remove_website_junk(self, content):
-        """ลบขยะเว็บไซต์ออกก่อนส่งให้ Gemini"""
+        """ลบขยะเว็บไซต์และย่อหน้าดิบออกก่อนส่งให้ AI"""
         import re
         
         if not content:
             return ""
         
-        # ถ้าเจอขยะในส่วนต้น ลองหาจุดเริ่มต้นเนื้อหาจริง
-        if any(keyword in content[:300].lower() for keyword in ['logo', 'thairath', 'สมาชิก', 'light', 'dark', 'ฟังข่าว']):
-            # หาจุดเริ่มต้นเนื้อหาจริง
-            start_markers = ['อดีตนายกรัฐมนตรี', 'นายกรัฐมนตรี', 'ทักษิณ ชินวัตร', 'ทักษิณ', 'รองนายก', 'รัฐมนตรี']
-            for marker in start_markers:
-                if marker in content:
-                    start_pos = content.find(marker)
-                    if start_pos > 50:  # ต้องมีขยะอย่างน้อย 50 ตัวอักษรข้างหน้า
-                        content = content[start_pos:]
-                        break
-        
-        # ลบย่อหน้าขยะออกเพิ่มเติม
+        # แยกเป็นย่อหน้า
         paragraphs = content.split('\n')
         cleaned_paragraphs = []
         
-        for para in paragraphs:
+        for i, para in enumerate(paragraphs):
             para = para.strip()
             if not para:
                 continue
             
-            # ข้ามย่อหน้าที่มีขยะเว็บไซต์
-            if self._is_junk_paragraph(para):
-                continue
-            
-            cleaned_paragraphs.append(para)
+            # ตรวจสอบย่อหน้าแรกว่าเป็นข้อความดิบหรือไม่
+            if i == 0 or (i == 1 and not cleaned_paragraphs):  # ย่อหน้าแรกที่มีเนื้อหา
+                # เช็คว่าเป็นย่อหน้าดิบ (copy-paste จากต้นฉบับ) - เพิ่มเงื่อนไขให้ครอบคลุมมากขึ้น
+                is_raw_paragraph = (
+                    '**' not in para and  # ไม่มี markdown formatting
+                    len(para) > 80 and   # ยาวเกินไป (ลดจาก 100 เป็น 80)
+                    not para.startswith('วันที่') and  # ไม่ใช่ข้อความข่าวปกติ
+                    not para.startswith('เมื่อ') and
+                    not para.startswith('ที่ผ่านมา') and
+                    not para.startswith('ผู้สื่อข่าว') and
+                    not para.startswith('อุบัติเหตุ') and
+                    not para.startswith('ต่อมา') and
+                    not para.startswith('จากกรณี') and
+                    # เพิ่มเงื่อนไข pattern ข้อความดิบที่พบใหม่
+                    ('บริษัท' in para or 'จำกัด' in para or 'เมื่อเร็วๆ นี้' in para or 'นครหลวง' in para or
+                     'เดินทางออกบ้าน' in para or 'อดีต' in para or 'เจ้าหน้าที่คาด' in para or
+                     'รถพังยับกว่า' in para or 'บ้านเสียหาย' in para or 'ด้านเจ้าของพร้อม' in para or
+                     # pattern ที่พบในข่าวราชบุรี
+                     ('เจ้าหน้าที่คาดสาเหตุ' in para and 'รถพังยับ' in para and 'บ้านเสียหาย' in para))
+                )
+                
+                if is_raw_paragraph:
+                    # หาจุดเริ่มต้นข่าวจริงในย่อหน้าดิบ
+                    formatted_start_markers = [
+                        '**',  # Markdown headers
+                        'วันที่', 'เมื่อวันที่', 
+                        'พิธี', 'งาน', 'การประชุม', 'เหตุการณ์',
+                        'นาย', 'ดร.', 'คุณ', 'ผู้', 'ท่าน'
+                    ]
+                    
+                    found_clean_start = False
+                    for marker in formatted_start_markers:
+                        marker_pos = para.find(marker)
+                        if marker_pos > 50:  # ต้องมีข้อความข้างหน้าพอสมควร (เป็นส่วนดิบ)
+                            clean_part = para[marker_pos:].strip()
+                            if len(clean_part) > 50:  # ส่วนที่สะอาดต้องยาวพอ
+                                cleaned_paragraphs.append(clean_part)
+                                found_clean_start = True
+                                break
+                    
+                    if not found_clean_start:
+                        # ถ้าหาจุดเริ่มต้นไม่ได้ ข้ามทั้งย่อหน้าดิบ
+                        continue
+                else:
+                    # ย่อหน้าปกติ หรือมี formatting อยู่แล้ว
+                    if not self._is_junk_paragraph(para):
+                        cleaned_paragraphs.append(para)
+            else:
+                # ย่อหน้าอื่นๆ ตรวจสอบขยะเว็บไซต์ปกติ
+                if not self._is_junk_paragraph(para):
+                    cleaned_paragraphs.append(para)
         
-        
-        return content.strip() if len(cleaned_paragraphs) <= 1 else '\n'.join(cleaned_paragraphs)
+        # รวมย่อหน้าที่สะอาดแล้ว
+        if cleaned_paragraphs:
+            return '\n'.join(cleaned_paragraphs)
+        else:
+            # ถ้าไม่มีย่อหน้าสะอาด ใช้เนื้อหาเดิม
+            return content.strip()
     
     def _is_junk_paragraph(self, paragraph):
         """ตรวจสอบว่าย่อหน้านี้เป็นขยะเว็บไซต์หรือไม่"""

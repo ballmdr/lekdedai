@@ -88,11 +88,13 @@
                                     <div class="flex items-start gap-3 p-3 bg-white/70 rounded-lg border">
                                         <div class="flex-shrink-0">
                                             <span class="inline-block w-10 h-10 bg-orange-600 text-white text-lg font-bold rounded-lg flex items-center justify-center">
-                                                {{ entity.value }}
+                                                {% if entity.number %}{{ entity.number }}{% else %}{{ entity.value }}{% endif %}
                                             </span>
                                         </div>
                                         <div class="flex-1">
-                                            <p class="text-sm font-medium text-gray-800">{{ entity.reasoning }}</p>
+                                            <p class="text-sm font-medium text-gray-800">
+                                                {% if entity.source %}{{ entity.source }}{% else %}{{ entity.reasoning }}{% endif %}
+                                            </p>
                                         </div>
                                     </div>
                                     {% endfor %}
@@ -381,7 +383,7 @@ function updateInsightAIResults(data) {
                 <div class="flex items-start justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex-1">
                         <div class="flex items-center gap-3">
-                            <span class="text-2xl font-bold text-blue-600">${entity.value}</span>
+                            <span class="text-2xl font-bold text-blue-600">${entity.number || entity.value}</span>
                             <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
                                 ${entityTypeMap[entity.entity_type] || entity.entity_type}
                             </span>

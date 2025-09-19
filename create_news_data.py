@@ -5,7 +5,8 @@ import django
 import sys
 
 # Setup Django
-sys.path.append('C:/Users/ballm/Dropbox/lekdedai')
+sys.path.append('/app')
+# เฉพาะใน Docker container เท่านั้น - ไม่ใช้ local database
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lekdedai.settings')
 django.setup()
 
