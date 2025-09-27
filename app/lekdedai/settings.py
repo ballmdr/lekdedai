@@ -18,15 +18,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Local apps (จะเพิ่มทีหลัง)
-    'home',
-    'dreams',
-    'lotto_stats',
-    'news',
-    'ai_engine',
-    'lottery_checker',
-    'lucky_spots',
+
+    # Core apps for simplified LekdeDai
+    'home',           # Main homepage with lottery numbers
+    'dreams',         # Dream interpretation to numbers
+    'lotto_stats',    # Historical lottery analysis
+    'lotto_formula',  # Lottery formula calculator
+    'news',           # News analysis for lottery numbers
+    'ai_engine',      # AI-powered predictions
+    'lottery_checker', # Online lottery result checker
 ]
 # เพิ่มการตั้งค่า Media files
 MEDIA_URL = '/media/'

@@ -16,59 +16,14 @@ from ai_engine.models import (
     PredictionAccuracyTracking, DataIngestionRecord
 )
 from lottery_checker.models import LottoResult
-from lucky_spots.models import LuckyLocation
+# from lucky_spots.models import LuckyLocation  # Removed unused app
 from utils.lottery_dates import LotteryDates
-from .instant_lucky import get_instant_lucky_numbers
+# from .instant_lucky import get_instant_lucky_numbers  # Removed for simplified version
 from lotto_stats.models import LotteryDraw, NumberStatistics, HotColdNumber
 
-def get_daily_numbers_for_today():
-    """สร้างเลขเด็ดประจำวัน - เลขเดียวกันตลอดวัน"""
-    today = timezone.now().date()
-    # ใช้วันที่เป็น seed เพื่อให้ได้เลขเดียวกันตลอดวัน
-    random.seed(today.toordinal())
-    
-    return {
-        'daily_seed': today.toordinal()
-    }
+# get_daily_numbers_for_today function removed for simplified version
 
-def get_daily_ritual_content(latest_news, latest_prediction):
-    """สร้างเลขเด็ดประจำวัน - เลขเดียวกันตลอดวัน"""
-    
-    # ตั้งค่า seed ใหม่สำหรับวันนี้
-    today = timezone.now().date()
-    random.seed(today.toordinal())
-    
-    ritual_content = {
-        'title': '🎯 เลขเด็ด AI ประจำวัน',
-        'subtitle': f'วันที่ {today.strftime("%d/%m/%Y")}',
-        'primary_message': 'เลขจากข่าวดัง และการวิเคราะห์ AI',
-        'highlighted_numbers': [],
-        'buzz_numbers': [],
-        'special_message': 'เลขเปลี่ยนใหม่ทุกวัน เวลา 00:01 น.'
-    }
-    
-    # เลขจากข่าวล่าสุด
-    news_numbers = []
-    if latest_news.exists():
-        for article in latest_news[:2]:
-            numbers = article.get_extracted_numbers_list()
-            news_numbers.extend(numbers[:2])
-    
-    # เลขจาก AI prediction
-    ai_numbers = []
-    if latest_prediction:
-        if hasattr(latest_prediction, 'get_top_two_digit_numbers') and latest_prediction.get_top_two_digit_numbers:
-            ai_numbers.extend([item.get('number', item) if isinstance(item, dict) else item 
-                              for item in latest_prediction.get_top_two_digit_numbers[:3]])
-    
-    # รวมเลขทั้งหมด (เฉพาะจากข่าวและ AI)
-    all_numbers = news_numbers + ai_numbers
-    
-    # ใช้เฉพาะเลขจากข่าวและ AI เท่านั้น
-    ritual_content['highlighted_numbers'] = list(set(all_numbers))[:4]
-    ritual_content['buzz_numbers'] = []  # เอาเลขสุ่มออก
-    
-    return ritual_content
+# get_daily_ritual_content function removed for simplified version
 
 def get_next_draw_prediction():
     """สร้างเลขเด็ดสำหรับงวดหน้า - จากสถิติ + ข่าวใหญ่ตั้งแต่งวดที่แล้ว"""
@@ -123,21 +78,20 @@ def get_next_draw_prediction():
     major_news_numbers = []
     
     try:
-        # ข่าวใหญ่ที่มีคะแนน >= 80 ตั้งแต่งวดที่แล้ว
+        # ข่าวใหญ่ที่มีเลขตั้งแต่งวดที่แล้ว
         major_news = NewsArticle.objects.filter(
             status='published',
-            lottery_relevance_score__gte=80,
             published_date__date__gte=last_draw_date
-        ).order_by('-lottery_relevance_score', '-published_date')[:8]
+        ).exclude(numbers_with_reasons=[]).order_by('-published_date')[:8]
         
         for article in major_news:
-            numbers = article.get_extracted_numbers_list()
+            numbers = article.get_numbers_only()
             for num in numbers[:2]:  # เอา 2 เลขแรกต่อข่าว
                 if len(num) == 2:
                     major_news_numbers.append({
                         'number': num,
                         'source': 'major_news',
-                        'confidence': article.lottery_relevance_score,
+                        'confidence': 90,  # ค่าคงที่สำหรับข่าว
                         'reason': f'จากข่าว: {article.title[:30]}...'
                     })
         
@@ -170,63 +124,20 @@ def get_next_draw_prediction():
 def home(request):
     """หน้าแรก - แสดงข้อมูลจริงจาก database"""
     
-    # ดึงข่าวล่าสุดที่เหมาะสำหรับหวย (คะแนน >= 70)
+    # ดึงข่าวล่าสุดที่มีเลข
     latest_news = NewsArticle.objects.filter(
-        status='published',
-        lottery_relevance_score__gte=70
-    ).select_related('category').order_by('-lottery_relevance_score', '-published_date')[:3]
+        status='published'
+    ).exclude(numbers_with_reasons=[]).select_related('category').order_by('-published_date')[:3]
     
-    # ถ้าไม่มีข่าวคะแนนสูง ให้ใช้ข่าวล่าสุดธรรมดา
+    # ถ้าไม่มีข่าวที่มีเลข ให้ใช้ข่าวล่าสุดธรรมดา
     if not latest_news.exists():
         latest_news = NewsArticle.objects.filter(
             status='published'
         ).select_related('category').order_by('-published_date')[:3]
     
-    # เลขเด็ดเช้านี้ - จากข่าวใน 24 ชั่วโมงล่าสุด (ถ้าไม่มีให้ขยายไปเรื่อยๆ)
-    morning_numbers = []
-    daily_news_sources = []  # เก็บข่าวที่ใช้วิเคราะห์
-    hours_back = 24
-    max_hours_back = 168  # สูงสุด 7 วัน
-    
-    while not morning_numbers and hours_back <= max_hours_back:
-        news_cutoff = timezone.now() - timedelta(hours=hours_back)
-        morning_news = NewsArticle.objects.filter(
-            status='published',
-            published_date__gte=news_cutoff
-        ).select_related('category').order_by('-published_date')
-        
-        # เก็บข่าวที่ใช้วิเคราะห์
-        used_articles = []
-        for article in morning_news[:6]:  # ดูจาก 6 บทความล่าสุด
-            numbers = article.get_extracted_numbers_list()
-            if numbers:  # ถ้ามีเลข
-                used_articles.append(article)
-                morning_numbers.extend(numbers[:2])  # เอา 2 เลขแรกต่อบทความ
-        
-        # เอาเฉพาะเลข 2-3 หลัก และไม่ซ้ำกัน (รวม 195 ได้)
-        morning_numbers = list(set([num for num in morning_numbers if len(num) in [2, 3]]))[:6]
-        
-        if morning_numbers:
-            daily_news_sources = used_articles  # เก็บข่าวที่มีเลข
-        else:
-            hours_back += 24  # ขยายไปอีก 24 ชั่วโมง
-    
-    # ถ้ายังไม่มีเลข ให้ใช้ข่าวล่าสุดโดยไม่จำกัดวันที่
-    if not morning_numbers:
-        fallback_news = NewsArticle.objects.filter(
-            status='published'
-        ).select_related('category').order_by('-published_date')[:10]
-        
-        used_articles = []
-        for article in fallback_news:
-            numbers = article.get_extracted_numbers_list()
-            if numbers:
-                used_articles.append(article)
-                morning_numbers.extend(numbers[:2])
-        
-        # เอาเฉพาะเลข 2-3 หลัก และไม่ซ้ำกัน (รวม 195 ได้)
-        morning_numbers = list(set([num for num in morning_numbers if len(num) in [2, 3]]))[:6]
-        daily_news_sources = used_articles
+    # Daily numbers functionality removed for simplified version
+    morning_numbers = []  # Removed daily numbers feature
+    daily_news_sources = []  # Removed daily news sources
     
     # AI ทำนาย - จาก EnsemblePrediction ที่มี confidence >= 70%
     ai_predictions = EnsemblePrediction.objects.filter(
@@ -270,10 +181,8 @@ def home(request):
         is_valid=True
     ).order_by('-draw_date').first()
     
-    # ดึงสถานที่เลขเด็ดยอดนิยม 4 แห่ง
-    popular_lucky_locations = LuckyLocation.objects.filter(
-        is_active=True
-    ).select_related('province', 'category').order_by('-views_count')[:4]
+    # ดึงสถานที่เลขเด็ดยอดนิยม 4 แห่ง - ถูกลบออกแล้ว
+    # popular_lucky_locations = []  # Lucky spots feature removed
     
     # คำนวณสถิติเว็บไซต์จากระบบ AI ใหม่
     total_news = NewsArticle.objects.filter(status='published').count()
@@ -304,9 +213,16 @@ def home(request):
     today = timezone.now().date()
     next_draw_date = LotteryDates.get_next_draw_date(today)
     next_draw_info = None
+    dynamic_title = "เลขเด็ดหวยเอไองวดหน้า"  # Default title
+
     if next_draw_date:
         next_draw_date_obj = datetime.strptime(next_draw_date, "%Y-%m-%d").date()
         days_until_draw = (next_draw_date_obj - today).days
+
+        # เปลี่ยนคำหน้าแรก: ถ้าอีกไม่ถึง 5 วัน จะใช้ "งวดนี้"
+        if days_until_draw < 5:
+            dynamic_title = "เลขเด็ดหวยเอไองวดนี้"
+
         next_draw_info = {
             'date': next_draw_date_obj,
             'days_remaining': days_until_draw,
@@ -314,7 +230,7 @@ def home(request):
         }
     
     # สร้าง Daily Ritual Content (เลขเดียวกันตลอดวัน)
-    daily_ritual = get_daily_ritual_content(latest_news, latest_prediction)
+    # daily_ritual = get_daily_ritual_content(latest_news, latest_prediction)  # Removed for simplified version
     
     # 🎯 เลขเด็ดหวยงวดหน้า - จากสถิติ + ข่าวใหญ่
     next_draw_prediction = get_next_draw_prediction()
@@ -325,7 +241,7 @@ def home(request):
         'latest_prediction': latest_prediction,
         'ai_prediction': latest_prediction,  # เพิ่ม alias สำหรับ template ใหม่
         'latest_lottery_result': latest_lottery_result,
-        'popular_lucky_locations': popular_lucky_locations,
+        # 'popular_lucky_locations': [],  # Lucky spots feature removed
         'next_draw_info': next_draw_info,
         'site_stats': {
             'total_visitors_today': total_views_today + 150,  # รวม views + estimate
@@ -342,13 +258,13 @@ def home(request):
         'current_date': timezone.now(),
         'thai_current_date': timezone.now().strftime('%d %B %Y'),
         
-        # 🎯 Daily Ritual Engine (เลขเดียวกันตลอดวัน)
-        'daily_ritual': daily_ritual,
+        # Daily ritual functionality removed for simplified version
+        # 'daily_ritual': daily_ritual,  # Removed
         'current_date_formatted': timezone.now().strftime('%d/%m/%Y'),
         
-        # 🌅 เลขเด็ดเช้านี้ - จากข่าว 24 ชั่วโมงล่าสุด
-        'morning_news_numbers': morning_numbers,
-        'daily_news_sources': daily_news_sources,
+        # Daily numbers feature removed for simplified version
+        # 'morning_news_numbers': morning_numbers,  # Removed
+        # 'daily_news_sources': daily_news_sources,  # Removed
         
         # 🤖 AI ทำนาย - จาก EnsemblePrediction confidence >= 70%
         'ai_prediction_numbers': ai_numbers,
@@ -356,109 +272,19 @@ def home(request):
         # ข้อมูลงวดหวย
         'target_lottery_date': next_draw_info['formatted_date'] if next_draw_info else '2 กันยายน 2025',
         
-        # 🎯 เลขเด็ดหวยงวดหน้า
+        # 🎯 เลขเด็ดหวยงวดหน้า/งวดนี้ (แบบไดนามิก)
         'next_draw_prediction': next_draw_prediction,
         'next_draw_numbers': [item['number'] for item in next_draw_prediction['prediction_numbers']],
+        'dynamic_lottery_title': dynamic_title,
     }
     
     return render(request, 'home/index.html', context)
 
 
-@csrf_exempt
-@require_http_methods(["GET", "POST"])
-def instant_lucky_numbers_api(request):
-    """
-    API endpoint สำหรับ Instant Lucky Numbers
-    GET: ใช้วันที่ปัจจุบัน
-    POST: รับ significant_date จาก body
-    """
-    
-    try:
-        significant_date = None
-        
-        selected_news_ids = None
-        
-        if request.method == "POST":
-            try:
-                data = json.loads(request.body.decode('utf-8'))
-                significant_date = data.get('significant_date')
-                selected_news_ids = data.get('selected_news_ids')
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                # ถ้า JSON ไม่ถูกต้อง ใช้วันปัจจุบัน
-                pass
-        
-        # เรียก service function
-        result = get_instant_lucky_numbers(significant_date, selected_news_ids)
-        
-        return JsonResponse({
-            'success': True,
-            'data': result
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e),
-            'message': 'เกิดข้อผิดพลาดในการสร้างเลขเด็ด กรุณาลองใหม่'
-        }, status=500)
+# instant_lucky_numbers_api function removed for simplified version
 
 
-@csrf_exempt
-@require_http_methods(["GET"])
-def get_recent_news_for_selection_api(request):
-    """
-    API endpoint สำหรับดึงข่าวล่าสุดให้ผู้ใช้เลือก
-    """
-    
-    try:
-        # ดึงข่าวล่าสุด 24-48 ชั่วโมง
-        recent_cutoff = timezone.now() - timedelta(hours=48)
-        
-        # ข่าวคะแนนสูงก่อน
-        high_score_news = NewsArticle.objects.filter(
-            status='published',
-            lottery_relevance_score__gte=70,
-            published_date__gte=recent_cutoff
-        ).select_related('category').order_by('-lottery_relevance_score', '-published_date')[:10]
-        
-        # ถ้าไม่มีข่าวคะแนนสูง ใช้ข่าวล่าสุดธรรมดา
-        if not high_score_news.exists():
-            high_score_news = NewsArticle.objects.filter(
-                status='published',
-                published_date__gte=recent_cutoff
-            ).select_related('category').order_by('-published_date')[:8]
-        
-        # แปลงเป็น JSON format
-        news_list = []
-        for article in high_score_news:
-            extracted_nums = article.get_extracted_numbers_list()
-            
-            news_list.append({
-                'id': article.id,
-                'title': article.title[:80] + ('...' if len(article.title) > 80 else ''),
-                'category': article.category.name if article.category else 'ทั่วไป',
-                'lottery_category': article.get_lottery_category_display() if hasattr(article, 'get_lottery_category_display') else article.lottery_category,
-                'lottery_relevance_score': article.lottery_relevance_score,
-                'extracted_numbers': extracted_nums[:5],  # แสดงแค่ 5 เลขแรก
-                'published_date': article.published_date.strftime('%d/%m/%Y %H:%M'),
-                'confidence_level': 'สูง' if article.lottery_relevance_score >= 90 else 'ปานกลาง' if article.lottery_relevance_score >= 70 else 'พอใช้'
-            })
-        
-        return JsonResponse({
-            'success': True,
-            'data': {
-                'news_articles': news_list,
-                'total_count': len(news_list),
-                'time_range': '24-48 ชั่วโมงล่าสุด'
-            }
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e),
-            'message': 'เกิดข้อผิดพลาดในการดึงข่าว กรุณาลองใหม่'
-        }, status=500)
+# get_recent_news_for_selection_api function removed for simplified version
 
 
 @csrf_exempt

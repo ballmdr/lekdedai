@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">เครื่องคำนวณหวย</h1>
+    
+     React Calculator Component 
+    <div id="lottery-calculator" 
+         data-formulas="{{ formulas|safe }}"
+         data-csrf-token="{{ csrf_token }}">
+    </div>
+</div>
+
+<script>
+// Pass Django data to React
+window.LOTTERY_DATA = {
+    formulas: {{ formulas|safe }},
+    csrfToken: '{{ csrf_token }}'
+};
+</script>
+{% endblock %}

@@ -66,37 +66,14 @@ class NewsArticle(models.Model):
         null=True
     )
     
-    # เลขที่ได้จากข่าว
-    extracted_numbers = models.CharField(
-        "เลขที่ได้จากข่าว",
-        max_length=200,
+    # เลขที่ได้จากข่าว พร้อมเหตุผล
+    numbers_with_reasons = models.JSONField(
+        "เลขพร้อมเหตุผล",
+        default=list,
         blank=True,
-        help_text="เลขที่วิเคราะห์ได้จากข่าว คั่นด้วยเครื่องหมายจุลภาค"
+        help_text="รูปแบบ: [{'number': '24', 'reason': 'วันที่เกิดเหตุ'}, ...]"
     )
-    confidence_score = models.IntegerField(
-        "ความน่าเชื่อถือ (%)",
-        default=50,
-        help_text="0-100"
-    )
-    
-    # คะแนนความเหมาะสมสำหรับหวย (ระบบใหม่)
-    lottery_relevance_score = models.IntegerField(
-        "คะแนนความเหมาะสมหวย",
-        default=0,
-        help_text="0-100 คะแนนจากระบบวิเคราะห์ใหม่"
-    )
-    lottery_category = models.CharField(
-        "หมวดหมู่สำหรับหวย",
-        max_length=20,
-        choices=[
-            ('accident', 'อุบัติเหตุ'),
-            ('celebrity', 'คนดัง'),
-            ('economic', 'เศรษฐกิจ'),
-            ('general', 'ทั่วไป')
-        ],
-        blank=True,
-        help_text="หมวดหมู่ที่วิเคราะห์โดยระบบใหม่"
-    )
+
     
     # การเผยแพร่
     status = models.CharField(
@@ -115,14 +92,6 @@ class NewsArticle(models.Model):
     # การนับ
     views = models.IntegerField("จำนวนคนดู", default=0)
     
-    # URL แหล่งที่มา
-    source_url = models.URLField("URL แหล่งที่มา", blank=True, null=True)
-    
-    # Insight-AI Analysis Results
-    insight_summary = models.TextField("สรุปเหตุการณ์ (Insight-AI)", blank=True)
-    insight_impact_score = models.FloatField("คะแนนผลกระทบ (Insight-AI)", default=0.0, help_text="0.0-1.0")
-    insight_entities = models.JSONField("เลขจาก Insight-AI", default=list, blank=True)
-    insight_analyzed_at = models.DateTimeField("วิเคราะห์ Insight-AI เมื่อ", blank=True, null=True)
     
     class Meta:
         verbose_name = "บทความข่าว"
@@ -145,11 +114,37 @@ class NewsArticle(models.Model):
     def get_absolute_url(self):
         return reverse('news:article_detail', kwargs={'slug': self.slug})
     
-    def get_extracted_numbers_list(self):
-        """แปลงเลขเป็น list"""
-        if self.extracted_numbers:
-            return [num.strip() for num in self.extracted_numbers.split(',') if num.strip()]
+
+    def get_numbers_with_reasons(self):
+        """ดึงเลขพร้อมเหตุผล"""
+        if self.numbers_with_reasons:
+            return self.numbers_with_reasons
         return []
+
+    def get_numbers_only(self):
+        """ดึงเฉพาะเลข จาก numbers_with_reasons"""
+        numbers = []
+        for item in self.get_numbers_with_reasons():
+            if isinstance(item, dict) and 'number' in item:
+                numbers.append(item['number'])
+        return numbers
+
+    def add_number_with_reason(self, number, reason):
+        """เพิ่มเลขพร้อมเหตุผล"""
+        if not self.numbers_with_reasons:
+            self.numbers_with_reasons = []
+
+        # ตรวจสอบว่าเลขนี้มีอยู่แล้วหรือไม่
+        for item in self.numbers_with_reasons:
+            if isinstance(item, dict) and item.get('number') == str(number):
+                item['reason'] = reason  # อัพเดทเหตุผล
+                return
+
+        # เพิ่มเลขใหม่
+        self.numbers_with_reasons.append({
+            'number': str(number),
+            'reason': reason
+        })
     
     def get_formatted_content(self):
         """จัดรูปแบบเนื้อหาด้วย AI (Groq/Gemini) พร้อม filter ขยะ"""

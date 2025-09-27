@@ -18,11 +18,28 @@ class NewsCategoryAdmin(admin.ModelAdmin):
 @admin.register(NewsArticle)
 class NewsArticleAdmin(admin.ModelAdmin):
     form = NewsArticleForm
-    list_display = ['title', 'category', 'status', 'published_date', 'views', 'confidence_score']
+    list_display = ['title', 'numbers_display', 'category', 'status', 'published_date', 'views']
     list_filter = ['status', 'category', 'published_date']
-    search_fields = ['title', 'content', 'extracted_numbers']
+    search_fields = ['title', 'content']
     date_hierarchy = 'published_date'
-    
+    readonly_fields = ['created_at', 'updated_at']
+
+    def numbers_display(self, obj):
+        """แสดงเลขพร้อมเหตุผลในรายการ"""
+        numbers_with_reasons = obj.get_numbers_with_reasons()
+        if numbers_with_reasons:
+            display_items = []
+            for item in numbers_with_reasons[:3]:  # แสดง 3 เลขแรก
+                if isinstance(item, dict) and 'number' in item:
+                    reason = item.get('reason', '')[:10]  # เหตุผลสั้นๆ
+                    display_items.append(f"{item['number']} ({reason}...)")
+            result = ', '.join(display_items)
+            if len(numbers_with_reasons) > 3:
+                result += ' ...'
+            return result
+        return 'ไม่มี'
+    numbers_display.short_description = 'เลขพร้อมเหตุผล'
+
     def save_model(self, request, obj, form, change):
         # สร้าง slug อัตโนมัติถ้าไม่มี
         if not obj.slug:
@@ -38,15 +55,20 @@ class NewsArticleAdmin(admin.ModelAdmin):
             'fields': ('intro', 'content', 'featured_image')
         }),
         ('เลขจากข่าว', {
-            'fields': ('extracted_numbers', 'confidence_score'),
-            'classes': ('collapse',)
+            'fields': ('numbers_with_reasons',),
+            'description': 'เลขพร้อมเหตุผลในรูปแบบ JSON: [{"number": "24", "reason": "วันที่เกิดเหตุ"}]'
         }),
         ('การเผยแพร่', {
-            'fields': ('status', 'published_date')
+            'fields': ('status', 'published_date', 'views')
         }),
         ('SEO', {
             'fields': ('meta_description',),
             'classes': ('collapse',)
+        }),
+        ('ข้อมูลระบบ', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+            'description': 'ข้อมูลที่สร้างโดยระบบอัตโนมัติ (อ่านอย่างเดียว)'
         }),
     )
     

@@ -4,7 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-LekdeDai is a Thai Django-based AI lottery prediction system that combines machine learning with traditional Thai lottery culture. The system includes dream interpretation, news analysis, lottery statistics, and AI-powered number prediction.
+LekdeDai is a simplified Thai Django-based lottery prediction website. The main page displays lottery numbers for the next draw (not daily numbers) generated from four core features:
+
+1. **News Analysis** - Analyze news from the latest lottery draw to present date
+2. **Historical Lottery Analysis** - Use various formulas and AI to analyze past lottery results
+3. **Dream Interpretation** - Convert dreams into lottery numbers
+4. **Online Lottery Checker** - Check lottery results online (already working well)
+
+All other features have been removed to focus on these core functionalities.
 
 ## Development Commands
 
@@ -42,60 +49,50 @@ docker-compose logs -f web
 ```
 
 ### Management Commands
-The project includes numerous management commands for data operations:
+Core management commands for the simplified system:
 
 ```bash
 # Lottery data operations
-python manage.py add_calculate_stats
 python manage.py sync_lotto_data
 python manage.py clear_and_fetch_lotto
 
-# News and content management
-python manage.py add_news_data
+# News analysis
 python manage.py scrape_thairath
-python manage.py scrape_rss_feeds
 python manage.py analyze_existing_articles
-python manage.py score_existing_news
 
-# AI engine operations
-python manage.py collect_prediction_data
+# AI prediction generation
 python manage.py generate_ai_prediction
-python manage.py setup_ai_data_sources
 
-# Dream analysis
+# Dream interpretation
 python manage.py add_dream_data
-python manage.py train_dream_model
-
-# Daily operations
-python manage.py update_daily_numbers
 ```
 
 ## Architecture
 
 ### Core Django Apps
 
-- **ai_engine**: ML prediction system with three specialized AI models (Journalist, Interpreter, Statistician) that work together via an ensemble approach
-- **dreams**: Dream interpretation system with keyword mapping to lottery numbers
-- **news**: News scraping and analysis with lottery relevance scoring
-- **lotto_stats**: Historical lottery data analysis and statistics
-- **home**: Main dashboard and daily number display
-- **lottery_checker**: Lottery result checking and validation
-- **lucky_spots**: Location-based lucky number suggestions
+- **home**: Main homepage displaying next lottery draw predictions
+- **dreams**: Dream interpretation system converting dreams to lottery numbers
+- **lotto_stats**: Historical lottery analysis using various formulas and AI
+- **news**: News analysis from latest draw to present for lottery number extraction
+- **ai_engine**: AI-powered prediction system combining all data sources
+- **lottery_checker**: Online lottery result checking tool (already working)
 
-### Database Architecture
+### Simplified Architecture
 
-The system uses PostgreSQL with complex relationships between:
-- AI prediction sessions with ensemble results
-- News articles with extracted numbers and relevance scoring  
-- Dream interpretations with symbol-to-number mappings
-- Historical lottery data for statistical analysis
+The system focuses on four core data sources:
+- **News Analysis**: Extract lottery-relevant numbers from recent news
+- **Historical Data**: Apply statistical formulas and AI to past lottery results
+- **Dream Interpretation**: Convert dream symbols to traditional lottery numbers
+- **Result Checking**: Verify lottery results online
 
-### AI System Architecture
+### Prediction Flow
 
-The AI engine uses a three-tier approach:
-1. **Specialist Models**: Journalist AI (news analysis), Interpreter AI (dreams/astrology), Statistician AI (historical data)
-2. **Ensemble Prediction**: Combines results from all specialist models with confidence weighting
-3. **Session Management**: Tracks prediction sessions with data collection periods and accuracy tracking
+1. Collect news from latest lottery draw to present
+2. Analyze historical lottery patterns using AI and formulas
+3. Process dream interpretations for number suggestions
+4. Combine all sources into next draw predictions
+5. Display results on main homepage
 
 ## Key Configuration
 
@@ -107,25 +104,26 @@ The AI engine uses a three-tier approach:
 
 ## Data Flow Patterns
 
-### News Processing Pipeline
-1. Scrape news from multiple sources (Thairath, RSS feeds)
-2. Analyze content for lottery relevance using custom scoring
-3. Extract potential numbers from headlines/content
-4. Store with confidence scores and categorization
+### Core Features
 
-### AI Prediction Flow
-1. Create prediction session for specific draw date
-2. Collect data from all sources within date range
-3. Run specialist AI models in parallel
-4. Combine results via ensemble methodology
-5. Generate final predictions with confidence scores
-6. Track accuracy against actual lottery results
+#### News Analysis
+- Scrape news from latest lottery draw to present
+- Extract lottery-relevant numbers from content
+- Score news relevance for lottery predictions
 
-### Dream Analysis Process
-1. User submits dream text
-2. Extract symbols and keywords using Thai NLP
-3. Map symbols to traditional lottery numbers via DreamKeyword model
-4. Generate number predictions with interpretation
+#### Historical Analysis
+- Apply statistical formulas to past lottery results
+- Use AI to identify patterns in historical data
+- Generate predictions based on trends
+
+#### Dream Interpretation
+- Convert dream text to lottery numbers
+- Map dream symbols to traditional Thai lottery meanings
+- Provide number suggestions with interpretations
+
+#### Lottery Checker
+- Check lottery results online
+- Verify winning numbers (already functional)
 
 ## Development Guidelines
 
@@ -135,16 +133,13 @@ The AI engine uses a three-tier approach:
 - Track data sources and processing timestamps
 - Implement soft deletes where appropriate (SET_NULL foreign keys)
 
-### Management Command Structure
-- Collect data operations for fetching external content
-- Analysis operations for ML processing
-- Setup operations for initial data seeding
-- Daily operations for automated tasks
-
-### URL Patterns
-- Thai language support in slugs using custom validators
-- Consistent app-based routing (dreams/, news/, ai/, etc.)
-- SEO-friendly URLs with proper slug generation
+### URL Structure
+- `/` - Main homepage with next draw predictions
+- `/dreams/` - Dream interpretation feature
+- `/lotto_stats/` - Historical lottery statistics
+- `/news/` - News analysis for lottery numbers
+- `/ai/` - AI prediction interface
+- `/lottery_checker/` - Online lottery result checker
 
 ## External Dependencies
 
@@ -168,4 +163,4 @@ gunicorn lekdedai.wsgi:application
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-The system is designed for Thai lottery culture with deep integration of traditional beliefs (dreams, symbols) and modern AI prediction techniques.
+The simplified system focuses on the core lottery prediction features that Thai users need most: news analysis, historical patterns, dream interpretation, and result checking.

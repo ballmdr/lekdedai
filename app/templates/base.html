@@ -1,177 +1,69 @@
 <!DOCTYPE html>
-{% load static %}
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}LekDedAI - เลขเด็ดจาก AI{% endblock %}</title>
-    {% block meta %}{% endblock %}
+    <title>{% block title %}{{ page_title|default:"เว็บสูตรคำนวณหวย" }}{% endblock %}</title>
+    <meta name="description" content="{% block description %}{{ meta_description|default:"เว็บสูตรคำนวณหวยไทย ทำนายเลขเด็ดแม่นยำ" }}{% endblock %}">
+    
+     SEO Meta Tags 
+    <meta property="og:title" content="{% block og_title %}{{ page_title }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ meta_description }}{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta name="robots" content="index, follow">
+    
+     Tailwind CSS 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        background: 'var(--background)',
-                        foreground: 'var(--foreground)',
-                        card: {
-                            DEFAULT: 'var(--card)',
-                            foreground: 'var(--card-foreground)'
-                        },
-                        popover: {
-                            DEFAULT: 'var(--popover)',
-                            foreground: 'var(--popover-foreground)'
-                        },
-                        primary: {
-                            DEFAULT: 'var(--primary)',
-                            foreground: 'var(--primary-foreground)'
-                        },
-                        secondary: {
-                            DEFAULT: 'var(--secondary)',
-                            foreground: 'var(--secondary-foreground)'
-                        },
-                        muted: {
-                            DEFAULT: 'var(--muted)',
-                            foreground: 'var(--muted-foreground)'
-                        },
-                        accent: {
-                            DEFAULT: 'var(--accent)',
-                            foreground: 'var(--accent-foreground)'
-                        },
-                        destructive: {
-                            DEFAULT: 'var(--destructive)',
-                            foreground: 'var(--destructive-foreground)'
-                        },
-                        border: 'var(--border)',
-                        input: 'var(--input)',
-                        ring: 'var(--ring)',
-                    },
-                    borderRadius: {
-                        lg: 'var(--radius)',
-                        md: 'calc(var(--radius) - 2px)',
-                        sm: 'calc(var(--radius) - 4px)',
-                    },
+                        primary: '#f59e0b',
+                        secondary: '#ea580c',
+                        accent: '#dc2626',
+                    }
                 }
-            },
+            }
         }
     </script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
-    {% block extra_css %}{% endblock %}
+    
+    <!-- CSS will be loaded via Tailwind CDN -->
 </head>
-<body class="min-h-screen bg-background">
-    <!-- Header -->
-    <header class="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                        <i class="fas fa-brain w-5 h-5 text-primary-foreground"></i>
+<body class="bg-gradient-to-br from-orange-50 to-yellow-50 min-h-screen">
+     Navigation 
+    <nav class="bg-white shadow-lg border-b-4 border-primary">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">หวย</span>
                     </div>
-                    <a href="/" class="text-xl font-serif font-bold text-foreground hover:text-primary transition-colors">เลขเด็ดเอไอ</a>
+                    <h1 class="text-2xl font-bold text-gray-800">สูตรคำนวณหวย</h1>
                 </div>
-                <nav class="hidden md:flex items-center gap-6">
-                    <a href="/" class="text-muted-foreground hover:text-foreground transition-colors">เลขวันนี้</a>
-                    <a href="/news/" class="text-muted-foreground hover:text-foreground transition-colors">ข่าวหวย</a>
-                    <a href="/dreams/" class="text-muted-foreground hover:text-foreground transition-colors">ความฝัน</a>
-                    <a href="/lucky-spots/" class="text-muted-foreground hover:text-foreground transition-colors">พิกัดเลขเด็ด</a>
-                    <a href="/lottery_checker/" class="text-muted-foreground hover:text-foreground transition-colors">ตรวจหวย</a>
-                    <a href="/lotto_stats/" class="text-muted-foreground hover:text-foreground transition-colors">สถิติ</a>
-                </nav>
-                <!-- Mobile menu button -->
-                <button class="md:hidden text-foreground" onclick="toggleMobileMenu()">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-            <!-- Mobile menu -->
-            <div id="mobileMenu" class="hidden md:hidden mt-4 py-4 border-t border-border">
-                <nav class="flex flex-col gap-4">
-                    <a href="/" class="text-muted-foreground hover:text-foreground transition-colors">เลขวันนี้</a>
-                    <a href="/news/" class="text-muted-foreground hover:text-foreground transition-colors">ข่าวหวย</a>
-                    <a href="/dreams/" class="text-muted-foreground hover:text-foreground transition-colors">ความฝัน</a>
-                    <a href="/lucky-spots/" class="text-muted-foreground hover:text-foreground transition-colors">พิกัดเลขเด็ด</a>
-                    <a href="/lottery_checker/" class="text-muted-foreground hover:text-foreground transition-colors">ตรวจหวย</a>
-                    <a href="/lotto_stats/" class="text-muted-foreground hover:text-foreground transition-colors">สถิติ</a>
-                </nav>
+                <div class="hidden md:flex space-x-6">
+                    <a href="/" class="text-gray-700 hover:text-primary transition-colors">หน้าแรก</a>
+                    <a href="/lotto_formula/calculator/" class="text-gray-700 hover:text-primary transition-colors">เครื่องคำนวณ</a>
+                    <a href="#" class="text-gray-700 hover:text-primary transition-colors">ผลหวย</a>
+                    <a href="#" class="text-gray-700 hover:text-primary transition-colors">สถิติ</a>
+                </div>
             </div>
         </div>
-    </header>
-    
-    <main>
-        {% block content %}{% endblock %}
+    </nav>
+
+     Main Content 
+    <main class="container mx-auto px-4 py-8">
+        {% block content %}
+        {% endblock %}
     </main>
-    
-    <!-- Footer -->
-    <footer class="bg-card border-t border-border py-8">
-        <div class="container mx-auto px-4">
-            <div class="grid md:grid-cols-3 gap-8">
-                <div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                            <i class="fas fa-brain text-primary-foreground"></i>
-                        </div>
-                        <h4 class="font-serif font-bold text-foreground">เลขเด็ดเอไอ</h4>
-                    </div>
-                    <p class="text-sm text-muted-foreground">พอร์ทัลเลขเด็ดและข่าวหวยอันดับ 1 ของไทย</p>
-                </div>
-                <div>
-                    <h5 class="font-semibold mb-4 text-foreground">เมนูหลัก</h5>
-                    <ul class="space-y-2 text-sm text-muted-foreground">
-                        <li>
-                            <a href="/" class="hover:text-foreground transition-colors">
-                                เลขเด็ดวันนี้
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/news/" class="hover:text-foreground transition-colors">
-                                ข่าวหวย
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/lotto_stats/" class="hover:text-foreground transition-colors">
-                                สถิติหวย
-                            </a>
-                        </li>
-                        <li>
-                            <a href="/lottery_checker/" class="hover:text-foreground transition-colors">
-                                ตรวจหวย
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div>
-                    <h5 class="font-semibold mb-4 text-foreground">ติดตาม</h5>
-                    <ul class="space-y-2 text-sm text-muted-foreground">
-                        <li>Facebook: เลขเด็ดเอไอ</li>
-                        <li>Line: @lekded-ai</li>
-                        <li>อีเมล: info@lekded-ai.com</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-border mt-6 pt-6 text-center text-sm text-muted-foreground">
-                <p>&copy; 2024 เลขเด็ดเอไอ - พอร์ทัลเลขเด็ดและข่าวหวย</p>
-            </div>
+
+     Footer 
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 เว็บสูตรคำนวณหวย - ทำนายเลขเด็ดแม่นยำ</p>
         </div>
     </footer>
 
-    <script>
-        // Mobile menu toggle
-        function toggleMobileMenu() {
-            const mobileMenu = document.getElementById('mobileMenu');
-            mobileMenu.classList.toggle('hidden');
-        }
-        
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const mobileMenu = document.getElementById('mobileMenu');
-            const menuButton = event.target.closest('button');
-            
-            if (!menuButton && !mobileMenu.contains(event.target)) {
-                mobileMenu.classList.add('hidden');
-            }
-        });
-    </script>
-    <script src="{% static 'js/theme.js' %}"></script>
-    {% block extra_js %}{% endblock %}
+    <!-- JS functionality would be added here if needed -->
 </body>
 </html>

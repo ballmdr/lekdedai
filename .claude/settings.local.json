@@ -35,7 +35,14 @@
       "WebFetch(domain:localhost)",
       "Bash(docker-compose:*)",
       "Bash(docker cp:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(rmdir:*)",
+      "WebFetch(domain:www.bbc.com)",
+      "WebFetch(domain:www.thaipbs.or.th)",
+      "WebFetch(domain:www.pptvhd36.com)",
+      "WebFetch(domain:www.prachachat.net)",
+      "WebFetch(domain:mgronline.com)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []

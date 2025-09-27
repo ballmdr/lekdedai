@@ -108,19 +108,20 @@
                             {% endif %}
                         </div>
                         
-                        <!-- แสดงเลขจากระบบเดิม -->
-                        {% if article.extracted_numbers %}
-                        <div class="mb-2">
-                            <div class="flex flex-wrap gap-2">
-                                {% for num in article.get_extracted_numbers_list|slice:":5" %}
-                                <span class="badge bg-primary text-primary-foreground text-sm font-bold">
-                                    {{ num }}
+                        <!-- แสดงเลขพร้อมเหตุผล -->
+                        {% if article.get_numbers_with_reasons %}
+                        <div class="mb-2 space-y-2">
+                            {% for item in article.get_numbers_with_reasons|slice:":3" %}
+                            <div class="flex items-center gap-2">
+                                <span class="badge bg-primary text-primary-foreground text-lg font-bold px-3 py-1">
+                                    {{ item.number }}
                                 </span>
-                                {% endfor %}
-                                {% if article.get_extracted_numbers_list|length > 5 %}
-                                <span class="text-sm text-muted-foreground">...</span>
-                                {% endif %}
+                                <span class="text-sm text-muted-foreground">{{ item.reason }}</span>
                             </div>
+                            {% endfor %}
+                            {% if article.get_numbers_with_reasons|length > 3 %}
+                            <div class="text-sm text-muted-foreground">และอีก {{ article.get_numbers_with_reasons|length|add:"-3" }} เลข...</div>
+                            {% endif %}
                         </div>
                         {% endif %}
                         

@@ -5,13 +5,13 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('home.urls')),
-    path('dreams/', include('dreams.urls')),
-    path('lotto_stats/', include('lotto_stats.urls')),
-    path('news/', include('news.urls')),
-    path('ai/', include('ai_engine.urls')),
-    path('lottery_checker/', include('lottery_checker.urls')),
-    path('lucky-spots/', include('lucky_spots.urls')),
+    path('', include('home.urls')),                              # Main homepage with lottery predictions
+    path('dreams/', include('dreams.urls')),                     # Dream interpretation feature
+    path('lotto_stats/', include('lotto_stats.urls')),           # Historical lottery statistics
+    path('lotto_formula/', include('lotto_formula.urls')),       # Lottery formula calculator
+    path('news/', include('news.urls')),                         # News analysis for lottery numbers
+    path('ai/', include('ai_engine.urls')),                      # AI-powered predictions
+    path('lottery_checker/', include('lottery_checker.urls')),   # Online lottery checker
 ]
 
 if settings.DEBUG:

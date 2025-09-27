@@ -64,9 +64,22 @@ class NewsArticleForm(ModelForm):
         model = NewsArticle
         fields = [
             'title', 'slug', 'category', 'author', 'intro', 'content',
-            'featured_image', 'extracted_numbers', 'confidence_score',
-            'status', 'published_date', 'meta_description'
+            'featured_image', 'numbers_with_reasons', 'status', 'published_date',
+            'views', 'meta_description'
         ]
+        widgets = {
+            'numbers_with_reasons': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': '[{"number": "24", "reason": "วันที่เกิดเหตุ"}, {"number": "08", "reason": "เวลาที่เกิดเหตุ"}]',
+                'help_text': 'รูปแบบ JSON: [{"number": "เลข", "reason": "เหตุผล"}]',
+                'style': 'font-size: 14px; font-family: monospace;',
+                'rows': 5
+            }),
+            'intro': forms.Textarea(attrs={'rows': 3}),
+            'content': forms.Textarea(attrs={'rows': 15}),
+            'meta_description': forms.Textarea(attrs={'rows': 3}),
+            'views': forms.NumberInput(attrs={'min': 0})
+        }
     
     def clean_slug(self):
         slug = self.cleaned_data.get('slug')
@@ -75,5 +88,43 @@ class NewsArticleForm(ModelForm):
         # ถ้าไม่มี slug ให้สร้างจากหัวข้อ
         if not slug and title:
             slug = thai_slugify(title)
-        
+
         return slug
+
+
+    def clean_numbers_with_reasons(self):
+        """ตรวจสอบ JSON format ของเลขพร้อมเหตุผล"""
+        import json
+        data = self.cleaned_data.get('numbers_with_reasons')
+
+        if not data:
+            return []
+
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except json.JSONDecodeError:
+                raise forms.ValidationError('รูปแบบ JSON ไม่ถูกต้อง')
+
+        if not isinstance(data, list):
+            raise forms.ValidationError('ข้อมูลต้องเป็น Array')
+
+        # ตรวจสอบแต่ละรายการ
+        for i, item in enumerate(data):
+            if not isinstance(item, dict):
+                raise forms.ValidationError(f'รายการที่ {i+1} ต้องเป็น Object')
+
+            if 'number' not in item or 'reason' not in item:
+                raise forms.ValidationError(f'รายการที่ {i+1} ต้องมี "number" และ "reason"')
+
+            # ตรวจสอบเลข
+            try:
+                int(item['number'])
+            except ValueError:
+                raise forms.ValidationError(f'เลข "{item["number"]}" ไม่ใช่ตัวเลข')
+
+            # ตรวจสอบความยาวเลข
+            if len(str(item['number'])) < 1 or len(str(item['number'])) > 4:
+                raise forms.ValidationError(f'เลข "{item["number"]}" ควรมี 1-4 หลัก')
+
+        return data

@@ -68,70 +68,8 @@ def article_detail(request, slug):
     article.views += 1
     article.save(update_fields=['views'])
     
-    # เตรียมข้อมูลการวิเคราะห์ (ใช้ Gemini AI ก่อน ถ้าไม่มีค่อยใช้ News Analyzer)
+    # การวิเคราะห์ข่าวถูกลบออกเพื่อความเรียบง่าย
     insight_analysis = None
-    
-    if article.insight_entities:
-        # เรียงลำดับเลขตามความสำคัญ
-        def get_priority(entity):
-            source = entity.get('source', entity.get('reasoning', '')).lower()
-            # ป้ายทะเบียน = 1 (สำคัญสุด)
-            if 'ทะเบียน' in source or 'ป้าย' in source:
-                return 1
-            # อายุ = 2 
-            elif 'อายุ' in source:
-                return 2
-            # เวลา = 3
-            elif 'เวลา' in source or 'โมง' in source or 'นาที' in source:
-                return 3
-            # จำนวน/ปริมาณ = 4
-            elif 'จำนวน' in source or 'คัน' in source or 'หลัง' in source or 'ต้น' in source:
-                return 4
-            # อื่นๆ = 5
-            else:
-                return 5
-        
-        # เรียงลำดับ entities ตามความสำคัญ
-        sorted_entities = sorted(article.insight_entities, key=get_priority)
-        
-        # ใช้ข้อมูลจาก AI (รองรับทั้ง Gemini และ Groq format)
-        numbers = [entity.get('number', entity.get('value', '')) for entity in sorted_entities]
-        avg_score = sum(entity.get('confidence', entity.get('significance_score', 0)) for entity in sorted_entities) / len(sorted_entities) if sorted_entities else 0
-        
-        # Debug print
-        print(f"DEBUG: Found insight_entities with {len(numbers)} numbers: {numbers}")
-        print(f"DEBUG: Average confidence: {avg_score}")
-        
-        insight_analysis = {
-            'numbers': numbers,
-            'confidence': round(avg_score, 1),  # ไม่คูณ 100 เพราะ confidence อยู่ในรูป 0-100 แล้ว
-            'story_summary': article.insight_summary or f'วิเคราะห์ด้วย AI พบ {len(numbers)} เลข',
-            'story_impact_score': round(avg_score, 1),
-            'category': 'AI Analysis',
-            'is_insight_ai': True,  # แสดงว่าเป็น AI
-            'extracted_entities': sorted_entities  # ส่งข้อมูลที่เรียงแล้วไป JavaScript
-        }
-        
-    elif article.extracted_numbers:
-        # ใช้ข้อมูลจาก News Analyzer (fallback)
-        numbers = [num.strip() for num in article.extracted_numbers.split(',') if num.strip()]
-        
-        insight_analysis = {
-            'numbers': numbers,
-            'confidence': article.confidence_score or 0,
-            'story_summary': f'วิเคราะห์ด้วย News Analyzer Enhanced พบ {len(numbers)} เลข',
-            'story_impact_score': article.confidence_score or 0,
-            'category': 'News Analyzer Enhanced',
-            'is_insight_ai': False  # แสดงว่าเป็น News Analyzer
-        }
-        
-        # อัพเดตเลขหลักถ้ายังไม่มี
-        if not article.extracted_numbers and article.insight_entities:
-            numbers = [entity['number'] for entity in article.insight_entities]
-            avg_score = sum(entity['significance_score'] for entity in article.insight_entities) / len(article.insight_entities) if article.insight_entities else 0
-            article.extracted_numbers = ', '.join(numbers[:10])
-            article.confidence_score = avg_score * 100
-            article.save(update_fields=['extracted_numbers', 'confidence_score'])
     
     # ดึงข่าวที่เกี่ยวข้อง
     related_articles = NewsArticle.objects.filter(
@@ -150,7 +88,6 @@ def article_detail(request, slug):
         'related_articles': related_articles,
         'lucky_hints': lucky_hints,
         'comments': comments,
-        'extracted_numbers': article.get_extracted_numbers_list(),
         'insight_analysis': insight_analysis,
     }
     
@@ -287,56 +224,3 @@ def analyze_news(request, article_id):
             'error': f'เกิดข้อผิดพลาดในการวิเคราะห์: {str(e)}'
         }, status=500)
 
-def insight_ai_analysis(request, article_id):
-    """API วิเคราะห์ข่าวด้วย Insight-AI และเก็บผลลัพธ์"""
-    article = get_object_or_404(NewsArticle, id=article_id)
-    
-    try:
-        # Import Insight-AI using absolute path
-        import sys
-        from django.utils import timezone
-        sys.path.insert(0, '/app/mcp_dream_analysis')
-        from specialized_django_integration import extract_news_numbers_for_django
-        
-        # วิเคราะห์ข่าว
-        result = extract_news_numbers_for_django(article.content)
-        
-        if result and 'extracted_entities' in result:
-            # เก็บผลลัพธ์ลงฐานข้อมูล
-            article.insight_summary = result.get('story_summary', '')
-            article.insight_impact_score = result.get('story_impact_score', 0)
-            article.insight_entities = result.get('extracted_entities', [])
-            article.insight_analyzed_at = timezone.now()
-            
-            # อัพเดตเลขในบทความด้วยถ้ายังไม่มี
-            if not article.extracted_numbers or article.extracted_numbers.strip() == "":
-                numbers = [entity['value'] for entity in result['extracted_entities']]
-                avg_score = sum(entity['significance_score'] for entity in result['extracted_entities']) / len(result['extracted_entities']) if result['extracted_entities'] else 0
-                article.extracted_numbers = ', '.join(numbers[:10])
-                article.confidence_score = avg_score * 100
-            
-            article.save()
-            
-            # ส่งกลับผลลัพธ์เป็น JSON
-            return JsonResponse({
-                'success': True,
-                'story_summary': result.get('story_summary', 'ไม่สามารถสรุปได้'),
-                'story_impact_score': round(result.get('story_impact_score', 0) * 100, 1),
-                'extracted_entities': result.get('extracted_entities', []),
-                'numbers': [entity['value'] for entity in result.get('extracted_entities', [])],
-                'confidence': round(sum(entity['significance_score'] for entity in result['extracted_entities']) / len(result['extracted_entities']) * 100, 1) if result.get('extracted_entities') else 0,
-                'is_insight_ai': True,
-                'saved': True
-            })
-        else:
-            raise Exception("No valid result from Insight-AI analysis")
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': f'เกิดข้อผิดพลาด: {str(e)}',
-            'story_summary': 'ไม่สามารถวิเคราะห์ได้',
-            'story_impact_score': 0,
-            'extracted_entities': [],
-            'saved': False
-        })
