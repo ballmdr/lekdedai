@@ -24,9 +24,9 @@
             <i aria-hidden="true" class="fas fa-crystal-ball"></i>
           </div>
           
-          <h2 class="text-4xl md:text-6xl font-serif font-bold text-foreground mb-4 leading-tight">
+          <h1 class="text-4xl md:text-6xl font-serif font-bold text-foreground mb-4 leading-tight">
             <span class="text-blue-600">🎯 {{ dynamic_lottery_title }}</span>
-          </h2>
+          </h1>
           {% if next_draw_info %}
           <p class="text-lg font-semibold text-blue-700 mb-2">
             งวดวันที่ {{ next_draw_info.formatted_date }} · เหลืออีก {{ next_draw_info.days_remaining }} วัน
@@ -352,12 +352,14 @@
               <input
                 id="lotteryInput"
                 aria-label="กรอกเลขสลาก 6 หลัก"
+                aria-describedby="lotteryError"
                 placeholder="กรอกเลข 6 หลัก"
                 class="input"
                 maxlength="6"
                 pattern="[0-9]{6}"
                 inputmode="numeric"
               />
+              <div id="lotteryError" class="hidden text-sm text-red-600" role="alert" aria-live="polite"></div>
               <button onclick="checkLottery()" id="lotteryBtn" class="btn btn-primary w-full">ตรวจผลหวย</button>
               <a href="/lottery_checker/" class="btn btn-outline w-full">
                 <i aria-hidden="true" class="fas fa-search mr-2"></i>
@@ -392,36 +394,36 @@
             <div class="p-4 border-b">
               <h3 class="font-serif flex items-center gap-2 text-lg font-bold text-foreground">
                 <i aria-hidden="true" class="fas fa-chart-bar text-secondary"></i>
-                เลขฮิตประจำสัปดาห์
+                เลขฮิตจากสถิติ 90 วัน
               </h3>
             </div>
             <div class="p-4">
+              {% if next_draw_prediction.hot_numbers or next_draw_prediction.cold_numbers %}
               <div class="space-y-3">
+                {% if next_draw_prediction.hot_numbers %}
                 <div class="flex justify-between items-center">
-                  <span class="text-sm text-foreground">เลขออกบ่อย</span>
+                  <span class="text-sm text-foreground">ออกบ่อย</span>
                   <div class="flex gap-1">
-                    <span class="badge badge-secondary">07</span>
-                    <span class="badge badge-secondary">23</span>
-                    <span class="badge badge-secondary">45</span>
+                    {% for item in next_draw_prediction.hot_numbers %}
+                    <span class="badge badge-secondary" title="ออก {{ item.count }} ครั้ง">{{ item.number }}</span>
+                    {% endfor %}
                   </div>
                 </div>
+                {% endif %}
+                {% if next_draw_prediction.cold_numbers %}
                 <div class="flex justify-between items-center">
-                  <span class="text-sm text-foreground">เลขไม่เคยออก</span>
+                  <span class="text-sm text-foreground">ไม่ออกนานสุด</span>
                   <div class="flex gap-1">
-                    <span class="badge badge-outline">89</span>
-                    <span class="badge badge-outline">91</span>
-                    <span class="badge badge-outline">96</span>
+                    {% for item in next_draw_prediction.cold_numbers %}
+                    <span class="badge badge-outline" title="ไม่ออก {{ item.days }} วัน">{{ item.number }}</span>
+                    {% endfor %}
                   </div>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-sm text-foreground">เลขแนวโน้มสูง</span>
-                  <div class="flex gap-1">
-                    <span class="badge bg-accent text-accent-foreground">12</span>
-                    <span class="badge bg-accent text-accent-foreground">34</span>
-                    <span class="badge bg-accent text-accent-foreground">56</span>
-                  </div>
-                </div>
+                {% endif %}
               </div>
+              {% else %}
+              <p class="text-sm text-muted-foreground">ยังไม่มีข้อมูลสถิติย้อนหลัง ต้องซิงค์ผลหวยก่อน</p>
+              {% endif %}
             </div>
           </div>
 
@@ -436,18 +438,18 @@
             <div class="p-4">
               <div class="text-center space-y-4">
                 <div>
-                  {% if latest_prediction %}
-                    <div class="text-2xl font-bold text-primary mb-1">{{ latest_prediction.get_three_digit_list.0|default:"—" }}</div>
+                  {% if ai_card.has_number %}
+                    <div class="text-2xl font-bold text-primary mb-1">{{ ai_card.number }}</div>
                     <div class="text-sm text-muted-foreground">เลขบน 3 ตัว</div>
-                    {% if latest_prediction.overall_confidence %}
-                    <div class="badge bg-primary/10 text-primary mt-2">{{ latest_prediction.overall_confidence|floatformat:0 }} คะแนน (เพื่อความบันเทิง)</div>
+                    {% if ai_card.confidence %}
+                    <div class="badge bg-primary/10 text-primary mt-2">{{ ai_card.confidence }} คะแนน (เพื่อความบันเทิง)</div>
                     {% else %}
                     <div class="badge bg-primary/10 text-primary mt-2">ยังไม่มีข้อมูลคะแนน</div>
                     {% endif %}
                   {% else %}
-                    <div class="text-2xl font-bold text-primary mb-1">—</div>
+                    <div class="text-2xl font-bold text-muted-foreground mb-1">—</div>
                     <div class="text-sm text-muted-foreground">เลขบน 3 ตัว</div>
-                    <div class="badge bg-primary/10 text-primary mt-2">ยังไม่มีการทำนาย</div>
+                    <div class="badge bg-primary/10 text-primary mt-2">ยังไม่มีการทำนายที่มีเลข</div>
                   {% endif %}
                 </div>
                 <a href="/ai/" class="btn btn-primary w-full">
@@ -943,14 +945,25 @@ async function checkLottery() {
     const lotteryResultText = document.getElementById('lotteryResultText');
 
     const lotteryNumber = lotteryInput.value.trim();
+    const lotteryError = document.getElementById('lotteryError');
+
+    function showLotteryError(message) {
+        lotteryError.textContent = message;
+        lotteryError.classList.remove('hidden');
+        lotteryInput.setAttribute('aria-invalid', 'true');
+        lotteryInput.focus();
+    }
+
+    lotteryError.classList.add('hidden');
+    lotteryInput.removeAttribute('aria-invalid');
 
     if (!lotteryNumber) {
-        alert('กรุณากรอกเลขสลากที่ต้องการตรวจ');
+        showLotteryError('กรุณากรอกเลขสลากที่ต้องการตรวจ');
         return;
     }
 
     if (!/^\d{6}$/.test(lotteryNumber)) {
-        alert('กรุณากรอกเลข 6 หลัก');
+        showLotteryError('กรุณากรอกเลข 6 หลัก');
         return;
     }
 
@@ -1023,6 +1036,10 @@ function resetLotteryForm() {
     document.getElementById('lotteryLoading').classList.add('hidden');
     document.getElementById('lotteryResultText').textContent = '';
     document.getElementById('lotteryBtn').disabled = false;
+    const lotteryError = document.getElementById('lotteryError');
+    lotteryError.classList.add('hidden');
+    lotteryError.textContent = '';
+    document.getElementById('lotteryInput').removeAttribute('aria-invalid');
 }
 
 // Utility function to get CSRF token

@@ -55,3 +55,40 @@ class ErrorPageTests(TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertContains(res, "ไม่พบหน้าที่คุณกำลังมองหา", status_code=404)
         self.assertContains(res, 'href="/"', status_code=404)
+
+
+class AiCardConsistencyTests(TestCase):
+    """การ์ด AI ต้องไม่โชว์คะแนนลอย ๆ โดยไม่มีเลข."""
+
+    def _make_prediction(self, three_digit, confidence=68.0):
+        from ai_engine.models import LuckyNumberPrediction
+
+        return LuckyNumberPrediction.objects.create(
+            two_digit_numbers="10,20",
+            three_digit_numbers=three_digit,
+            overall_confidence=confidence,
+        )
+
+    def test_ai_card_without_number_hides_confidence(self):
+        self._make_prediction("")
+        res = self.client.get("/")
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(res.context["ai_card"]["has_number"])
+        self.assertNotContains(res, "68 คะแนน")
+
+    def test_ai_card_normalizes_legacy_confidence(self):
+        self._make_prediction("110", confidence=68.0)
+        res = self.client.get("/")
+        card = res.context["ai_card"]
+        self.assertTrue(card["has_number"])
+        self.assertEqual(card["number"], "110")
+        self.assertEqual(card["confidence"], 68)
+
+
+class ThaiDateTests(TestCase):
+    def test_thai_date_formats_buddhist_year(self):
+        from datetime import date
+
+        from utils.thai_date import format_thai_date
+
+        self.assertEqual(format_thai_date(date(2026, 9, 1)), "1 กันยายน 2569")

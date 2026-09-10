@@ -18,8 +18,9 @@ from ai_engine.models import (
 from lottery_checker.models import LottoResult
 # from lucky_spots.models import LuckyLocation  # Removed unused app
 from utils.lottery_dates import LotteryDates
+from utils.thai_date import format_thai_date
 # from .instant_lucky import get_instant_lucky_numbers  # Removed for simplified version
-from lotto_stats.models import LotteryDraw, NumberStatistics, HotColdNumber
+from lotto_stats.stats_calculator import StatsCalculator
 
 # get_daily_numbers_for_today function removed for simplified version
 
@@ -35,41 +36,36 @@ def get_next_draw_prediction():
         last_draw_date = latest_lotto.draw_date
     else:
         # ถ้าไม่มีข้อมูล ใช้ 2 สัปดาห์ที่แล้ว
-        last_draw_date = timezone.now().date() - timedelta(days=14)
+        last_draw_date = timezone.localdate() - timedelta(days=14)
     
-    # Part 1: เลขจากสถิติ - Hot Numbers และ Cold Numbers
+    # Part 1: เลขจากสถิติ - Hot Numbers และ Cold Numbers (ชุดเดียวกับหน้าสถิติ)
     statistical_numbers = []
+    hot_numbers = []
+    cold_numbers = []
     
     try:
+        calculator = StatsCalculator()
+
         # เลขฮอต - ออกบ่อยใน 90 วันล่าสุด
-        hot_numbers = NumberStatistics.objects.filter(
-            number_type='2D',
-            total_appearances__gte=3
-        ).order_by('-total_appearances')[:6]
-        
+        hot_numbers = calculator.get_hot_numbers(limit=6, days=90, number_type='2D')
         for hot_num in hot_numbers:
             statistical_numbers.append({
-                'number': hot_num.number,
+                'number': hot_num['number'],
                 'source': 'hot_stats',
                 # คะแนนจัดอันดับภายในสูตรนี้เท่านั้น (0-100) ไม่ใช่โอกาสถูก
-                'score': min(85, 50 + (hot_num.total_appearances * 5)),
-                'reason': f'ออกแล้ว {hot_num.total_appearances} ครั้ง'
+                'score': min(85, 50 + (hot_num['count'] * 5)),
+                'reason': f"ออกแล้ว {hot_num['count']} ครั้งใน 90 วัน"
             })
         
-        # เลขเย็น - ไม่ออกนานแล้ว มีโอกาสออก
-        cold_numbers = NumberStatistics.objects.filter(
-            number_type='2D',
-            days_since_last__gte=30,
-            total_appearances__gte=1
-        ).order_by('-days_since_last')[:4]
-        
+        # เลขเย็น - ไม่ออกนานแล้ว
+        cold_numbers = calculator.get_cold_numbers(limit=4, number_type='2D')
         for cold_num in cold_numbers:
             statistical_numbers.append({
-                'number': cold_num.number,
+                'number': cold_num['number'],
                 'source': 'cold_stats',
                 # คะแนนจัดอันดับภายในสูตรนี้เท่านั้น (0-100) ไม่ใช่โอกาสถูก
-                'score': min(75, 40 + (cold_num.days_since_last // 10)),
-                'reason': f'ไม่ออก {cold_num.days_since_last} วัน'
+                'score': min(75, 40 + (cold_num['days'] // 10)),
+                'reason': f"ไม่ออก {cold_num['days']} วัน"
             })
             
     except Exception:
@@ -133,7 +129,9 @@ def get_next_draw_prediction():
         'data_source_summary': data_source_summary,
         'last_draw_date': last_draw_date,
         'total_news_analyzed': analyzed_articles,
-        'statistical_coverage': len(statistical_numbers)
+        'statistical_coverage': len(statistical_numbers),
+        'hot_numbers': hot_numbers[:3],
+        'cold_numbers': cold_numbers[:3],
     }
 
 def home(request):
@@ -178,7 +176,7 @@ def home(request):
     # ถ้าไม่มีการทำนายใหม่ ใช้ระบบเก่าชั่วคราว
     if not latest_prediction:
         old_prediction = LuckyNumberPrediction.objects.filter(
-            prediction_date__lte=timezone.now().date()
+            prediction_date__lte=timezone.localdate()
         ).select_related('ai_model').order_by('-prediction_date', '-created_at').first()
         # แปลงให้เข้ากับ template
         if old_prediction:
@@ -191,6 +189,27 @@ def home(request):
                 'session': {'for_draw_date': old_prediction.for_draw_date}
             }
     
+    # การ์ด AI หน้าแรก: ต้องมีเลขจริงจึงโชว์เลข+คะแนน (normalize ทั้งระบบเก่า/ใหม่)
+    ai_card = {'has_number': False, 'number': '', 'confidence': None}
+    if latest_prediction:
+        if isinstance(latest_prediction, dict):
+            three_digits = [
+                item.get('number') if isinstance(item, dict) else item
+                for item in latest_prediction.get('get_top_three_digit_numbers') or []
+            ]
+            confidence = latest_prediction.get('overall_confidence')
+        else:
+            top_items = latest_prediction.get_top_three_digit_numbers(limit=1)
+            three_digits = [item.get('number') for item in top_items if isinstance(item, dict)]
+            confidence = latest_prediction.overall_confidence
+
+        number = next((str(n) for n in three_digits if n), '')
+        if number:
+            # ระบบเก่าเก็บ 0-100 ระบบใหม่เก็บ 0-1
+            if confidence is not None and confidence <= 1:
+                confidence = confidence * 100
+            ai_card = {'has_number': True, 'number': number, 'confidence': round(confidence) if confidence is not None else None}
+
     # ดึงผลหวยงวดล่าสุด
     latest_lottery_result = LottoResult.objects.filter(
         is_valid=True
@@ -219,7 +238,7 @@ def home(request):
     
     # ข้อมูลที่เก็บวันนี้
     today_data_records = DataIngestionRecord.objects.filter(
-        ingested_at__date=timezone.now().date()
+        ingested_at__date=timezone.localdate()
     ).count()
     
     total_views_today = latest_news.aggregate(
@@ -227,7 +246,7 @@ def home(request):
     )['total_views'] or 0
     
     # ดึงข้อมูลงวดถัดไป
-    today = timezone.now().date()
+    today = timezone.localdate()
     next_draw_date = LotteryDates.get_next_draw_date(today)
     next_draw_info = None
     dynamic_title = "เลขเด็ดหวยเอไองวดหน้า"  # Default title
@@ -243,7 +262,7 @@ def home(request):
         next_draw_info = {
             'date': next_draw_date_obj,
             'days_remaining': days_until_draw,
-            'formatted_date': next_draw_date_obj.strftime('%d %B %Y')
+            'formatted_date': format_thai_date(next_draw_date_obj)
         }
     
     # สร้าง Daily Ritual Content (เลขเดียวกันตลอดวัน)
@@ -257,6 +276,7 @@ def home(request):
         'latest_news': latest_news,
         'latest_prediction': latest_prediction,
         'ai_prediction': latest_prediction,  # เพิ่ม alias สำหรับ template ใหม่
+        'ai_card': ai_card,
         'latest_lottery_result': latest_lottery_result,
         # 'popular_lucky_locations': [],  # Lucky spots feature removed
         'next_draw_info': next_draw_info,

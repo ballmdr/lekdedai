@@ -293,8 +293,8 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
                 document.getElementById('aiModelBadge').classList.remove('hidden');
             }
             
-            // Show interpretation
-            document.getElementById('interpretation').textContent = result.interpretation;
+            // Show interpretation (escape ก่อน แล้วแปลง **ตัวหนา** เป็น HTML ที่ปลอดภัย)
+            document.getElementById('interpretation').innerHTML = formatInterpretation(result.interpretation);
             
             // Show Expert AI numbers with reasoning
             if (result.is_expert_ai && result.predicted_numbers && result.predicted_numbers.length > 0) {
@@ -396,6 +396,17 @@ function usePopularDream(text) {
     input.value = text;
     input.focus();
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function formatInterpretation(text) {
+    const escaped = String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    return escaped
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^#{1,6}\s*(.+)$/gm, '<strong>$1</strong>');
 }
 
 function getCookie(name) {

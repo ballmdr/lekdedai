@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import logging
 
 from lottery_checker.lotto_service import LottoService
+from utils.lottery_dates import LOTTERY_DATES
 
 logger = logging.getLogger(__name__)
 
@@ -47,15 +48,15 @@ class Command(BaseCommand):
             )
             return
         
-        # ดึงข้อมูลใหม่
-        self.stdout.write(f'🌐 กำลังดึงข้อมูลหวย {days_back} วันล่าสุดจาก API...')
+        # ดึงข้อมูลใหม่ (เฉพาะวันหวยออกตาม LOTTERY_DATES เพื่อลดจำนวน API call)
+        draw_date_strs = LOTTERY_DATES.get_recent_draw_dates(days_back)
+        self.stdout.write(f'🌐 กำลังดึงข้อมูลหวย {len(draw_date_strs)} งวดล่าสุดจาก API...')
         
-        today = timezone.now().date()
         success_count = 0
         error_count = 0
         
-        for i in range(days_back):
-            target_date = today - timedelta(days=i)
+        for date_str in reversed(draw_date_strs):
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
             date = target_date.day
             month = target_date.month
             year = target_date.year
@@ -76,9 +77,9 @@ class Command(BaseCommand):
         self.stdout.write('\n' + '=' * 50)
         self.stdout.write('📊 สรุปผลการดำเนินการ')
         self.stdout.write('=' * 50)
-        self.stdout.write(f'✅ สำเร็จ: {success_count} วัน')
-        self.stdout.write(f'❌ ล้มเหลว: {error_count} วัน')
-        self.stdout.write(f'📅 รวม: {days_back} วัน')
+        self.stdout.write(f'✅ สำเร็จ: {success_count} งวด')
+        self.stdout.write(f'❌ ล้มเหลว: {error_count} งวด')
+        self.stdout.write(f'📅 รวม: {len(draw_date_strs)} งวด')
         
         if success_count > 0:
             self.stdout.write(

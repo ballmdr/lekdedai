@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% load static %}
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
     <link rel="stylesheet" href="{% static 'css/theme.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>{% block title %}{{ page_title|default:"LekdeDai - เลขเด็ดและตรวจหวย" }}{% endblock %}</title>
@@ -13,21 +14,6 @@
     <meta property="og:description" content="{% block og_description %}{{ meta_description }}{% endblock %}">
     <meta property="og:type" content="website">
     <meta name="robots" content="index, follow">
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#f59e0b',
-                        secondary: '#ea580c',
-                        accent: '#dc2626',
-                    }
-                }
-            }
-        }
-    </script>
 </head>
 <body class="bg-gradient-to-br from-orange-50 to-yellow-50 min-h-screen">
     <nav class="bg-white shadow-lg border-b-4 border-primary">
