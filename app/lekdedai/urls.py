@@ -12,6 +12,7 @@ urlpatterns = [
     path('news/', include('news.urls')),                         # News analysis for lottery numbers
     path('ai/', include('ai_engine.urls')),                      # AI-powered predictions
     path('lottery_checker/', include('lottery_checker.urls')),   # Online lottery checker
+    path('notebook/', include('notebook.urls')),               # สมุดเลข browser-only
 ]
 
 if settings.DEBUG:

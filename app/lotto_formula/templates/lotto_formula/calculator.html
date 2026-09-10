@@ -1,21 +1,104 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">เครื่องคำนวณหวย</h1>
-    
-     React Calculator Component 
-    <div id="lottery-calculator" 
-         data-formulas="{{ formulas|safe }}"
-         data-csrf-token="{{ csrf_token }}">
-    </div>
-</div>
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">เครื่องคำนวณหวย</h1>
+    <p class="text-muted-foreground text-center mb-8">เลือกสูตร กรอกเลขอ้างอิง แล้วดูผลลัพธ์ที่คำนวณได้ (ไม่รับประกันผลรางวัล)</p>
 
-<script>
-// Pass Django data to React
-window.LOTTERY_DATA = {
-    formulas: {{ formulas|safe }},
-    csrfToken: '{{ csrf_token }}'
-};
-</script>
+    {% if formulas %}
+    <div class="card p-6 mb-6">
+        <form id="calcForm">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="formulaSelect" class="block text-sm font-medium text-foreground mb-1">เลือกสูตร</label>
+                <select id="formulaSelect" class="input">
+                    {% for formula in formulas %}
+                    <option value="{{ formula.id }}">{{ formula.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="inputNumbers" class="block text-sm font-medium text-foreground mb-1">เลขอ้างอิง (อย่างน้อย 2 ตัว เช่น 123456)</label>
+                <input type="text" id="inputNumbers" class="input" inputmode="numeric" placeholder="เช่น 123456">
+            </div>
+            <button type="button" id="calculateBtn" class="btn btn-primary w-full" aria-label="คำนวณเลข">คำนวณ</button>
+        </form>
+    </div>
+
+    <div id="calcError" class="hidden p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 mb-6" role="alert"></div>
+
+    <div id="calcResult" class="hidden card p-6">
+        <h2 class="text-xl font-bold text-foreground mb-4">ผลลัพธ์จากสูตร <span id="resultFormulaName"></span></h2>
+        <div id="resultNumbers" class="flex flex-wrap gap-3"></div>
+    </div>
+
+    <script>
+        (function () {
+            var btn = document.getElementById('calculateBtn');
+            var select = document.getElementById('formulaSelect');
+            var input = document.getElementById('inputNumbers');
+            var errorBox = document.getElementById('calcError');
+            var resultBox = document.getElementById('calcResult');
+            var resultNumbers = document.getElementById('resultNumbers');
+            var resultName = document.getElementById('resultFormulaName');
+
+            function getCookie(name) {
+                var cookies = document.cookie ? document.cookie.split(';') : [];
+                for (var i = 0; i < cookies.length; i++) {
+                    var c = cookies[i].trim();
+                    if (c.substring(0, name.length + 1) === name + '=') {
+                        return decodeURIComponent(c.substring(name.length + 1));
+                    }
+                }
+                return null;
+            }
+
+            btn.addEventListener('click', function () {
+                errorBox.classList.add('hidden');
+                resultBox.classList.add('hidden');
+
+                fetch('/lotto_formula/api/calculate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        formula_id: select.value,
+                        input_numbers: input.value.trim()
+                    })
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data.success) {
+                        errorBox.textContent = data.error || 'คำนวณไม่สำเร็จ';
+                        errorBox.classList.remove('hidden');
+                        return;
+                    }
+                    resultNumbers.innerHTML = '';
+                    data.calculated_numbers.forEach(function (num) {
+                        var span = document.createElement('span');
+                        span.className = 'badge bg-primary text-primary-foreground text-2xl font-bold px-4 py-2';
+                        span.textContent = num;
+                        resultNumbers.appendChild(span);
+                    });
+                    resultName.textContent = data.formula_name;
+                    resultBox.classList.remove('hidden');
+                })
+                .catch(function () {
+                    errorBox.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ลองใหม่อีกครั้ง';
+                    errorBox.classList.remove('hidden');
+                });
+            });
+        })();
+    </script>
+    {% else %}
+    <div class="card p-10 text-center">
+        <i aria-hidden="true" class="fas fa-calculator text-4xl text-muted-foreground mb-4" aria-hidden="true"></i>
+        <p class="text-lg font-semibold text-foreground mb-2">ยังไม่มีสูตรในระบบ</p>
+        <p class="text-muted-foreground mb-6">ผู้ดูแลระบบสามารถเพิ่มสูตรได้จากหน้าจัดการ เมื่อมีสูตรแล้ว เครื่องคำนวณจะพร้อมใช้งานทันที</p>
+        <a href="/lotto_formula/" class="btn btn-outline">กลับหน้าสูตรคำนวณ</a>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

@@ -10,7 +10,7 @@
         <!-- Header Section -->
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-foreground mb-2">
-                <i class="fas fa-search text-primary mr-3"></i>
+                <i aria-hidden="true" class="fas fa-search text-primary mr-3"></i>
                 ตรวจหวย
             </h1>
             <p class="text-lg text-muted-foreground">ตรวจสอบเลขหวยของคุณกับผลรางวัลล่าสุด</p>
@@ -20,7 +20,7 @@
         <div class="max-w-2xl mx-auto card p-8 mb-8">
             <div class="mb-6">
                 <label class="block text-lg font-semibold text-foreground mb-3">
-                    <i class="fas fa-edit text-primary mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-edit text-primary mr-2"></i>
                     กรอกเลขสลาก (สูงสุด 10 หมายเลข, คั่นด้วยคอมมา)
                 </label>
                 <input 
@@ -34,7 +34,7 @@
 
             <div class="mb-6">
                 <label class="block text-lg font-semibold text-foreground mb-3">
-                    <i class="fas fa-calendar text-primary mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-calendar text-primary mr-2"></i>
                     เลือกวันที่ออกรางวัล
                 </label>
                 <select 
@@ -53,7 +53,7 @@
                 onclick="checkLottoAndLoadFullResults()" 
                 class="btn btn-primary w-full py-4 text-xl"
             >
-                <i class="fas fa-search mr-2"></i>
+                <i aria-hidden="true" class="fas fa-search mr-2"></i>
                 ตรวจหวย
             </button>
 
@@ -67,7 +67,7 @@
         <div class="max-w-6xl mx-auto card p-8">
             <div class="text-center mb-8">
                 <h2 class="text-3xl font-bold text-foreground">
-                    <i class="fas fa-trophy text-primary mr-3"></i>
+                    <i aria-hidden="true" class="fas fa-trophy text-primary mr-3"></i>
                     ผลสลากกินแบ่งรัฐบาล
                 </h2>
             </div>
@@ -252,25 +252,25 @@ async function loadLottoResultsForDate(selectedDateFull) {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <div class="card bg-gradient-to-br from-primary to-accent text-primary-foreground p-6 text-center">
                     <h4 class="text-lg font-semibold mb-2">รางวัลที่ 1</h4>
-                    <p class="text-sm mb-3 opacity-90">1 รางวัลๆ 6,000,000 บาท</p>
+                    <p class="text-sm mb-3 opacity-90">1 รางวัล รางวัลละ 6,000,000 บาท</p>
                     <div class="text-3xl font-bold">${firstPrizeNumber}</div>
                 </div>
                 
                 <div class="card bg-gradient-to-br from-secondary to-primary/80 text-secondary-foreground p-6 text-center">
                     <h4 class="text-lg font-semibold mb-2">เลขหน้า 3 ตัว</h4>
-                    <p class="text-sm mb-3 opacity-90">2 รางวัลๆ 4,000 บาท</p>
+                    <p class="text-sm mb-3 opacity-90">2 รางวัล รางวัลละ 4,000 บาท</p>
                     <div class="text-2xl font-bold">${front3Numbers}</div>
                 </div>
                 
                 <div class="card bg-gradient-to-br from-accent to-secondary/80 text-accent-foreground p-6 text-center">
                     <h4 class="text-lg font-semibold mb-2">เลขท้าย 3 ตัว</h4>
-                    <p class="text-sm mb-3 opacity-90">2 รางวัลๆ 4,000 บาท</p>
+                    <p class="text-sm mb-3 opacity-90">2 รางวัล รางวัลละ 4,000 บาท</p>
                     <div class="text-2xl font-bold">${last3Numbers}</div>
                 </div>
                 
                 <div class="card bg-gradient-to-br from-primary/90 to-secondary text-primary-foreground p-6 text-center">
                     <h4 class="text-lg font-semibold mb-2">เลขท้าย 2 ตัว</h4>
-                    <p class="text-sm mb-3 opacity-90">1 รางวัลๆ 2,000 บาท</p>
+                    <p class="text-sm mb-3 opacity-90">1 รางวัล รางวัลละ 2,000 บาท</p>
                     <div class="text-2xl font-bold">${last2Number}</div>
                 </div>
             </div>
@@ -281,7 +281,7 @@ async function loadLottoResultsForDate(selectedDateFull) {
             htmlContent += `
                 <div class="card bg-gradient-to-br from-primary to-accent text-primary-foreground p-6 text-center mb-8">
                     <h4 class="text-xl font-semibold mb-2">รางวัลข้างเคียงรางวัลที่ 1</h4>
-                    <p class="text-sm mb-3 opacity-90">2 รางวัลๆ 100,000 บาท</p>
+                    <p class="text-sm mb-3 opacity-90">2 รางวัล รางวัลละ 100,000 บาท</p>
                     <div class="text-2xl font-bold">${near1Numbers.join(' ')}</div>
                 </div>
             `;
@@ -292,8 +292,8 @@ async function loadLottoResultsForDate(selectedDateFull) {
             htmlContent += `
                 <div class="card p-6 mb-8">
                     <h4 class="text-2xl font-bold text-foreground text-center mb-4">
-                        <i class="fas fa-medal text-secondary mr-2"></i>
-                        รางวัลที่ 2 (5 รางวัลๆ 200,000 บาท)
+                        <i aria-hidden="true" class="fas fa-medal text-secondary mr-2"></i>
+                        รางวัลที่ 2 (5 รางวัล รางวัลละ 200,000 บาท)
                     </h4>
                     <div class="flex flex-wrap justify-center gap-3">
             `;
@@ -308,8 +308,8 @@ async function loadLottoResultsForDate(selectedDateFull) {
             htmlContent += `
                 <div class="card p-6 mb-8">
                     <h4 class="text-2xl font-bold text-foreground text-center mb-4">
-                        <i class="fas fa-award text-accent mr-2"></i>
-                        รางวัลที่ 3 (10 รางวัลๆ 80,000 บาท)
+                        <i aria-hidden="true" class="fas fa-award text-accent mr-2"></i>
+                        รางวัลที่ 3 (10 รางวัล รางวัลละ 80,000 บาท)
                     </h4>
                     <div class="flex flex-wrap justify-center gap-3">
             `;
@@ -322,33 +322,41 @@ async function loadLottoResultsForDate(selectedDateFull) {
         // รางวัลที่ 4
         if (lottoData.fourth?.number && lottoData.fourth.number.length > 0) {
             htmlContent += `
-                <div class="card p-6 mb-8">
-                    <h4 class="text-2xl font-bold text-foreground text-center mb-4">
-                        <i class="fas fa-gift text-primary mr-2"></i>
-                        รางวัลที่ 4 (50 รางวัลๆ 40,000 บาท)
-                    </h4>
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                <div class="card mb-8">
+                    <button type="button" class="w-full p-6 flex items-center justify-between" aria-expanded="false" aria-controls="fourthPrizeList" onclick="togglePrize(this, 'fourthPrizeList')">
+                        <h4 class="text-2xl font-bold text-foreground">
+                            <i aria-hidden="true" class="fas fa-gift text-primary mr-2" aria-hidden="true"></i>
+                            รางวัลที่ 4 (50 รางวัล รางวัลละ 40,000 บาท)
+                        </h4>
+                        <i aria-hidden="true" class="fas fa-chevron-down text-muted-foreground transition-transform" aria-hidden="true"></i>
+                    </button>
+                    <div id="fourthPrizeList" class="hidden px-6 pb-6">
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             `;
             lottoData.fourth.number.forEach(item => {
                 htmlContent += `<span class="badge badge-outline px-3 py-2 font-semibold text-center">${item.value}</span>`;
             });
-            htmlContent += `</div></div>`;
+            htmlContent += `</div></div></div>`;
         }
 
         // รางวัลที่ 5
         if (lottoData.fifth?.number && lottoData.fifth.number.length > 0) {
             htmlContent += `
-                <div class="card p-6 mb-8">
-                    <h4 class="text-2xl font-bold text-foreground text-center mb-4">
-                        <i class="fas fa-star text-primary mr-2"></i>
-                        รางวัลที่ 5 (100 รางวัลๆ 20,000 บาท)
-                    </h4>
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                <div class="card mb-8">
+                    <button type="button" class="w-full p-6 flex items-center justify-between" aria-expanded="false" aria-controls="fifthPrizeList" onclick="togglePrize(this, 'fifthPrizeList')">
+                        <h4 class="text-2xl font-bold text-foreground">
+                            <i aria-hidden="true" class="fas fa-star text-primary mr-2" aria-hidden="true"></i>
+                            รางวัลที่ 5 (100 รางวัล รางวัลละ 20,000 บาท)
+                        </h4>
+                        <i aria-hidden="true" class="fas fa-chevron-down text-muted-foreground transition-transform" aria-hidden="true"></i>
+                    </button>
+                    <div id="fifthPrizeList" class="hidden px-6 pb-6">
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             `;
             lottoData.fifth.number.forEach(item => {
                 htmlContent += `<span class="badge badge-outline px-3 py-2 font-semibold text-center">${item.value}</span>`;
             });
-            htmlContent += `</div></div>`;
+            htmlContent += `</div></div></div>`;
         }
 
         displayDiv.innerHTML = htmlContent;
@@ -550,6 +558,16 @@ function handleEnterKey(event) {
 function onDateChange() {
     const selectedDate = document.getElementById("lottoDate").value;
     loadLottoResultsForDate(selectedDate);
+}
+
+// ฟังก์ชันเปิด/ปิดรายการรางวัลจำนวนมาก
+function togglePrize(button, listId) {
+    const list = document.getElementById(listId);
+    if (!list) return;
+    const isOpen = !list.classList.toggle('hidden');
+    button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    const icon = button.querySelector('i.fa-chevron-down');
+    if (icon) icon.style.transform = isOpen ? 'rotate(180deg)' : '';
 }
 
 // ฟังก์ชันสำหรับตรวจสอบความถูกต้องของข้อมูลหวย

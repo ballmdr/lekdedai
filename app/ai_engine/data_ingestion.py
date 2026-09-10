@@ -19,6 +19,11 @@ from dreams.models import DreamInterpretation
 
 logger = logging.getLogger(__name__)
 
+
+def _mock_ingestion_allowed() -> bool:
+    """Mock ใช้ได้เฉพาะ dev/test ที่เปิด flag ชัดเจน ห้ามปน production."""
+    return bool(getattr(settings, "ALLOW_MOCK_INGESTION", False))
+
 class TextProcessor:
     """ประมวลผลข้อความและสกัดข้อมูล"""
     
@@ -237,8 +242,15 @@ class NewsIngester:
                 
                 # TODO: เรียก API จริงและประมวลผลข้อมูล
                 # response = requests.get(data_source.api_endpoint, headers=headers, timeout=30)
-                
-                # สำหรับการทดสอบ - สร้างข้อมูลจำลอง
+
+                if not _mock_ingestion_allowed():
+                    logger.warning(
+                        "External API %s ยังไม่เชื่อมจริง และ mock ถูกปิด — ข้าม",
+                        data_source.name,
+                    )
+                    return records
+
+                # เฉพาะ dev/test ที่เปิด ALLOW_MOCK_INGESTION — สร้างข้อมูลจำลอง
                 mock_articles = self._generate_mock_news_data()
                 
                 for article_data in mock_articles:
@@ -316,10 +328,14 @@ class SocialMediaIngester:
         """เก็บข้อมูลการพูดถึงหวยในโซเชียล"""
         
         records = []
-        
-        # ตัวอย่างการสร้างข้อมูลโซเชียลจำลอง
+
+        if not _mock_ingestion_allowed():
+            logger.warning("Social ingestion ยังไม่เชื่อม API จริง และ mock ถูกปิด — ข้าม")
+            return records
+
+        # เฉพาะ dev/test ที่เปิด ALLOW_MOCK_INGESTION
         # ในการใช้งานจริงจะต้องเชื่อมต่อกับ API ของแต่ละแพลตฟอร์ม
-        
+
         mock_posts = self._generate_mock_social_data()
         
         for post_data in mock_posts:
@@ -485,8 +501,12 @@ class TrendDataIngester:
         """เก็บข้อมูล Google Trends (จำลอง)"""
         
         records = []
-        
-        # สร้างข้อมูล Google Trends จำลอง
+
+        if not _mock_ingestion_allowed():
+            logger.warning("Google Trends ยังไม่เชื่อม API จริง และ mock ถูกปิด — ข้าม")
+            return records
+
+        # เฉพาะ dev/test ที่เปิด ALLOW_MOCK_INGESTION — สร้างข้อมูลจำลอง
         mock_trends = self._generate_mock_trends_data()
         
         for trend_data in mock_trends:
@@ -616,8 +636,8 @@ class DataIngestionManager:
             elif data_source.source_type == 'dreams':
                 records = self.dream_ingester.ingest_dream_interpretations(data_source)
             elif data_source.source_type == 'trends':
-                records = self.trend_ingester.ingest_trend_data(data_source)
-            
+                records = self.trend_ingester.ingest_google_trends(data_source)
+
             if records:
                 # อัปเดตเวลาการเก็บข้อมูล
                 data_source.last_scraped = timezone.now()

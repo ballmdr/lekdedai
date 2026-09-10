@@ -51,7 +51,8 @@ def get_next_draw_prediction():
             statistical_numbers.append({
                 'number': hot_num.number,
                 'source': 'hot_stats',
-                'confidence': min(85, 50 + (hot_num.total_appearances * 5)),
+                # คะแนนจัดอันดับภายในสูตรนี้เท่านั้น (0-100) ไม่ใช่โอกาสถูก
+                'score': min(85, 50 + (hot_num.total_appearances * 5)),
                 'reason': f'ออกแล้ว {hot_num.total_appearances} ครั้ง'
             })
         
@@ -66,7 +67,8 @@ def get_next_draw_prediction():
             statistical_numbers.append({
                 'number': cold_num.number,
                 'source': 'cold_stats',
-                'confidence': min(75, 40 + (cold_num.days_since_last // 10)),
+                # คะแนนจัดอันดับภายในสูตรนี้เท่านั้น (0-100) ไม่ใช่โอกาสถูก
+                'score': min(75, 40 + (cold_num.days_since_last // 10)),
                 'reason': f'ไม่ออก {cold_num.days_since_last} วัน'
             })
             
@@ -76,6 +78,7 @@ def get_next_draw_prediction():
     
     # Part 2: เลขจากข่าวใหญ่ - ตั้งแต่งวดที่แล้วจนถึงปัจจุบัน
     major_news_numbers = []
+    analyzed_articles = 0
     
     try:
         # ข่าวใหญ่ที่มีเลขตั้งแต่งวดที่แล้ว
@@ -86,14 +89,19 @@ def get_next_draw_prediction():
         
         for article in major_news:
             numbers = article.get_numbers_only()
+            used = 0
             for num in numbers[:2]:  # เอา 2 เลขแรกต่อข่าว
                 if len(num) == 2:
                     major_news_numbers.append({
                         'number': num,
                         'source': 'major_news',
-                        'confidence': 90,  # ค่าคงที่สำหรับข่าว
+                        # คะแนนจัดอันดับคงที่สำหรับข่าว (ยังไม่มีวิธีวัดจริง) ไม่ใช่โอกาสถูก
+                        'score': 90,
                         'reason': f'จากข่าว: {article.title[:30]}...'
                     })
+                    used += 1
+            if used:
+                analyzed_articles += 1
         
     except Exception:
         pass
@@ -105,7 +113,7 @@ def get_next_draw_prediction():
     seen_numbers = set()
     unique_numbers = []
     
-    for item in sorted(all_prediction_numbers, key=lambda x: x['confidence'], reverse=True):
+    for item in sorted(all_prediction_numbers, key=lambda x: x['score'], reverse=True):
         if item['number'] not in seen_numbers:
             unique_numbers.append(item)
             seen_numbers.add(item['number'])
@@ -113,11 +121,18 @@ def get_next_draw_prediction():
         if len(unique_numbers) >= 6:  # จำกัดที่ 6 เลข
             break
     
+    has_data = bool(unique_numbers)
+    if has_data:
+        data_source_summary = f'วิเคราะห์จากสถิติ + ข่าวใหญ่ตั้งแต่ {last_draw_date.strftime("%d/%m/%Y")}'
+    else:
+        data_source_summary = 'ยังไม่มีข้อมูลสถิติหรือข่าวที่วิเคราะห์ได้ จึงยังไม่แสดงเลขแนะนำ'
+
     return {
         'prediction_numbers': unique_numbers,
-        'data_source_summary': f'วิเคราะห์จากสถิติ + ข่าวใหญ่ตั้งแต่ {last_draw_date.strftime("%d/%m/%Y")}',
+        'has_data': has_data,
+        'data_source_summary': data_source_summary,
         'last_draw_date': last_draw_date,
-        'total_news_analyzed': len(major_news_numbers),
+        'total_news_analyzed': analyzed_articles,
         'statistical_coverage': len(statistical_numbers)
     }
 
@@ -192,13 +207,15 @@ def home(request):
     total_predictions_old = LuckyNumberPrediction.objects.count()
     total_predictions = total_predictions_new + total_predictions_old
     
-    # ความแม่นยำจากระบบใหม่
+    # ความแม่นยำจากระบบใหม่ (None = ยังไม่มีข้อมูลงวดที่ตรวจแล้ว ห้ามโชว์ค่าจำลอง)
     accuracy_records = PredictionAccuracyTracking.objects.all()
     if accuracy_records.exists():
         correct_predictions = accuracy_records.filter(two_digit_accuracy=True).count()
         accuracy_percentage = (correct_predictions / accuracy_records.count()) * 100
+        has_accuracy_data = True
     else:
-        accuracy_percentage = 87  # ค่าเริ่มต้น
+        accuracy_percentage = None
+        has_accuracy_data = False
     
     # ข้อมูลที่เก็บวันนี้
     today_data_records = DataIngestionRecord.objects.filter(
@@ -244,8 +261,9 @@ def home(request):
         # 'popular_lucky_locations': [],  # Lucky spots feature removed
         'next_draw_info': next_draw_info,
         'site_stats': {
-            'total_visitors_today': total_views_today + 150,  # รวม views + estimate
-            'accuracy_percentage': int(accuracy_percentage),
+            'total_visitors_today': total_views_today,  # ยอดวิวจริงเท่านั้น ห้ามบวก estimate
+            'accuracy_percentage': int(accuracy_percentage) if accuracy_percentage is not None else None,
+            'has_accuracy_data': has_accuracy_data,
             'total_predictions': total_predictions,
             'total_news_today': today_data_records,  # ข้อมูลที่ AI เก็บได้วันนี้
         },

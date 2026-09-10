@@ -31,7 +31,7 @@
 <div class="min-h-screen bg-background">
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold text-center mb-8 text-foreground">
-            <i class="fas fa-chart-bar text-primary mr-3"></i>
+            <i aria-hidden="true" class="fas fa-chart-bar text-primary mr-3"></i>
             สถิติหวยย้อนหลัง
         </h1>
         
@@ -47,14 +47,14 @@
                     class="btn btn-ghost btn-sm"
                     title="ซิงค์ข้อมูลล่าสุด"
                 >
-                    <i class="fas fa-sync-alt mr-1"></i>
+                    <i aria-hidden="true" class="fas fa-sync-alt mr-1"></i>
                     <span class="hidden sm:inline">ซิงค์ข้อมูล</span>
                 </button>
             </div>
             {% endif %}
             
             <h2 class="text-2xl font-bold mb-4 text-foreground">
-                <i class="fas fa-chart-line text-primary mr-2"></i>
+                <i aria-hidden="true" class="fas fa-chart-line text-primary mr-2"></i>
                 สรุปภาพรวม
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -77,16 +77,17 @@
             </div>
             
             <div class="mt-4 flex items-center justify-center text-xs text-muted-foreground">
-                <i class="fas fa-clock mr-1"></i>
+                <i aria-hidden="true" class="fas fa-clock mr-1"></i>
                 <span id="lastUpdated">อัปเดตล่าสุด: {{ stats_summary.date_range.to }}</span>
             </div>
         </div>
         {% endif %}
 
+        {% if has_data %}
         <!-- ค้นหาเลข (ย้ายมาไว้ด้านบน) -->
         <div class="card p-6 mb-8">
             <h2 class="text-2xl font-bold mb-4 text-foreground">
-                <i class="fas fa-search text-primary mr-2"></i>
+                <i aria-hidden="true" class="fas fa-search text-primary mr-2"></i>
                 ค้นหาสถิติเลข
             </h2>
             <p class="text-sm text-muted-foreground mb-4">ค้นหาสถิติของเลขที่คุณสนใจ วิเคราะห์จากผลหวยย้อนหลัง {{ stats_summary.total_draws }} งวด</p>
@@ -95,6 +96,7 @@
                     type="text" 
                     id="searchNumber" 
                     placeholder="ใส่เลข 2-3 หลัก (เช่น 01, 123)" 
+                    aria-label="ค้นหาสถิติเลข 2-3 หลัก"
                     maxlength="3"
                     class="input flex-1"
                 >
@@ -102,7 +104,7 @@
                     onclick="searchNumber()"
                     class="btn btn-primary"
                 >
-                    <i class="fas fa-search mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-search mr-2"></i>
                     ค้นหา
                 </button>
             </div>
@@ -116,7 +118,7 @@
             <!-- เลขที่ออกบ่อย -->
             <div class="card p-6">
                 <h2 class="text-2xl font-bold mb-4 text-foreground">
-                    <i class="fas fa-fire text-accent mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-fire text-accent mr-2"></i>
                     เลขฮอต (ออกบ่อย)
                 </h2>
                 <div class="chart-container mb-4">
@@ -136,7 +138,7 @@
             <!-- เลขที่ไม่ออกนาน -->
             <div class="card p-6">
                 <h2 class="text-2xl font-bold mb-4 text-foreground">
-                    <i class="fas fa-snowflake text-secondary mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-snowflake text-secondary mr-2"></i>
                     เลขเย็น (ไม่ออกนาน)
                 </h2>
                 <div class="chart-container mb-4">
@@ -156,7 +158,7 @@
             <!-- สถิติรายเดือน -->
             <div class="card p-6 lg:col-span-2">
                 <h2 class="text-2xl font-bold mb-4 text-foreground">
-                    <i class="fas fa-calendar-alt text-primary mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-calendar-alt text-primary mr-2"></i>
                     สถิติเลขที่ออกบ่อยในแต่ละเดือน
                 </h2>
                 <p class="text-sm text-muted-foreground mb-4">
@@ -197,7 +199,7 @@
             <!-- สถิติเลขวิ่ง (0-9) -->
             <div class="card p-6">
                 <h2 class="text-2xl font-bold mb-4 text-foreground">
-                    <i class="fas fa-running text-primary mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-running text-primary mr-2"></i>
                     สถิติเลขวิ่ง (0-9)
                 </h2>
                 <p class="text-sm text-muted-foreground mb-4">
@@ -209,7 +211,9 @@
                          title="เลข {{ digit }}: ออกทั้งหมด {{ stats.total_count }} ครั้ง (เลขท้าย: {{ stats.two_digit_count }}, รางวัลที่ 1: {{ stats.first_prize_count }})">
                         <div class="font-bold text-2xl text-amber-600">{{ digit }}</div>
                         <div class="text-xs text-muted-foreground mt-1">{{ stats.total_count }} ครั้ง</div>
-                        <div class="text-xs text-muted-foreground">{{ stats.days_since_last }} วัน</div>
+                        <div class="text-xs text-muted-foreground">
+                            {% if stats.days_since_last == 999 %}ยังไม่เคยออก{% else %}{{ stats.days_since_last }} วัน{% endif %}
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
@@ -218,7 +222,7 @@
             <!-- สถิติเลขเบิ้ล/เลขหาม -->
             <div class="card p-6">
                 <h2 class="text-2xl font-bold mb-4 text-foreground">
-                    <i class="fas fa-clone text-accent mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-clone text-accent mr-2"></i>
                     สถิติเลขเบิ้ล/เลขหาม
                 </h2>
                 <p class="text-sm text-muted-foreground mb-4">
@@ -261,7 +265,7 @@
             <!-- สถิติเลขเรียง -->
             <div class="card p-6 lg:col-span-2">
                 <h2 class="text-2xl font-bold mb-4 text-foreground">
-                    <i class="fas fa-sort-numeric-up text-secondary mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-sort-numeric-up text-secondary mr-2"></i>
                     สถิติเลขเรียง
                 </h2>
                 <p class="text-sm text-muted-foreground mb-4">
@@ -308,7 +312,7 @@
             <!-- ตารางผลหวยย้อนหลัง -->
             <div class="card p-6 lg:col-span-2">
                 <h2 class="text-2xl font-bold mb-4 text-foreground">
-                    <i class="fas fa-list text-primary mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-list text-primary mr-2"></i>
                     ผลหวยย้อนหลัง 10 งวด
                 </h2>
                 <div class="overflow-x-auto">
@@ -357,6 +361,14 @@
                 </div>
             </div>
         </div>
+        {% else %}
+        <div class="card p-10 text-center">
+            <i aria-hidden="true" class="fas fa-chart-bar text-4xl text-muted-foreground mb-4" aria-hidden="true"></i>
+            <p class="text-lg font-semibold text-foreground mb-2">ยังไม่มีข้อมูลสถิติ</p>
+            <p class="text-muted-foreground mb-6">ต้องมีผลหวยย้อนหลังในระบบก่อน ระบบจึงจะคำนวณเลขฮอต/เย็นและสถิติต่างๆ ได้</p>
+            <a href="/lottery_checker/" class="btn btn-primary">ไปหน้าผลหวยล่าสุด</a>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -380,6 +392,7 @@ function getCSRFToken() {
 }
 </script>
 <script>
+{% if has_data %}
 // Hot Numbers Chart
 const hotCtx = document.getElementById('hotNumbersChart').getContext('2d');
 new Chart(hotCtx, {
@@ -493,6 +506,7 @@ new Chart(coldCtx, {
 });
 
 // Monthly stats now displayed as cards instead of chart
+{% endif %}
 
 // ฟังก์ชันค้นหาเลข
 async function searchNumber() {
@@ -619,7 +633,7 @@ async function syncLatestData() {
         if (response.ok && data.success) {
             successMsg = document.createElement('div');
             successMsg.className = 'fixed top-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg z-50';
-            successMsg.innerHTML = `<i class="fas fa-check mr-2"></i>${data.message || 'ซิงค์ข้อมูลเรียบร้อย'}`;
+            successMsg.innerHTML = `<i aria-hidden="true" class="fas fa-check mr-2"></i>${data.message || 'ซิงค์ข้อมูลเรียบร้อย'}`;
             document.body.appendChild(successMsg);
             
             // Reload หน้าเพื่อแสดงข้อมูลใหม่
@@ -632,7 +646,7 @@ async function syncLatestData() {
         console.error('Error syncing data:', error);
         errorMsg = document.createElement('div');
         errorMsg.className = 'fixed top-4 right-4 bg-destructive text-destructive-foreground px-4 py-2 rounded-lg shadow-lg z-50';
-        errorMsg.innerHTML = `<i class="fas fa-times-circle mr-2"></i>${error.message}`;
+        errorMsg.innerHTML = `<i aria-hidden="true" class="fas fa-times-circle mr-2"></i>${error.message}`;
         document.body.appendChild(errorMsg);
     } finally {
         // คืนค่า button state
@@ -648,10 +662,13 @@ async function syncLatestData() {
 }
 
 // Enter key support
-document.getElementById('searchNumber').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        searchNumber();
-    }
-});
+var searchInput = document.getElementById('searchNumber');
+if (searchInput) {
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchNumber();
+        }
+    });
+}
 </script>
 {% endblock %}

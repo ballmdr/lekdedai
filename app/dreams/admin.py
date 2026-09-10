@@ -20,13 +20,13 @@ class DreamInterpretationAdmin(admin.ModelAdmin):
     list_filter = ['interpreted_at', 'sentiment']
     search_fields = ['dream_text', 'main_symbols', 'suggested_numbers']
     readonly_fields = [
-        'interpreted_at', 'ip_address', 'user', 'dream_text',
+        'interpreted_at', 'user', 'dream_text',
         'interpretation', 'sentiment', 'main_symbols',
         'predicted_numbers_json', 'keywords_found', 'suggested_numbers'
     ]
     fieldsets = (
         ('ข้อมูลหลัก', {
-            'fields': ('interpreted_at', 'user', 'dream_text', 'ip_address')
+            'fields': ('interpreted_at', 'user', 'dream_text')
         }),
         ('ผลการทำนาย (Seer-AI)', {
             'fields': ('sentiment', 'main_symbols', 'interpretation', 'predicted_numbers_json')

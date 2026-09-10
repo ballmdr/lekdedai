@@ -19,20 +19,39 @@
         <!-- Main Header -->
         <div class="text-center mb-12">
           <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-full text-blue-700 font-semibold mb-4">
-            <i class="fas fa-chart-line"></i>
+            <i aria-hidden="true" class="fas fa-chart-line"></i>
             <span>NEXT DRAW PREDICTION</span>
-            <i class="fas fa-crystal-ball"></i>
+            <i aria-hidden="true" class="fas fa-crystal-ball"></i>
           </div>
           
           <h2 class="text-4xl md:text-6xl font-serif font-bold text-foreground mb-4 leading-tight">
             <span class="text-blue-600">🎯 {{ dynamic_lottery_title }}</span>
           </h2>
+          {% if next_draw_info %}
+          <p class="text-lg font-semibold text-blue-700 mb-2">
+            งวดวันที่ {{ next_draw_info.formatted_date }} · เหลืออีก {{ next_draw_info.days_remaining }} วัน
+          </p>
+          {% endif %}
           
           <p class="text-xl text-muted-foreground mb-2">วิเคราะห์จากสถิติและข่าวใหญ่</p>
-          <p class="text-base text-muted-foreground">{{ next_draw_prediction.data_source_summary|default:"วิเคราะห์จากสถิติเลขที่ออกทั้งหมด + ข่าวใหญ่ตั้งแต่งวดที่แล้ว" }}</p>
+          <p class="text-base text-muted-foreground">{{ next_draw_prediction.data_source_summary }}</p>
+
+          <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="/dreams/"
+               class="inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold text-lg rounded-xl hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+              <i aria-hidden="true" class="fas fa-moon"></i>
+              <span>วิเคราะห์ความฝันของฉัน</span>
+              <i aria-hidden="true" class="fas fa-arrow-right"></i>
+            </a>
+            <a href="/lottery_checker/"
+               class="inline-flex items-center justify-center gap-3 px-8 py-4 bg-white border-2 border-blue-600 text-blue-700 font-bold text-lg rounded-xl hover:shadow-xl transition-all duration-300">
+              <i aria-hidden="true" class="fas fa-search"></i>
+              <span>ตรวจผลหวย</span>
+            </a>
+          </div>
           
           <div class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 rounded-full text-indigo-700 text-sm">
-            <i class="fas fa-sync"></i>
+            <i aria-hidden="true" class="fas fa-sync"></i>
             เลขอาจเปลี่ยนเมื่อมีข่าวใหม่
           </div>
         </div>
@@ -44,10 +63,10 @@
           <div class="card border-2 border-blue-300/50 bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-xl transition-all duration-300">
             <div class="p-8 text-center">
               <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-chart-bar text-2xl text-white"></i>
+                <i aria-hidden="true" class="fas fa-chart-bar text-2xl text-white"></i>
               </div>
               <h3 class="text-xl font-bold text-foreground mb-2">📊 จากสถิติ</h3>
-              <p class="text-sm text-muted-foreground mb-4">เลขฮอต เลขเย็น และเลขแนวโน้ม</p>
+              <p class="text-sm text-muted-foreground mb-4">เลข 2 ตัวฮอต/เย็นจากงวดที่ผ่านมา</p>
               <div class="flex justify-center gap-3 flex-wrap mb-4">
                 {% for item in next_draw_prediction.prediction_numbers %}
                   {% if item.source == 'hot_stats' or item.source == 'cold_stats' %}
@@ -56,15 +75,14 @@
                          title="{{ item.reason }}">
                       {{ item.number }}
                     </div>
-                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                      {{ item.confidence|floatformat:0 }}
+                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold"
+                         title="คะแนนจัดอันดับ ไม่ใช่โอกาสถูก">
+                      {{ item.score|floatformat:0 }}
                     </div>
                   </div>
                   {% endif %}
                 {% empty %}
-                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">47</div>
-                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">23</div>
-                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">89</div>
+                <div class="text-sm text-muted-foreground">ยังไม่มีข้อมูลสถิติ</div>
                 {% endfor %}
               </div>
               <p class="text-xs text-muted-foreground">🔢 สถิติจากงวดที่ผ่านมา</p>
@@ -75,10 +93,10 @@
           <div class="card border-2 border-purple-300/50 bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-xl transition-all duration-300">
             <div class="p-8 text-center">
               <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-newspaper text-2xl text-white"></i>
+                <i aria-hidden="true" class="fas fa-newspaper text-2xl text-white"></i>
               </div>
               <h3 class="text-xl font-bold text-foreground mb-2">📰 จากข่าวใหญ่</h3>
-              <p class="text-sm text-muted-foreground mb-4">ข่าวคะแนนสูง ≥80 ตั้งแต่งวดที่แล้ว</p>
+              <p class="text-sm text-muted-foreground mb-4">เลข 2 ตัวจากข่าวที่วิเคราะห์ได้</p>
               <div class="flex justify-center gap-3 flex-wrap mb-4">
                 {% for item in next_draw_prediction.prediction_numbers %}
                   {% if item.source == 'major_news' %}
@@ -87,18 +105,17 @@
                          title="{{ item.reason }}">
                       {{ item.number }}
                     </div>
-                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                      {{ item.confidence|floatformat:0 }}
+                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold"
+                         title="คะแนนจัดอันดับ ไม่ใช่โอกาสถูก">
+                      {{ item.score|floatformat:0 }}
                     </div>
                   </div>
                   {% endif %}
                 {% empty %}
-                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">15</div>
-                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">72</div>
-                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">34</div>
+                <div class="text-sm text-muted-foreground">ยังไม่มีข้อมูลข่าว</div>
                 {% endfor %}
               </div>
-              <p class="text-xs text-muted-foreground">📈 วิเคราะห์จาก {{ next_draw_prediction.total_news_analyzed|default:"5" }} ข่าวใหญ่</p>
+              <p class="text-xs text-muted-foreground">📈 วิเคราะห์จาก {{ next_draw_prediction.total_news_analyzed }} ข่าวใหญ่</p>
             </div>
           </div>
           
@@ -107,20 +124,19 @@
         <!-- Combined Top Predictions -->
         <div class="card bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border-2 border-indigo-300/50 mb-8">
           <div class="p-8 text-center">
-            <h3 class="text-2xl font-bold text-foreground mb-4">🏆 เลขเด็ดแนะนำสูงสุด</h3>
-            <p class="text-muted-foreground mb-6">รวมทั้งสถิติและข่าว เรียงตามความน่าเชื่อถือ</p>
+            <h3 class="text-2xl font-bold text-foreground mb-4">🏆 เลขเด็ดแนะนำสูงสุด (เลข 2 ตัว)</h3>
+            <p class="text-muted-foreground mb-6">รวมทั้งสถิติและข่าว เรียงตามคะแนนจัดอันดับ (ไม่ใช่โอกาสถูก)</p>
             <div class="flex justify-center gap-4 flex-wrap">
               {% for number in next_draw_numbers|slice:":6" %}
               <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl hover:scale-110 transition-all duration-300">
                 {{ number }}
               </div>
               {% empty %}
-              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">47</div>
-              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">23</div>
-              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">89</div>
-              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">15</div>
-              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">72</div>
-              <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl">34</div>
+              <div class="text-center py-4">
+                <p class="text-lg font-semibold text-foreground mb-2">ยังไม่มีเลขแนะนำ</p>
+                <p class="text-muted-foreground mb-4">ต้องมีข้อมูลสถิติหรือข่าวที่วิเคราะห์ได้ก่อน ระบบจึงจะแสดงเลข</p>
+                <a href="/lottery_checker/" class="btn btn-outline">ดูผลหวยล่าสุดแทน</a>
+              </div>
               {% endfor %}
             </div>
           </div>
@@ -131,20 +147,25 @@
           <div class="p-6">
             <div class="flex items-start gap-4">
               <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-analytics text-white"></i>
+                <i aria-hidden="true" class="fas fa-analytics text-white"></i>
               </div>
               <div class="flex-1">
                 <h4 class="text-lg font-semibold text-foreground mb-2">สรุปการวิเคราะห์</h4>
                 <div class="grid md:grid-cols-2 gap-4 text-sm text-foreground">
                   <div>
-                    <span class="font-medium">📊 ข้อมูลสถิติ:</span> {{ next_draw_prediction.statistical_coverage|default:"10" }} รายการ<br>
-                    <span class="font-medium">📰 ข่าวที่วิเคราะห์:</span> {{ next_draw_prediction.total_news_analyzed|default:"5" }} บทความ<br>
-                    <span class="font-medium">📅 ข้อมูลตั้งแต่:</span> {{ next_draw_prediction.last_draw_date|date:"d/m/Y"|default:"20/08/2025" }}
+                    <span class="font-medium">📊 ข้อมูลสถิติ:</span> {{ next_draw_prediction.statistical_coverage }} รายการ<br>
+                    <span class="font-medium">📰 ข่าวที่วิเคราะห์:</span> {{ next_draw_prediction.total_news_analyzed }} บทความ<br>
+                    <span class="font-medium">📅 ข้อมูลตั้งแต่:</span> {% if next_draw_prediction.has_data %}{{ next_draw_prediction.last_draw_date|date:"d/m/Y" }}{% else %}—{% endif %}
                   </div>
                   <div>
-                    <span class="font-medium">🎯 วิธีการ:</span> สถิติ Hot/Cold + ข่าวคะแนนสูง<br>
+                    <span class="font-medium">🎯 วิธีการ:</span> สถิติ Hot/Cold + ข่าวที่มีเลข<br>
                     <span class="font-medium">🔄 อัปเดต:</span> เมื่อมีข่าวใหม่หรือข้อมูลสถิติ<br>
-                    <span class="font-medium">⚡ สถานะ:</span> <span class="text-green-600 font-semibold">พร้อมใช้งาน</span>
+                    <span class="font-medium">⚡ สถานะ:</span>
+                    {% if next_draw_prediction.has_data %}
+                    <span class="text-green-600 font-semibold">มีข้อมูลพร้อมวิเคราะห์</span>
+                    {% else %}
+                    <span class="text-orange-600 font-semibold">รอข้อมูล</span>
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -156,15 +177,15 @@
         <div class="text-center mt-8">
           <a href="{% url 'lotto_stats:statistics' %}" 
              class="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold text-lg rounded-xl hover:shadow-xl transform hover:scale-105 transition-all duration-300 mr-4">
-            <i class="fas fa-chart-bar"></i>
+            <i aria-hidden="true" class="fas fa-chart-bar"></i>
             <span>ดูสถิติโดยละเอียด</span>
-            <i class="fas fa-arrow-right"></i>
+            <i aria-hidden="true" class="fas fa-arrow-right"></i>
           </a>
-          <a href="/news/?category=major" 
+          <a href="/news/"
              class="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-700 text-white font-bold text-lg rounded-xl hover:shadow-xl transform hover:scale-105 transition-all duration-300">
-            <i class="fas fa-newspaper"></i>
-            <span>ดูข่าวใหญ่ทั้งหมด</span>
-            <i class="fas fa-external-link-alt"></i>
+            <i aria-hidden="true" class="fas fa-newspaper" aria-hidden="true"></i>
+            <span>ดูข่าวทั้งหมด</span>
+            <i aria-hidden="true" class="fas fa-external-link-alt"></i>
           </a>
           <p class="text-sm text-muted-foreground mt-3">
             ระบบวิเคราะห์อัตโนมัติ ผสมผสานสถิติและการวิเคราะห์ข่าว
@@ -188,7 +209,7 @@
           <div>
             <div class="flex items-center justify-between mb-6">
               <h3 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-                <i class="fas fa-newspaper text-primary"></i>
+                <i aria-hidden="true" class="fas fa-newspaper text-primary"></i>
                 ข่าวหวยล่าสุด
               </h3>
               <a href="/news/" class="btn btn-outline">ดูทั้งหมด</a>
@@ -206,7 +227,7 @@
                         </div>
                       {% else %}
                         <div class="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <i class="fas fa-newspaper text-primary text-2xl"></i>
+                          <i aria-hidden="true" class="fas fa-newspaper text-primary text-2xl"></i>
                         </div>
                       {% endif %}
                       <div class="flex-1">
@@ -221,10 +242,10 @@
                         {% endif %}
                         <div class="flex items-center gap-4 text-xs text-muted-foreground">
                           <span class="flex items-center gap-1">
-                            <i class="fas fa-clock"></i>{{ article.published_date|timesince }} ที่แล้ว
+                            <i aria-hidden="true" class="fas fa-clock"></i>{{ article.published_date|timesince }} ที่แล้ว
                           </span>
                           <span class="flex items-center gap-1">
-                            <i class="fas fa-users"></i>
+                            <i aria-hidden="true" class="fas fa-users"></i>
                             อ่าน {{ article.views }} ครั้ง
                           </span>
                         </div>
@@ -238,7 +259,7 @@
                 <div class="p-4">
                   <div class="flex gap-4">
                     <div class="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <i class="fas fa-newspaper text-primary text-2xl"></i>
+                      <i aria-hidden="true" class="fas fa-newspaper text-primary text-2xl"></i>
                     </div>
                     <div class="flex-1">
                       <h4 class="font-semibold mb-2">ยังไม่มีข่าวล่าสุด</h4>
@@ -256,7 +277,7 @@
           <!-- Dream Interpretation -->
           <div>
             <h3 class="text-2xl font-serif font-bold text-foreground mb-6 flex items-center gap-2">
-              <i class="fas fa-moon text-primary"></i>
+              <i aria-hidden="true" class="fas fa-moon text-primary"></i>
               แปลความฝันวันนี้
             </h3>
 
@@ -264,7 +285,7 @@
               <div class="p-6">
                 <div class="space-y-4">
                   <div class="bg-muted/50 p-4 rounded-lg">
-                    <h4 class="font-semibold mb-2 text-foreground">ความฝันยอดนิยม: "ฝันเห็นงูใหญ่สีเขียว"</h4>
+                    <h4 class="font-semibold mb-2 text-foreground">ตัวอย่าง: "ฝันเห็นงูใหญ่สีเขียว"</h4>
                     <p class="text-sm text-muted-foreground mb-3">
                       งูสีเขียวในความฝันแทนความโชคดีและเงินทอง แนะนำเลข 89, 98, 08
                     </p>
@@ -276,14 +297,15 @@
                   </div>
 
                   <div class="space-y-3">
-                    <textarea 
+                    <textarea
                       id="dreamInput"
-                      placeholder="เล่าความฝันของคุณ..." 
-                      rows="3" 
+                      aria-label="เล่าความฝันของคุณ"
+                      placeholder="เล่าความฝันของคุณ..."
+                      rows="3"
                       class="textarea resize-none"
                     ></textarea>
                     <button onclick="interpretDream()" id="dreamBtn" class="btn btn-primary w-full">
-                      <i class="fas fa-moon mr-2"></i>
+                      <i aria-hidden="true" class="fas fa-moon mr-2"></i>
                       แปลความฝันของฉัน
                     </button>
                   </div>
@@ -322,21 +344,23 @@
           <div class="card">
             <div class="p-4 border-b">
               <h3 class="font-serif flex items-center gap-2 text-lg font-bold text-foreground">
-                <i class="fas fa-search text-primary"></i>
+                <i aria-hidden="true" class="fas fa-search text-primary"></i>
                 ตรวจหวยด่วน
               </h3>
             </div>
             <div class="p-4 space-y-3">
-              <input 
+              <input
                 id="lotteryInput"
-                placeholder="กรอกเลข 6 หลัก" 
+                aria-label="กรอกเลขสลาก 6 หลัก"
+                placeholder="กรอกเลข 6 หลัก"
                 class="input"
                 maxlength="6"
                 pattern="[0-9]{6}"
+                inputmode="numeric"
               />
               <button onclick="checkLottery()" id="lotteryBtn" class="btn btn-primary w-full">ตรวจผลหวย</button>
               <a href="/lottery_checker/" class="btn btn-outline w-full">
-                <i class="fas fa-search mr-2"></i>
+                <i aria-hidden="true" class="fas fa-search mr-2"></i>
                 ไปหน้าตรวจหวยแบบละเอียด
               </a>
               {% if latest_lottery_result %}
@@ -367,7 +391,7 @@
           <div class="card">
             <div class="p-4 border-b">
               <h3 class="font-serif flex items-center gap-2 text-lg font-bold text-foreground">
-                <i class="fas fa-chart-bar text-secondary"></i>
+                <i aria-hidden="true" class="fas fa-chart-bar text-secondary"></i>
                 เลขฮิตประจำสัปดาห์
               </h3>
             </div>
@@ -405,7 +429,7 @@
           <div class="card border-primary/20">
             <div class="p-4 border-b">
               <h3 class="font-serif flex items-center gap-2 text-lg font-bold text-foreground">
-                <i class="fas fa-brain text-primary"></i>
+                <i aria-hidden="true" class="fas fa-brain text-primary"></i>
                 AI ทำนายใหม่
               </h3>
             </div>
@@ -413,17 +437,21 @@
               <div class="text-center space-y-4">
                 <div>
                   {% if latest_prediction %}
-                    <div class="text-2xl font-bold text-primary mb-1">{{ latest_prediction.get_three_digit_list.0|default:"427" }}</div>
+                    <div class="text-2xl font-bold text-primary mb-1">{{ latest_prediction.get_three_digit_list.0|default:"—" }}</div>
                     <div class="text-sm text-muted-foreground">เลขบน 3 ตัว</div>
-                    <div class="badge bg-primary/10 text-primary mt-2">{{ latest_prediction.overall_confidence|floatformat:0|default:"87" }}% แม่นยำ</div>
+                    {% if latest_prediction.overall_confidence %}
+                    <div class="badge bg-primary/10 text-primary mt-2">{{ latest_prediction.overall_confidence|floatformat:0 }} คะแนน (เพื่อความบันเทิง)</div>
+                    {% else %}
+                    <div class="badge bg-primary/10 text-primary mt-2">ยังไม่มีข้อมูลคะแนน</div>
+                    {% endif %}
                   {% else %}
-                    <div class="text-2xl font-bold text-primary mb-1">427</div>
+                    <div class="text-2xl font-bold text-primary mb-1">—</div>
                     <div class="text-sm text-muted-foreground">เลขบน 3 ตัว</div>
-                    <div class="badge bg-primary/10 text-primary mt-2">87% แม่นยำ</div>
+                    <div class="badge bg-primary/10 text-primary mt-2">ยังไม่มีการทำนาย</div>
                   {% endif %}
                 </div>
                 <a href="/ai/" class="btn btn-primary w-full">
-                  <i class="fas fa-bolt mr-2"></i>
+                  <i aria-hidden="true" class="fas fa-bolt mr-2"></i>
                   สร้างเลขใหม่
                 </a>
               </div>
@@ -871,7 +899,19 @@ async function interpretDream() {
             data.result.numbers.forEach(number => {
                 const div = document.createElement('div');
                 div.className = 'bg-card border border-border rounded-lg p-3 text-center';
-                div.innerHTML = `<span class="text-xl font-bold text-primary">${number}</span>`;
+                const label = document.createElement('span');
+                label.className = 'text-xl font-bold text-primary';
+                label.textContent = number;
+                div.appendChild(label);
+                const kw = (data.result.keywords || []).slice(0, 3).join(', ');
+                const saveLink = document.createElement('a');
+                saveLink.className = 'btn btn-outline text-sm mt-2 inline-block';
+                saveLink.textContent = '＋ บันทึก';
+                saveLink.href = '/notebook/?' + new URLSearchParams({
+                    number, source: 'dream',
+                    reason: kw ? 'สัญลักษณ์: ' + kw : 'ตีความจากความฝัน'
+                }).toString();
+                div.appendChild(saveLink);
                 numbersContainer.appendChild(div);
             });
             

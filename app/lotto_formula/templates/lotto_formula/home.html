@@ -1,26 +1,25 @@
 {% extends 'base.html' %}
 
 {% block content %}
- Hero Section 
 <div class="text-center mb-12">
     <h1 class="text-4xl md:text-6xl font-bold text-gray-800 mb-4">
-        เว็บสูตรคำนวณหวย
+        สูตรคำนวณหวย
     </h1>
     <p class="text-xl text-gray-600 mb-8">
-        ทำนายเลขเด็ดแม่นยำ ด้วยสูตรคำนวณที่ได้รับการพิสูจน์แล้ว
+        ทดลองคำนวณเลขจากสูตรต่างๆ (ผลลัพธ์เป็นเพียงแนวทาง ไม่รับประกันผลรางวัล)
     </p>
-    <a href="{% url 'lotto_formula:calculator' %}" class="bg-primary hover:bg-secondary text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors">
-        เริ่มคำนวณเลขเด็ด
+    <a href="{% url 'lotto_formula:calculator' %}" class="btn btn-primary text-lg px-8 py-3">
+        เริ่มคำนวณ
     </a>
 </div>
 
- Formulas Grid 
+{% if formulas %}
 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
     {% for formula in formulas %}
-    <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+    <div class="card p-6">
         <h3 class="text-xl font-bold text-gray-800 mb-3">{{ formula.name }}</h3>
         <p class="text-gray-600 mb-4">{{ formula.description|truncatewords:20 }}</p>
-        
+
         <div class="flex justify-between items-center mb-4">
             <div class="text-center">
                 <div class="text-2xl font-bold text-primary">{{ formula.accuracy_rate }}%</div>
@@ -31,17 +30,24 @@
                 <div class="text-sm text-gray-500">ครั้งที่ทำนาย</div>
             </div>
         </div>
-        
-        <a href="{{ formula.get_absolute_url }}" class="block w-full bg-primary hover:bg-secondary text-white text-center py-2 rounded-lg transition-colors">
+
+        <a href="{{ formula.get_absolute_url }}" class="btn btn-primary w-full">
             ดูรายละเอียด
         </a>
     </div>
     {% endfor %}
 </div>
+{% else %}
+<div class="card p-10 text-center mb-12">
+    <i aria-hidden="true" class="fas fa-flask text-4xl text-muted-foreground mb-4" aria-hidden="true"></i>
+    <p class="text-lg font-semibold text-foreground mb-2">ยังไม่มีสูตรในระบบ</p>
+    <p class="text-muted-foreground">ผู้ดูแลระบบสามารถเพิ่มสูตรได้จากหน้าจัดการ เมื่อมีสูตรแล้วจะแสดงการ์ดสูตรที่นี่</p>
+</div>
+{% endif %}
 
- Latest Results 
-<div class="bg-white rounded-xl shadow-lg p-6">
+<div class="card p-6">
     <h2 class="text-2xl font-bold text-gray-800 mb-6">ผลหวยล่าสุด</h2>
+    {% if latest_results %}
     <div class="overflow-x-auto">
         <table class="w-full">
             <thead>
@@ -64,8 +70,8 @@
             </tbody>
         </table>
     </div>
+    {% else %}
+    <p class="text-center text-muted-foreground py-6">ยังไม่มีข้อมูลผลหวยในระบบนี้ ดูผลจริงได้ที่หน้า <a href="/lottery_checker/" class="text-primary hover:underline">ตรวจผลหวย</a></p>
+    {% endif %}
 </div>
-
- React Component for Interactive Features 
-<div id="lottery-stats"></div>
 {% endblock %}

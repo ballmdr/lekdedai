@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ page_title|default:"เว็บสูตรคำนวณหวย" }}{% endblock %}</title>
-    <meta name="description" content="{% block description %}{{ meta_description|default:"เว็บสูตรคำนวณหวยไทย ทำนายเลขเด็ดแม่นยำ" }}{% endblock %}">
-    
-     SEO Meta Tags 
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>{% block title %}{{ page_title|default:"LekdeDai - เลขเด็ดและตรวจหวย" }}{% endblock %}</title>
+    <meta name="description" content="{% block description %}{{ meta_description|default:"วิเคราะห์ฝัน ตรวจผลหวย และบันทึกเลขเด็ดในที่เดียว" }}{% endblock %}">
+
     <meta property="og:title" content="{% block og_title %}{{ page_title }}{% endblock %}">
     <meta property="og:description" content="{% block og_description %}{{ meta_description }}{% endblock %}">
     <meta property="og:type" content="website">
     <meta name="robots" content="index, follow">
-    
-     Tailwind CSS 
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -27,43 +28,67 @@
             }
         }
     </script>
-    
-    <!-- CSS will be loaded via Tailwind CDN -->
 </head>
 <body class="bg-gradient-to-br from-orange-50 to-yellow-50 min-h-screen">
-     Navigation 
     <nav class="bg-white shadow-lg border-b-4 border-primary">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center py-4">
-                <div class="flex items-center space-x-2">
+                <a href="/" class="flex items-center space-x-2">
                     <div class="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
-                        <span class="text-white font-bold text-xl">หวย</span>
+                        <span class="text-white font-bold text-xl" aria-hidden="true">หวย</span>
                     </div>
-                    <h1 class="text-2xl font-bold text-gray-800">สูตรคำนวณหวย</h1>
-                </div>
+                    <span class="text-2xl font-bold text-gray-800">LekdeDai</span>
+                </a>
                 <div class="hidden md:flex space-x-6">
                     <a href="/" class="text-gray-700 hover:text-primary transition-colors">หน้าแรก</a>
+                    <a href="/dreams/" class="text-gray-700 hover:text-primary transition-colors">วิเคราะห์ฝัน</a>
+                    <a href="/lottery_checker/" class="text-gray-700 hover:text-primary transition-colors">ตรวจหวย</a>
+                    <a href="/lotto_stats/" class="text-gray-700 hover:text-primary transition-colors">สถิติ</a>
+                    <a href="/notebook/" class="text-gray-700 hover:text-primary transition-colors">สมุดเลข</a>
                     <a href="/lotto_formula/calculator/" class="text-gray-700 hover:text-primary transition-colors">เครื่องคำนวณ</a>
-                    <a href="#" class="text-gray-700 hover:text-primary transition-colors">ผลหวย</a>
-                    <a href="#" class="text-gray-700 hover:text-primary transition-colors">สถิติ</a>
+                </div>
+                <button id="navToggle" type="button"
+                        class="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100"
+                        aria-label="เปิดเมนูหลัก" aria-controls="mobileNav" aria-expanded="false">
+                    <i aria-hidden="true" class="fas fa-bars text-xl" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div id="mobileNav" class="hidden md:hidden border-t border-border">
+                <div class="flex flex-col py-2">
+                    <a href="/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">หน้าแรก</a>
+                    <a href="/dreams/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">วิเคราะห์ฝัน</a>
+                    <a href="/lottery_checker/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">ตรวจหวย</a>
+                    <a href="/lotto_stats/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">สถิติ</a>
+                    <a href="/notebook/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">สมุดเลข</a>
+                    <a href="/lotto_formula/calculator/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">เครื่องคำนวณ</a>
                 </div>
             </div>
         </div>
     </nav>
 
-     Main Content 
     <main class="container mx-auto px-4 py-8">
         {% block content %}
         {% endblock %}
     </main>
 
-     Footer 
     <footer class="bg-gray-800 text-white py-8 mt-16">
         <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2025 เว็บสูตรคำนวณหวย - ทำนายเลขเด็ดแม่นยำ</p>
+            <p>&copy; {% now "Y" %} LekdeDai — วิเคราะห์ฝัน ตรวจผลหวย และบันทึกเลขเด็ด</p>
+            <p class="text-sm text-gray-400 mt-2">ตัวเลขทั้งหมดเป็นความเห็นส่วนตัว ไม่ใช่การรับประกันผลรางวัล</p>
         </div>
     </footer>
 
-    <!-- JS functionality would be added here if needed -->
+    <script>
+        (function () {
+            var toggle = document.getElementById('navToggle');
+            var nav = document.getElementById('mobileNav');
+            if (!toggle || !nav) return;
+            toggle.addEventListener('click', function () {
+                var open = nav.classList.toggle('hidden') === false;
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                toggle.setAttribute('aria-label', open ? 'ปิดเมนูหลัก' : 'เปิดเมนูหลัก');
+            });
+        })();
+    </script>
 </body>
 </html>

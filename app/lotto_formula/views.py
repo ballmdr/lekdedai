@@ -45,26 +45,32 @@ def calculator_view(request):
         'meta_description': 'เครื่องคำนวณหวยออนไลน์ เลือกสูตรและคำนวณเลขเด็ดได้ทันที'
     })
 
-@csrf_exempt
+@require_http_methods(["POST"])
 def calculate_numbers(request):
-    if request.method == 'POST':
+    try:
         data = json.loads(request.body)
-        formula_id = data.get('formula_id')
-        input_numbers = data.get('input_numbers')
-        
-        # Logic การคำนวณตามสูตร
-        formula = get_object_or_404(LotteryFormula, id=formula_id)
-        
-        # ตัวอย่างการคำนวณ (ต้องปรับตามสูตรจริง)
-        calculated_numbers = calculate_by_formula(formula, input_numbers)
-        
-        return JsonResponse({
-            'success': True,
-            'calculated_numbers': calculated_numbers,
-            'formula_name': formula.name
-        })
-    
-    return JsonResponse({'success': False})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'ข้อมูลที่ส่งมาไม่ถูกต้อง'}, status=400)
+
+    formula_id = data.get('formula_id')
+    input_numbers = str(data.get('input_numbers') or '').strip()
+
+    if not formula_id or not input_numbers:
+        return JsonResponse({'success': False, 'error': 'กรุณาเลือกสูตรและกรอกเลขอ้างอิง'}, status=400)
+
+    formula = LotteryFormula.objects.filter(id=formula_id).first()
+    if not formula:
+        return JsonResponse({'success': False, 'error': 'ไม่พบสูตรที่เลือก'}, status=404)
+
+    calculated_numbers = calculate_by_formula(formula, input_numbers)
+    if not calculated_numbers:
+        return JsonResponse({'success': False, 'error': 'เลขอ้างอิงต้องมีตัวเลขอย่างน้อย 2 ตัว'}, status=400)
+
+    return JsonResponse({
+        'success': True,
+        'calculated_numbers': calculated_numbers,
+        'formula_name': formula.name
+    })
 
 @require_http_methods(["GET"])
 def api_stats(request):
@@ -124,17 +130,17 @@ def api_formula_detail(request, formula_id):
         return JsonResponse({'error': 'Formula not found'}, status=404)
 
 def calculate_by_formula(formula, input_numbers):
-    """ปรับปรุงการคำนวณให้มีสูตรที่หลากหลายมากขึ้น"""
-    if not input_numbers or len(input_numbers) < 2:
-        return ["000", "111", "222"]
-    
-    # แปลงเลขอ้างอิงเป็นตัวเลข
+    """คำนวณตามสูตรที่เลือก (คืน None ถ้าข้อมูลไม่พอ)"""
+    if not input_numbers:
+        return None
+
     try:
-        numbers = [int(d) for d in input_numbers if d.isdigit()]
-        if len(numbers) < 2:
-            return ["000", "111", "222"]
-    except:
-        return ["000", "111", "222"]
+        numbers = [int(d) for d in str(input_numbers) if d.isdigit()]
+    except (TypeError, ValueError):
+        return None
+
+    if len(numbers) < 2:
+        return None
     
     if formula.name == "สูตรบวกลบ":
         # สูตรบวกลบ: เอาเลข 2 ตัวแรกมาบวกลบ

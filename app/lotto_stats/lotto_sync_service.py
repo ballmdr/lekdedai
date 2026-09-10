@@ -118,8 +118,8 @@ class LottoSyncService:
             elif isinstance(date, datetime):
                 date = date.date()
             
-            # ดึงข้อมูลจาก lottery_checker
-            lotto_result = LottoResult.objects.filter(draw_date=date).first()
+            # ดึงข้อมูลจาก lottery_checker (เฉพาะแถว valid — canonical ที่ผ่าน validation)
+            lotto_result = LottoResult.objects.filter(draw_date=date, is_valid=True).first()
             
             if not lotto_result:
                 return {

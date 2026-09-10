@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'news',           # News analysis for lottery numbers
     'ai_engine',      # AI-powered predictions
     'lottery_checker', # Online lottery result checker
+    'notebook',       # สมุดเลข browser-only (Task 9)
 ]
 # เพิ่มการตั้งค่า Media files
 MEDIA_URL = '/media/'
@@ -100,3 +101,6 @@ STATICFILES_DIRS = [BASE_DIR / 'static'] if os.path.exists(BASE_DIR / 'static') 
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Mock ingestion ใช้ได้เฉพาะ dev/test ที่เปิด flag ชัดเจน ห้ามเปิดใน production
+ALLOW_MOCK_INGESTION = os.environ.get('ALLOW_MOCK_INGESTION', 'False') == 'True'

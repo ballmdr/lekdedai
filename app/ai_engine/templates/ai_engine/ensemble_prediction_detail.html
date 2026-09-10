@@ -9,7 +9,7 @@
   <div class="container mx-auto px-4">
     <div class="text-center">
       <h1 class="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
-        <i class="fas fa-robot text-primary mr-2"></i>
+        <i aria-hidden="true" class="fas fa-robot text-primary mr-2"></i>
         รายละเอียดการทำนาย AI Ensemble
       </h1>
       <p class="text-lg text-muted-foreground">
@@ -45,7 +45,7 @@
   <div class="card mb-8">
     <div class="p-6 border-b">
       <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-target text-primary"></i>
+        <i aria-hidden="true" class="fas fa-target text-primary"></i>
         เลขเด็ดสุดท้าย
       </h2>
     </div>
@@ -55,7 +55,7 @@
         {% if prediction.final_two_digit %}
         <div>
           <h3 class="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-            <i class="fas fa-dice-two text-primary"></i>
+            <i aria-hidden="true" class="fas fa-dice-two text-primary"></i>
             เลขท้าย 2 ตัว
           </h3>
           <div class="space-y-3">
@@ -80,7 +80,7 @@
         {% if prediction.final_three_digit %}
         <div>
           <h3 class="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-            <i class="fas fa-dice-three text-secondary"></i>
+            <i aria-hidden="true" class="fas fa-dice-three text-secondary"></i>
             เลขท้าย 3 ตัว
           </h3>
           <div class="space-y-3">
@@ -108,7 +108,7 @@
   <div class="card mb-8">
     <div class="p-6 border-b">
       <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-brain text-primary"></i>
+        <i aria-hidden="true" class="fas fa-brain text-primary"></i>
         การทำนายของแต่ละโมเดล AI
       </h2>
     </div>
@@ -119,16 +119,16 @@
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-foreground flex items-center gap-2">
               {% if model_pred.model_type.role == 'journalist' %}
-                <i class="fas fa-newspaper text-blue-500"></i>
+                <i aria-hidden="true" class="fas fa-newspaper text-blue-500"></i>
                 <span class="text-blue-500">{{ model_pred.model_type.name }}</span>
               {% elif model_pred.model_type.role == 'interpreter' %}
-                <i class="fas fa-moon text-purple-500"></i>
+                <i aria-hidden="true" class="fas fa-moon text-purple-500"></i>
                 <span class="text-purple-500">{{ model_pred.model_type.name }}</span>
               {% elif model_pred.model_type.role == 'statistician' %}
-                <i class="fas fa-chart-line text-green-500"></i>
+                <i aria-hidden="true" class="fas fa-chart-line text-green-500"></i>
                 <span class="text-green-500">{{ model_pred.model_type.name }}</span>
               {% else %}
-                <i class="fas fa-robot text-gray-500"></i>
+                <i aria-hidden="true" class="fas fa-robot text-gray-500"></i>
                 <span class="text-gray-500">{{ model_pred.model_type.name }}</span>
               {% endif %}
             </h3>
@@ -195,7 +195,7 @@
   <div class="card mb-8">
     <div class="p-6 border-b">
       <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-pie-chart text-secondary"></i>
+        <i aria-hidden="true" class="fas fa-pie-chart text-secondary"></i>
         การมีส่วนร่วมของโมเดล
       </h2>
     </div>
@@ -224,7 +224,7 @@
   <div class="card mb-8">
     <div class="p-6 border-b">
       <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-database text-accent"></i>
+        <i aria-hidden="true" class="fas fa-database text-accent"></i>
         แหล่งข้อมูลที่ใช้
       </h2>
     </div>
@@ -234,15 +234,15 @@
         <div class="border border-border rounded-lg p-4">
           <div class="flex items-center gap-3 mb-3">
             {% if data_record.data_source.source_type == 'news' %}
-              <i class="fas fa-newspaper text-blue-500 text-xl"></i>
+              <i aria-hidden="true" class="fas fa-newspaper text-blue-500 text-xl"></i>
             {% elif data_record.data_source.source_type == 'social_media' %}
-              <i class="fas fa-share-alt text-green-500 text-xl"></i>
+              <i aria-hidden="true" class="fas fa-share-alt text-green-500 text-xl"></i>
             {% elif data_record.data_source.source_type == 'dreams' %}
-              <i class="fas fa-moon text-purple-500 text-xl"></i>
+              <i aria-hidden="true" class="fas fa-moon text-purple-500 text-xl"></i>
             {% elif data_record.data_source.source_type == 'trends' %}
-              <i class="fas fa-trending-up text-orange-500 text-xl"></i>
+              <i aria-hidden="true" class="fas fa-trending-up text-orange-500 text-xl"></i>
             {% else %}
-              <i class="fas fa-database text-gray-500 text-xl"></i>
+              <i aria-hidden="true" class="fas fa-database text-gray-500 text-xl"></i>
             {% endif %}
             <div>
               <h3 class="font-semibold text-foreground">{{ data_record.data_source.name }}</h3>
@@ -273,7 +273,7 @@
       {% if data_sources_used|length > 6 %}
       <div class="text-center mt-6">
         <button onclick="showAllDataSources()" class="btn btn-outline">
-          <i class="fas fa-eye mr-2"></i>
+          <i aria-hidden="true" class="fas fa-eye mr-2"></i>
           ดูแหล่งข้อมูลทั้งหมด ({{ data_sources_used|length }} รายการ)
         </button>
       </div>
@@ -286,7 +286,7 @@
   <div class="card mb-8">
     <div class="p-6 border-b">
       <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-scroll text-primary"></i>
+        <i aria-hidden="true" class="fas fa-scroll text-primary"></i>
         สรุปการทำนาย
       </h2>
     </div>
@@ -302,7 +302,7 @@
   <div class="card">
     <div class="p-6 border-b">
       <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-info-circle text-secondary"></i>
+        <i aria-hidden="true" class="fas fa-info-circle text-secondary"></i>
         ข้อมูลเซสชัน
       </h2>
     </div>
@@ -356,11 +356,11 @@
   <!-- Navigation -->
   <div class="flex justify-center mt-8 gap-4">
     <a href="{% url 'ai_engine:prediction' %}" class="btn btn-primary">
-      <i class="fas fa-arrow-left mr-2"></i>
+      <i aria-hidden="true" class="fas fa-arrow-left mr-2"></i>
       กลับหน้าหลัก
     </a>
     <a href="{% url 'ai_engine:ensemble_history' %}" class="btn btn-outline">
-      <i class="fas fa-history mr-2"></i>
+      <i aria-hidden="true" class="fas fa-history mr-2"></i>
       ประวัติการทำนาย
     </a>
   </div>
@@ -376,9 +376,9 @@ function showAllDataSources() {
   
   const button = event.target;
   if (button.textContent.includes('ดูทั้งหมด')) {
-    button.innerHTML = '<i class="fas fa-eye-slash mr-2"></i>ซ่อนแหล่งข้อมูล';
+    button.innerHTML = '<i aria-hidden="true" class="fas fa-eye-slash mr-2"></i>ซ่อนแหล่งข้อมูล';
   } else {
-    button.innerHTML = '<i class="fas fa-eye mr-2"></i>ดูแหล่งข้อมูลทั้งหมด';
+    button.innerHTML = '<i aria-hidden="true" class="fas fa-eye mr-2"></i>ดูแหล่งข้อมูลทั้งหมด';
   }
 }
 </script>

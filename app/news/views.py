@@ -16,21 +16,22 @@ def news_list(request):
     # ดึงเฉพาะข่าวที่เผยแพร่แล้ว
     articles = NewsArticle.objects.filter(status='published').select_related('category', 'author')
     
-    # Filter by category
+    # Filter by category (slug ที่ไม่มีอยู่จริงให้แสดงว่างแทน 404)
     category_slug = request.GET.get('category')
+    category = None
     if category_slug:
-        category = get_object_or_404(NewsCategory, slug=category_slug)
-        articles = articles.filter(category=category)
-    else:
-        category = None
+        category = NewsCategory.objects.filter(slug=category_slug).first()
+        if category:
+            articles = articles.filter(category=category)
+        else:
+            articles = articles.none()
     
     # Search
     query = request.GET.get('q')
     if query:
         articles = articles.filter(
             Q(title__icontains=query) |
-            Q(content__icontains=query) |
-            Q(extracted_numbers__icontains=query)
+            Q(content__icontains=query)
         )
     
     # Pagination
@@ -49,6 +50,7 @@ def news_list(request):
     context = {
         'articles': articles,
         'category': category,
+        'category_slug': category_slug,
         'categories': categories,
         'latest_hints': latest_hints,
         'query': query,

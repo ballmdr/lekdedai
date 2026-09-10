@@ -490,7 +490,12 @@ def data_source_detail(request, source_id):
 
 @require_http_methods(["POST"])
 def api_refresh_data_sources(request):
-    """API สำหรับรีเฟรชแหล่งข้อมูล"""
+    """API สำหรับรีเฟรชแหล่งข้อมูล (staff เท่านั้น)"""
+    if not request.user.is_staff:
+        return JsonResponse({
+            'success': False,
+            'error': 'ต้องเป็นผู้ดูแลระบบ'
+        }, status=403)
     try:
         # Trigger data collection for all active sources
         from .data_ingestion import DataIngestionManager
@@ -525,7 +530,12 @@ def api_refresh_data_sources(request):
 
 @require_http_methods(["POST"])
 def api_trigger_data_collection(request, source_id):
-    """API สำหรับเก็บข้อมูลจากแหล่งเฉพาะ"""
+    """API สำหรับเก็บข้อมูลจากแหล่งเฉพาะ (staff เท่านั้น)"""
+    if not request.user.is_staff:
+        return JsonResponse({
+            'success': False,
+            'error': 'ต้องเป็นผู้ดูแลระบบ'
+        }, status=403)
     try:
         data_source = get_object_or_404(DataSource, id=source_id)
         

@@ -10,7 +10,7 @@
   <div class="container mx-auto px-4 relative z-10">
     <div class="text-center mb-8">
       <h1 class="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
-        <i class="fas fa-moon text-primary mr-2"></i>
+        <i aria-hidden="true" class="fas fa-moon text-primary mr-2"></i>
         ตีความฝันเป็นเลขเด็ด
       </h1>
       <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -28,7 +28,7 @@
                 <div class="card">
                     <div class="p-6 border-b">
                         <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-                            <i class="fas fa-moon text-primary"></i>
+                            <i aria-hidden="true" class="fas fa-moon text-primary"></i>
                             บอกเล่าความฝันของคุณ
                         </h2>
                         <p class="text-muted-foreground mt-2">เล่าความฝันให้ AI ฟัง แล้วรับเลขมงคลที่เหมาะกับคุณ</p>
@@ -53,6 +53,9 @@
                                 <div class="text-xs text-muted-foreground mt-2">
                                     💡 ยิ่งเล่าละเอียด AI จะวิเคราะห์ได้แม่นยำมากขึ้น
                                 </div>
+                                <div class="text-xs text-muted-foreground mt-1">
+                                    🔒 ข้อความฝันถูกเก็บไม่เกิน 90 วันเพื่อปรับปรุงการตีความ (ไม่เก็บ IP) เพื่อความบันเทิง โปรดอย่าใส่ชื่อ ที่อยู่ หรือข้อมูลระบุตัวตน
+                                </div>
                             </div>
                             
                             <button
@@ -60,7 +63,7 @@
                                 class="btn btn-primary w-full"
                                 id="submitBtn"
                             >
-                                <i class="fas fa-moon mr-2"></i>
+                                <i aria-hidden="true" class="fas fa-moon mr-2"></i>
                                 วิเคราะห์ความฝัน
                             </button>
                         </form>
@@ -86,7 +89,7 @@
                                 
                                 <div class="bg-primary/10 rounded-lg p-6 mb-6">
                                     <h4 class="font-semibold text-primary mb-3 flex items-center gap-2">
-                                        <i class="fas fa-magic"></i>
+                                        <i aria-hidden="true" class="fas fa-magic"></i>
                                         คำทำนายจากอาจารย์ AI
                                         <span id="aiModelBadge" class="hidden ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
                                             Expert AI
@@ -98,7 +101,7 @@
                                 <!-- Expert AI Numbers with Reasoning -->
                                 <div id="expertNumbers" class="hidden bg-muted/50 rounded-lg p-6 mb-6">
                                     <h4 class="font-semibold text-foreground mb-4 flex items-center gap-2">
-                                        <i class="fas fa-brain text-secondary"></i>
+                                        <i aria-hidden="true" class="fas fa-brain text-secondary"></i>
                                         เลขมงคลพร้อมเหตุผล
                                     </h4>
                                     <div id="expertNumbersList" class="space-y-3"></div>
@@ -107,7 +110,7 @@
                                 <!-- Traditional Numbers -->
                                 <div id="traditionalNumbers" class="bg-muted/50 rounded-lg p-6 mb-6">
                                     <h4 class="font-semibold text-foreground mb-4 flex items-center gap-2">
-                                        <i class="fas fa-star text-secondary"></i>
+                                        <i aria-hidden="true" class="fas fa-star text-secondary"></i>
                                         เลขมงคลจากความฝัน
                                     </h4>
                                     <div id="numbersList" class="grid grid-cols-3 md:grid-cols-5 gap-3"></div>
@@ -118,7 +121,7 @@
                                         onclick="resetForm()"
                                         class="btn btn-outline"
                                     >
-                                        <i class="fas fa-redo mr-2"></i>
+                                        <i aria-hidden="true" class="fas fa-redo mr-2"></i>
                                         ตีความใหม่
                                     </button>
                                 </div>
@@ -134,23 +137,23 @@
                 <div class="card">
                     <div class="p-4 border-b">
                         <h3 class="font-serif text-lg font-bold text-foreground flex items-center gap-2">
-                            <i class="fas fa-fire text-secondary"></i>
+                            <i aria-hidden="true" class="fas fa-fire text-secondary"></i>
                             ความฝันยอดนิยม
                         </h3>
                     </div>
                     <div class="p-4 space-y-3">
-                        <div class="p-3 bg-muted/30 rounded-lg">
+                        <button type="button" onclick="usePopularDream('ฝันเห็นงู พญานาค')" class="w-full text-left p-3 bg-muted/30 rounded-lg hover:bg-muted/60 transition-colors">
                             <div class="font-medium text-sm text-foreground">ฝันเห็นงู / พญานาค</div>
-                            <div class="text-xs text-muted-foreground mt-1">เลข: 56, 65, 59</div>
-                        </div>
-                        <div class="p-3 bg-muted/30 rounded-lg">
+                            <div class="text-xs text-muted-foreground mt-1">เลข: 56, 65, 59 · กดเพื่อลอง</div>
+                        </button>
+                        <button type="button" onclick="usePopularDream('ฝันเห็นช้าง')" class="w-full text-left p-3 bg-muted/30 rounded-lg hover:bg-muted/60 transition-colors">
                             <div class="font-medium text-sm text-foreground">ฝันเห็นช้าง</div>
-                            <div class="text-xs text-muted-foreground mt-1">เลข: 19, 99</div>
-                        </div>
-                        <div class="p-3 bg-muted/30 rounded-lg">
+                            <div class="text-xs text-muted-foreground mt-1">เลข: 19, 99 · กดเพื่อลอง</div>
+                        </button>
+                        <button type="button" onclick="usePopularDream('ฝันเห็นเงิน ทอง')" class="w-full text-left p-3 bg-muted/30 rounded-lg hover:bg-muted/60 transition-colors">
                             <div class="font-medium text-sm text-foreground">ฝันเห็นเงิน / ทอง</div>
-                            <div class="text-xs text-muted-foreground mt-1">เลข: 28, 82, 68</div>
-                        </div>
+                            <div class="text-xs text-muted-foreground mt-1">เลข: 28, 82, 68 · กดเพื่อลอง</div>
+                        </button>
                     </div>
                 </div>
                 
@@ -158,25 +161,25 @@
                 <div class="card">
                     <div class="p-4 border-b">
                         <h3 class="font-serif text-lg font-bold text-foreground flex items-center gap-2">
-                            <i class="fas fa-lightbulb text-accent"></i>
+                            <i aria-hidden="true" class="fas fa-lightbulb text-accent"></i>
                             เคล็ดลับการฝัน
                         </h3>
                     </div>
                     <div class="p-4 space-y-3 text-sm text-muted-foreground">
                         <div class="flex gap-2">
-                            <i class="fas fa-check text-primary mt-1"></i>
+                            <i aria-hidden="true" class="fas fa-check text-primary mt-1"></i>
                             <div>จดบันทึกความฝันทันทีหลังตื่น</div>
                         </div>
                         <div class="flex gap-2">
-                            <i class="fas fa-check text-primary mt-1"></i>
+                            <i aria-hidden="true" class="fas fa-check text-primary mt-1"></i>
                             <div>สังเกตสี อารมณ์ และบรรยากาศ</div>
                         </div>
                         <div class="flex gap-2">
-                            <i class="fas fa-check text-primary mt-1"></i>
+                            <i aria-hidden="true" class="fas fa-check text-primary mt-1"></i>
                             <div>จำตัวเลขที่เห็นในฝัน</div>
                         </div>
                         <div class="flex gap-2">
-                            <i class="fas fa-check text-primary mt-1"></i>
+                            <i aria-hidden="true" class="fas fa-check text-primary mt-1"></i>
                             <div>เชื่อมโยงกับเหตุการณ์จริง</div>
                         </div>
                     </div>
@@ -189,7 +192,7 @@
             <div class="card">
                 <div class="p-6 border-b">
                     <h2 class="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-                        <i class="fas fa-book text-primary"></i>
+                        <i aria-hidden="true" class="fas fa-book text-primary"></i>
                         คู่มือตีความฝันพื้นฐาน
                     </h2>
                     <p class="text-muted-foreground mt-2">สัญลักษณ์และความหมายที่พบบ่อยในความฝัน</p>
@@ -201,13 +204,13 @@
                         <div>
                             <h3 class="font-semibold text-foreground mb-4 flex items-center gap-2">
                                 {% if '🐘' in category_name %}
-                                    <i class="fas fa-paw text-secondary"></i>
+                                    <i aria-hidden="true" class="fas fa-paw text-secondary"></i>
                                 {% elif '👑' in category_name %}
-                                    <i class="fas fa-user text-accent"></i>
+                                    <i aria-hidden="true" class="fas fa-user text-accent"></i>
                                 {% elif '🏠' in category_name %}
-                                    <i class="fas fa-home text-primary"></i>
+                                    <i aria-hidden="true" class="fas fa-home text-primary"></i>
                                 {% elif '💪' in category_name %}
-                                    <i class="fas fa-hand-paper text-secondary"></i>
+                                    <i aria-hidden="true" class="fas fa-hand-paper text-secondary"></i>
                                 {% endif %}
                                 {{ category_name }}
                             </h3>
@@ -320,6 +323,14 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
                             ${pred.reason}
                         </div>
                     `;
+                    const saveLink = document.createElement('a');
+                    saveLink.className = 'btn btn-outline text-sm mt-3 inline-block';
+                    saveLink.textContent = '＋ บันทึกเลขนี้';
+                    saveLink.href = '/notebook/?' + new URLSearchParams({
+                        number: pred.number, source: 'dream',
+                        reason: (pred.reason || '').slice(0, 140)
+                    }).toString();
+                    div.appendChild(saveLink);
                     expertNumbersList.appendChild(div);
                 });
                 
@@ -330,13 +341,29 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
                 // Show traditional numbers
                 const numbersList = document.getElementById('numbersList');
                 numbersList.innerHTML = '';
-                
-                result.numbers.forEach(number => {
-                    const div = document.createElement('div');
-                    div.className = 'bg-card border border-border rounded-lg p-4 text-center hover:bg-muted/50 transition-colors';
-                    div.innerHTML = `<span class="text-2xl font-bold text-primary">${number}</span>`;
-                    numbersList.appendChild(div);
-                });
+
+                if (!result.numbers || result.numbers.length === 0) {
+                    numbersList.innerHTML = '<div class="col-span-full text-center text-muted-foreground py-4">ไม่พบสัญลักษณ์ที่ตรงกับความฝันนี้ในคู่มือ ลองเพิ่มรายละเอียด เช่น สี สิ่งของ สถานที่ หรือสัตว์ที่เห็น</div>';
+                } else {
+                    result.numbers.forEach(number => {
+                        const div = document.createElement('div');
+                        div.className = 'bg-card border border-border rounded-lg p-4 text-center hover:bg-muted/50 transition-colors';
+                        const label = document.createElement('span');
+                        label.className = 'text-2xl font-bold text-primary';
+                        label.textContent = number;
+                        div.appendChild(label);
+                        const kw = (result.keywords || []).slice(0, 3).join(', ');
+                        const saveLink = document.createElement('a');
+                        saveLink.className = 'btn btn-outline text-sm mt-3 inline-block';
+                        saveLink.textContent = '＋ บันทึกเลขนี้';
+                        saveLink.href = '/notebook/?' + new URLSearchParams({
+                            number, source: 'dream',
+                            reason: kw ? 'สัญลักษณ์: ' + kw : 'ตีความจากความฝัน'
+                        }).toString();
+                        div.appendChild(saveLink);
+                        numbersList.appendChild(div);
+                    });
+                }
                 
                 document.getElementById('traditionalNumbers').classList.remove('hidden');
             }
@@ -362,6 +389,13 @@ function resetForm() {
     document.getElementById('aiModelBadge').classList.add('hidden');
     document.getElementById('expertNumbers').classList.add('hidden');
     document.getElementById('traditionalNumbers').classList.remove('hidden');
+}
+
+function usePopularDream(text) {
+    const input = document.getElementById('dream_text');
+    input.value = text;
+    input.focus();
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function getCookie(name) {

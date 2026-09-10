@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <div class="text-center mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">📓 สมุดเลขของฉัน</h1>
+    <p class="text-gray-600 mt-2">จดเลข ที่มา และงวด แล้วกลับมาตรวจผลหลังหวยออก</p>
+  </div>
+
+  <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg mb-6 text-sm text-gray-700">
+    🔒 ข้อมูลอยู่ใน browser บนอุปกรณ์นี้เท่านั้น ไม่ต้องสมัครสมาชิก — ถ้าล้างข้อมูล browser หรือเปลี่ยนเครื่อง รายการจะหาย
+  </div>
+
+  <div class="card p-6 mb-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4" id="formTitle">บันทึกรายการใหม่</h2>
+    <div class="space-y-4">
+      <div>
+        <label for="nbNumber" class="block text-sm font-medium text-gray-700 mb-1">เลข (2-6 หลัก)</label>
+        <input id="nbNumber" aria-label="เลขที่ต้องการบันทึก" inputmode="numeric" maxlength="6"
+               placeholder="เช่น 89 หรือ 427" class="input text-center text-lg font-mono" />
+      </div>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label for="nbSource" class="block text-sm font-medium text-gray-700 mb-1">ที่มา</label>
+          <select id="nbSource" class="input">
+            <option value="dream">ฝัน</option>
+            <option value="news">ข่าว</option>
+            <option value="stats">สถิติ</option>
+            <option value="self">คิดเอง</option>
+          </select>
+        </div>
+        <div>
+          <label for="nbDraw" class="block text-sm font-medium text-gray-700 mb-1">งวด</label>
+          <select id="nbDraw" class="input"></select>
+        </div>
+      </div>
+      <div>
+        <label for="nbReason" class="block text-sm font-medium text-gray-700 mb-1">เหตุผล (ไม่บังคับ)</label>
+        <input id="nbReason" aria-label="เหตุผลที่บันทึกเลขนี้" maxlength="140"
+               placeholder="เช่น ฝันเห็นงู + เลขฮอต" class="input" />
+      </div>
+      <div class="flex gap-3">
+        <button onclick="saveEntry()" class="btn btn-primary flex-1">บันทึกรายการ</button>
+        <button onclick="resetForm()" class="btn btn-outline">ล้างฟอร์ม</button>
+      </div>
+      <p id="nbError" class="text-sm text-red-600 hidden"></p>
+    </div>
+  </div>
+
+  <div class="card p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold text-gray-800">รายการของฉัน (<span id="nbCount">0</span>)</h2>
+      <a href="/lottery_checker/" class="btn btn-outline text-sm">ไปตรวจผลหวย</a>
+    </div>
+    <div id="nbList" class="space-y-3"></div>
+    <p id="nbEmpty" class="text-sm text-gray-500 text-center py-6">ยังไม่มีรายการ — บันทึกเลขแรกจากฟอร์มด้านบนได้เลย</p>
+  </div>
+</div>
+
+<script>
+const NB_KEY = 'lekdedai_notebook_v1';
+const NB_DRAWS = {{ draw_options_json|safe }};
+const NB_SOURCES = {dream: 'ฝัน', news: 'ข่าว', stats: 'สถิติ', self: 'คิดเอง'};
+let nbEditingId = null;
+
+function nbLoad() {
+  try { return JSON.parse(localStorage.getItem(NB_KEY)) || []; }
+  catch (e) { return []; }
+}
+function nbSaveAll(items) {
+  localStorage.setItem(NB_KEY, JSON.stringify(items));
+}
+function nbDrawLabel(value) {
+  const d = NB_DRAWS.find(o => o.value === value);
+  return d ? d.label : value;
+}
+function nbInitDraws(selected) {
+  const sel = document.getElementById('nbDraw');
+  sel.innerHTML = '';
+  NB_DRAWS.forEach(o => {
+    const el = document.createElement('option');
+    el.value = o.value;
+    el.textContent = o.label;
+    sel.appendChild(el);
+  });
+  if (selected && NB_DRAWS.some(o => o.value === selected)) sel.value = selected;
+}
+function nbShowError(msg) {
+  const p = document.getElementById('nbError');
+  if (!msg) { p.classList.add('hidden'); return; }
+  p.textContent = msg;
+  p.classList.remove('hidden');
+}
+function saveEntry() {
+  const number = document.getElementById('nbNumber').value.replace(/\D/g, '').slice(0, 6);
+  const source = document.getElementById('nbSource').value;
+  const reason = document.getElementById('nbReason').value.trim().slice(0, 140);
+  const draw = document.getElementById('nbDraw').value;
+  if (number.length < 2) { nbShowError('กรุณากรอกเลขอย่างน้อย 2 หลัก'); return; }
+  if (!draw) { nbShowError('กรุณาเลือกงวด'); return; }
+  nbShowError(null);
+  const items = nbLoad();
+  if (nbEditingId) {
+    const it = items.find(x => x.id === nbEditingId);
+    if (it) { it.number = number; it.source = source; it.reason = reason; it.draw = draw; }
+    nbEditingId = null;
+    document.getElementById('formTitle').textContent = 'บันทึกรายการใหม่';
+  } else {
+    items.unshift({id: 'n' + Date.now().toString(36), number, source, reason, draw, created_at: new Date().toISOString()});
+  }
+  nbSaveAll(items);
+  resetForm();
+  nbRender();
+}
+function editEntry(id) {
+  const it = nbLoad().find(x => x.id === id);
+  if (!it) return;
+  nbEditingId = id;
+  document.getElementById('nbNumber').value = it.number;
+  document.getElementById('nbSource').value = it.source;
+  document.getElementById('nbDraw').value = it.draw;
+  document.getElementById('nbReason').value = it.reason || '';
+  document.getElementById('formTitle').textContent = 'แก้ไขรายการ';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+function deleteEntry(id) {
+  if (!confirm('ลบรายการนี้?')) return;
+  nbSaveAll(nbLoad().filter(x => x.id !== id));
+  if (nbEditingId === id) resetForm();
+  nbRender();
+}
+function resetForm() {
+  document.getElementById('nbNumber').value = '';
+  document.getElementById('nbReason').value = '';
+  nbEditingId = null;
+  document.getElementById('formTitle').textContent = 'บันทึกรายการใหม่';
+  nbShowError(null);
+}
+function nbRender() {
+  const items = nbLoad();
+  const list = document.getElementById('nbList');
+  document.getElementById('nbCount').textContent = items.length;
+  document.getElementById('nbEmpty').style.display = items.length ? 'none' : 'block';
+  list.innerHTML = '';
+  items.forEach(it => {
+    const div = document.createElement('div');
+    div.className = 'border rounded-lg p-4 flex items-center justify-between gap-3';
+    div.innerHTML =
+      '<div>' +
+        '<div class="text-2xl font-mono font-bold text-gray-800"></div>' +
+        '<div class="text-xs text-gray-500 mt-1"></div>' +
+        (it.reason ? '<div class="text-sm text-gray-600 mt-1"></div>' : '') +
+      '</div>' +
+      '<div class="flex gap-2 flex-shrink-0">' +
+        '<button class="btn btn-outline text-sm" data-act="edit">แก้</button>' +
+        '<button class="btn btn-outline text-sm" data-act="del">ลบ</button>' +
+      '</div>';
+    div.querySelector('.text-2xl').textContent = it.number;
+    div.querySelector('.text-xs').textContent =
+      (NB_SOURCES[it.source] || it.source) + ' • งวด ' + nbDrawLabel(it.draw) + ' • รอตรวจ';
+    if (it.reason) div.querySelector('.text-sm').textContent = it.reason;
+    div.querySelector('[data-act="edit"]').addEventListener('click', () => editEntry(it.id));
+    div.querySelector('[data-act="del"]').addEventListener('click', () => deleteEntry(it.id));
+    list.appendChild(div);
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const q = new URLSearchParams(window.location.search);
+  nbInitDraws(q.get('draw'));
+  const qn = (q.get('number') || '').replace(/\D/g, '').slice(0, 6);
+  if (qn) document.getElementById('nbNumber').value = qn;
+  if (q.get('source') && NB_SOURCES[q.get('source')]) document.getElementById('nbSource').value = q.get('source');
+  if (q.get('reason')) document.getElementById('nbReason').value = q.get('reason').slice(0, 140);
+  nbRender();
+});
+</script>
+{% endblock %}

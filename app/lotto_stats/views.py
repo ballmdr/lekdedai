@@ -61,6 +61,7 @@ def statistics_page(request):
     sync_status = sync_service.get_sync_status()
     
     context = {
+        'has_data': LotteryDraw.objects.exists(),
         'recent_draws': recent_draws,
         'hot_numbers': hot_numbers[:5],
         'cold_numbers': cold_numbers[:5],

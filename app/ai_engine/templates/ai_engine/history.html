@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}ประวัติการทำนาย - LekdeDai{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-foreground mb-2">ประวัติการทำนาย</h1>
+    <p class="text-muted-foreground mb-8">รายการทำนายย้อนหลังของระบบ</p>
+
+    <form method="get" class="card p-6 mb-8">
+        <div class="flex flex-col md:flex-row md:items-end gap-4">
+            <div class="flex-1">
+                <label for="from" class="block text-sm font-medium text-foreground mb-1">ตั้งแต่วันที่</label>
+                <input type="date" id="from" name="from" value="{{ date_from|default_if_none:'' }}" class="input">
+            </div>
+            <div class="flex-1">
+                <label for="to" class="block text-sm font-medium text-foreground mb-1">ถึงวันที่</label>
+                <input type="date" id="to" name="to" value="{{ date_to|default_if_none:'' }}" class="input">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary">กรอง</button>
+                <a href="{% url 'ai_engine:history' %}" class="btn btn-outline">ล้าง</a>
+            </div>
+        </div>
+    </form>
+
+    {% if predictions %}
+    <div class="space-y-4">
+        {% for prediction in predictions %}
+        <div class="card p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div class="text-sm text-muted-foreground">
+                    ทำนายเมื่อ {{ prediction.prediction_date|date:"j M Y" }}
+                    {% if prediction.for_draw_date %} · งวด {{ prediction.for_draw_date|date:"j M Y" }}{% endif %}
+                </div>
+                <span class="badge badge-outline">ความมั่นใจ {{ prediction.overall_confidence|floatformat:0 }}%</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                {% for num in prediction.get_two_digit_list %}
+                <span class="badge bg-primary text-primary-foreground">2 ตัว: {{ num }}</span>
+                {% endfor %}
+                {% for num in prediction.get_three_digit_list %}
+                <span class="badge badge-secondary">3 ตัว: {{ num }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if predictions.has_other_pages %}
+    <div class="flex justify-center mt-8">
+        <nav class="flex gap-2" aria-label="แบ่งหน้า">
+            {% if predictions.has_previous %}
+            <a href="?page={{ predictions.previous_page_number }}{% if date_from %}&from={{ date_from }}{% endif %}{% if date_to %}&to={{ date_to }}{% endif %}" class="btn btn-outline">← ก่อนหน้า</a>
+            {% endif %}
+            <span class="btn btn-primary">{{ predictions.number }} / {{ predictions.paginator.num_pages }}</span>
+            {% if predictions.has_next %}
+            <a href="?page={{ predictions.next_page_number }}{% if date_from %}&from={{ date_from }}{% endif %}{% if date_to %}&to={{ date_to }}{% endif %}" class="btn btn-outline">ถัดไป →</a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="card p-10 text-center">
+        <i aria-hidden="true" class="fas fa-history text-4xl text-muted-foreground mb-4" aria-hidden="true"></i>
+        <p class="text-lg font-semibold text-foreground mb-2">ยังไม่มีประวัติการทำนาย</p>
+        <p class="text-muted-foreground mb-6">เมื่อระบบสร้างการทำนาย งวดแรกจะแสดงที่นี่พร้อมผลย้อนหลัง</p>
+        <a href="{% url 'ai_engine:prediction' %}" class="btn btn-primary">ไปหน้าทำนาย AI</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

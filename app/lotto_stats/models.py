@@ -3,7 +3,11 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 
 class LotteryDraw(models.Model):
-    """ข้อมูลการออกรางวัลแต่ละงวด"""
+    """ข้อมูลการออกรางวัลแต่ละงวด — DERIVED read model.
+
+    writer เดียว: LottoSyncService.sync_specific_date ซึ่งอ่านจาก LottoResult
+    (canonical) เท่านั้น ห้ามสร้าง/แก้แถวจากที่อื่นโดยตรง.
+    """
     draw_date = models.DateField("วันที่ออกรางวัล", unique=True)
     draw_round = models.CharField("งวดที่", max_length=20, blank=True)
     

@@ -11,7 +11,7 @@
             <div class="mb-8">
                 <div class="flex items-center gap-2 mb-4">
                     <a href="{% url 'news:news_list' %}" class="text-primary hover:text-accent transition-colors">
-                        <i class="fas fa-arrow-left mr-2"></i>กลับหน้าข่าว
+                        <i aria-hidden="true" class="fas fa-arrow-left mr-2"></i>กลับหน้าข่าว
                     </a>
                     {% if article.category %}
                     <span class="text-muted-foreground">|</span>
@@ -30,7 +30,7 @@
                     <span>•</span>
                     <span>{{ article.published_date|date:"j F Y, H:i" }}</span>
                     <span>•</span>
-                    <span><i class="fas fa-eye mr-1"></i>อ่าน {{ article.views }} ครั้ง</span>
+                    <span><i aria-hidden="true" class="fas fa-eye mr-1"></i>อ่าน {{ article.views }} ครั้ง</span>
                 <!-- Admin Edit Button -->
                 {% if user.is_staff %}
                 <div class="flex gap-2">
@@ -78,7 +78,7 @@
                     {% if article.get_numbers_with_reasons %}
                     <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
                         <h4 class="font-bold text-blue-900 mb-4 flex items-center gap-2">
-                            <i class="fas fa-list-ol"></i>เลขจากข่าวพร้อมเหตุผล
+                            <i aria-hidden="true" class="fas fa-list-ol"></i>เลขจากข่าวพร้อมเหตุผล
                         </h4>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -105,7 +105,7 @@
                         {% if insight_analysis %}
                             <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
                                 <h4 class="font-bold text-orange-900 mb-4">
-                                    <i class="fas fa-magic mr-2"></i>เลขเด็ดจาก AI
+                                    <i aria-hidden="true" class="fas fa-magic mr-2"></i>เลขเด็ดจาก AI
                                 </h4>
                                 
                                 <!-- Numbers and Reasons -->
@@ -134,7 +134,7 @@
                 {% if lucky_hints %}
                 <div class="border-t border-border pt-6 mt-6">
                     <h3 class="text-xl font-bold mb-4 text-foreground">
-                        <i class="fas fa-star text-primary mr-2"></i>
+                        <i aria-hidden="true" class="fas fa-star text-primary mr-2"></i>
                         เลขเด็ดที่เกี่ยวข้อง
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -159,7 +159,7 @@
             <!-- Comments Section -->
             <div class="card p-8 mt-8">
                 <h3 class="text-xl font-bold mb-6 text-foreground">
-                    <i class="fas fa-comments text-primary mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-comments text-primary mr-2"></i>
                     ความคิดเห็น
                 </h3>
             
@@ -187,7 +187,7 @@
                            class="input mb-4">
                     <button type="submit" 
                             class="btn btn-primary">
-                        <i class="fas fa-paper-plane mr-2"></i>
+                        <i aria-hidden="true" class="fas fa-paper-plane mr-2"></i>
                         ส่งความคิดเห็น
                     </button>
                 </form>
@@ -218,7 +218,7 @@
             {% if related_articles %}
             <div class="mt-8">
                 <h3 class="text-2xl font-bold mb-4 text-foreground">
-                    <i class="fas fa-newspaper text-primary mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-newspaper text-primary mr-2"></i>
                     ข่าวที่เกี่ยวข้อง
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -246,10 +246,10 @@ async function analyzeAgain(articleId) {
     
     // แสดง loading
     const button = document.getElementById('analyzeButton');
-    const originalText = button ? button.innerHTML : '<i class="fas fa-magic mr-2"></i>วิเคราะห์เลขเด็ด';
+    const originalText = button ? button.innerHTML : '<i aria-hidden="true" class="fas fa-magic mr-2"></i>วิเคราะห์เลขเด็ด';
     
     if (button) {
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังวิเคราะห์...';
+        button.innerHTML = '<i aria-hidden="true" class="fas fa-spinner fa-spin mr-2"></i>กำลังวิเคราะห์...';
         button.disabled = true;
     }
     
@@ -336,7 +336,7 @@ function updateInsightAIResults(data) {
                         <span class="font-bold text-lg text-foreground">${Math.round(data.confidence)}%</span>
                     </span>
                     <button onclick="analyzeAgain(${articleId})" class="btn btn-primary" id="analyzeButton">
-                        <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
+                        <i aria-hidden="true" class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
                     </button>
                 </div>
             </div>
@@ -347,7 +347,7 @@ function updateInsightAIResults(data) {
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-info-circle text-xl text-yellow-600"></i>
+                        <i aria-hidden="true" class="fas fa-info-circle text-xl text-yellow-600"></i>
                     </div>
                     <div>
                         <h4 class="font-semibold text-yellow-800">ไม่พบเลขในข่าวนี้</h4>
@@ -359,7 +359,7 @@ function updateInsightAIResults(data) {
                         การวิเคราะห์เสร็จสมบูรณ์แล้ว (${Math.round(data.confidence)}% confidence)
                     </span>
                     <button onclick="analyzeAgain(${articleId})" class="btn btn-primary" id="analyzeButton">
-                        <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
+                        <i aria-hidden="true" class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
                     </button>
                 </div>
             </div>
@@ -460,7 +460,7 @@ function updateTraditionalResults(data) {
                         <span class="font-bold text-primary">${data.category || 'ทั่วไป'}</span>
                     </div>
                     <button onclick="analyzeAgain(${articleId})" class="btn btn-primary" id="analyzeButton">
-                        <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
+                        <i aria-hidden="true" class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
                     </button>
                 </div>
             </div>
@@ -471,7 +471,7 @@ function updateTraditionalResults(data) {
             <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-search text-xl text-gray-500"></i>
+                        <i aria-hidden="true" class="fas fa-search text-xl text-gray-500"></i>
                     </div>
                     <div>
                         <h4 class="font-semibold text-gray-800">ไม่พบเลขในข่าวนี้</h4>
@@ -483,7 +483,7 @@ function updateTraditionalResults(data) {
                         การวิเคราะห์เสร็จสมบูรณ์แล้ว (${Math.round(data.confidence)}% confidence)
                     </span>
                     <button onclick="analyzeAgain(${articleId})" class="btn btn-primary" id="analyzeButton">
-                        <i class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
+                        <i aria-hidden="true" class="fas fa-sync-alt mr-2"></i>วิเคราะห์ใหม่
                     </button>
                 </div>
             </div>
@@ -561,7 +561,7 @@ function showSuccessMessage(message) {
     alertDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300';
     alertDiv.innerHTML = `
         <div class="flex items-center gap-2">
-            <i class="fas fa-check-circle"></i>
+            <i aria-hidden="true" class="fas fa-check-circle"></i>
             <span>${message}</span>
         </div>
     `;
@@ -581,7 +581,7 @@ function showErrorMessage(message) {
     alertDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300';
     alertDiv.innerHTML = `
         <div class="flex items-center gap-2">
-            <i class="fas fa-exclamation-circle"></i>
+            <i aria-hidden="true" class="fas fa-exclamation-circle"></i>
             <span>${message}</span>
         </div>
     `;

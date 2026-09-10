@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}ความแม่นยำ AI - LekdeDai{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-foreground mb-2">ความแม่นยำของ AI</h1>
+    <p class="text-muted-foreground mb-8">ผลตรวจย้อนหลังของการทำนายที่ผ่านมา (นับเฉพาะงวดที่ตรวจผลแล้ว)</p>
+
+    {% if accuracy_stats.total > 0 %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="card p-5 text-center">
+            <div class="text-2xl font-bold text-primary">{{ accuracy_stats.first_prize.percentage|floatformat:1 }}%</div>
+            <div class="text-sm text-muted-foreground">ถูกรางวัลที่ 1 ({{ accuracy_stats.first_prize.correct }}/{{ accuracy_stats.total }})</div>
+        </div>
+        <div class="card p-5 text-center">
+            <div class="text-2xl font-bold text-primary">{{ accuracy_stats.two_digit.percentage|floatformat:1 }}%</div>
+            <div class="text-sm text-muted-foreground">ถูก 2 ตัว ({{ accuracy_stats.two_digit.correct }}/{{ accuracy_stats.total }})</div>
+        </div>
+        <div class="card p-5 text-center">
+            <div class="text-2xl font-bold text-primary">{{ accuracy_stats.three_digit.percentage|floatformat:1 }}%</div>
+            <div class="text-sm text-muted-foreground">ถูก 3 ตัว ({{ accuracy_stats.three_digit.correct }}/{{ accuracy_stats.total }})</div>
+        </div>
+    </div>
+
+    <div class="card overflow-hidden mb-8">
+        <table class="w-full text-sm">
+            <thead class="bg-muted">
+                <tr>
+                    <th class="text-left p-3">วันที่ตรวจ</th>
+                    <th class="text-left p-3">ผลที่ออก</th>
+                    <th class="text-left p-3">รางวัลที่ 1</th>
+                    <th class="text-left p-3">2 ตัว</th>
+                    <th class="text-left p-3">3 ตัว</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in accuracy_records %}
+                <tr class="border-t border-border">
+                    <td class="p-3">{{ record.checked_date|date:"j M Y" }}</td>
+                    <td class="p-3">{{ record.actual_result }}</td>
+                    <td class="p-3">{% if record.is_correct_first %}ถูก{% else %}—{% endif %}</td>
+                    <td class="p-3">{% if record.is_correct_two_digit %}ถูก{% else %}—{% endif %}</td>
+                    <td class="p-3">{% if record.is_correct_three_digit %}ถูก{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if models %}
+    <div class="card p-6">
+        <h2 class="text-xl font-bold text-foreground mb-4">โมเดลที่ใช้งาน</h2>
+        <div class="space-y-3">
+            {% for model in models %}
+            <div class="flex items-center justify-between border-b border-border pb-2">
+                <span class="font-medium text-foreground">{{ model.name }} v{{ model.version }}</span>
+                <span class="text-sm text-muted-foreground">ความแม่นยำ {{ model.accuracy|floatformat:1 }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="card p-10 text-center">
+        <i aria-hidden="true" class="fas fa-chart-line text-4xl text-muted-foreground mb-4" aria-hidden="true"></i>
+        <p class="text-lg font-semibold text-foreground mb-2">ยังไม่มีข้อมูลความแม่นยำ</p>
+        <p class="text-muted-foreground mb-6">ระบบจะนับผลก็ต่อเมื่อมีการทำนายและงวดนั้นออกผลแล้ว จากนั้นสถิติจริงจะแสดงที่นี่</p>
+        <a href="{% url 'ai_engine:prediction' %}" class="btn btn-primary">ไปหน้าทำนาย AI</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

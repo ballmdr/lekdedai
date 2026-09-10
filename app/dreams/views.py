@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from .models import DreamKeyword, DreamInterpretation
 import json
@@ -42,10 +41,9 @@ def dream_form(request):
     
     return render(request, 'dreams/dream_form.html', context)
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def analyze_dream(request):
-    """วิเคราะห์ความฝัน"""
+    """วิเคราะห์ความฝัน (ไม่เก็บ IP; ข้อความฝันเก็บเท่าที่ต้องใช้แสดงประวัติ)"""
     try:
         data = json.loads(request.body)
         dream_text = data.get('dream_text', '').strip()
@@ -74,6 +72,7 @@ def analyze_dream(request):
             result['is_expert_ai'] = False
         
         # บันทึกผลการตีความ (รวมข้อมูล sentiment และ predicted_numbers)
+        # Task 7: เลิกเก็บ IP (ไม่มีฟีเจอร์ใดใช้) เก็บข้อความฝันไว้แสดงประวัติเท่านั้น
         DreamInterpretation.objects.create(
             user=request.user if request.user.is_authenticated else None,
             dream_text=dream_text,
@@ -81,7 +80,7 @@ def analyze_dream(request):
             sentiment=result.get('sentiment', 'Neutral'),
             predicted_numbers_json=result if result.get('is_expert_ai') else None,
             main_symbols=', '.join(result.get('keywords', [])),
-            ip_address=get_client_ip(request)
+            ip_address=None
         )
         
         return JsonResponse({
@@ -295,14 +294,5 @@ def generate_enhanced_interpretation(keywords, keywords_info, numbers, dream_tex
         interpretation += "• เชื่อมโยงกับเหตุการณ์ที่เกิดขึ้นในชีวิตจริง\n"
     
     interpretation += "\n⚠️ *ความฝันเป็นเพียงแนวทางเท่านั้น ขอให้ใช้วิจารณญาณในการตัดสินใจ*"
-    
-    return interpretation
 
-def get_client_ip(request):
-    """ดึง IP address ของผู้ใช้"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
+    return interpretation

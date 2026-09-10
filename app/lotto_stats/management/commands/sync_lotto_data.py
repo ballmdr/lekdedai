@@ -63,8 +63,8 @@ class Command(BaseCommand):
                 # แปลง string เป็น date
                 draw_date = datetime.strptime(date_str, '%Y-%m-%d').date()
                 
-                # ดึงข้อมูลจาก lottery_checker
-                lotto_result = LottoResult.objects.filter(draw_date=draw_date).first()
+                # ดึงข้อมูลจาก lottery_checker (เฉพาะแถว valid)
+                lotto_result = LottoResult.objects.filter(draw_date=draw_date, is_valid=True).first()
                 
                 if not lotto_result:
                     self.stdout.write(

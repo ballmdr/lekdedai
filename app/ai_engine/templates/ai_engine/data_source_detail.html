@@ -9,12 +9,12 @@
   <div class="container mx-auto px-4">
     <div class="text-center">
       <h1 class="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
-        {% if data_source.source_type == 'news' %}<i class="fas fa-newspaper text-blue-500 mr-2"></i>
-        {% elif data_source.source_type == 'social_media' %}<i class="fas fa-share-alt text-green-500 mr-2"></i>
-        {% elif data_source.source_type == 'dreams' %}<i class="fas fa-moon text-purple-500 mr-2"></i>
-        {% elif data_source.source_type == 'trends' %}<i class="fas fa-trending-up text-orange-500 mr-2"></i>
-        {% elif data_source.source_type == 'astrology' %}<i class="fas fa-star text-indigo-500 mr-2"></i>
-        {% else %}<i class="fas fa-database text-gray-500 mr-2"></i>{% endif %}
+        {% if data_source.source_type == 'news' %}<i aria-hidden="true" class="fas fa-newspaper text-blue-500 mr-2"></i>
+        {% elif data_source.source_type == 'social_media' %}<i aria-hidden="true" class="fas fa-share-alt text-green-500 mr-2"></i>
+        {% elif data_source.source_type == 'dreams' %}<i aria-hidden="true" class="fas fa-moon text-purple-500 mr-2"></i>
+        {% elif data_source.source_type == 'trends' %}<i aria-hidden="true" class="fas fa-trending-up text-orange-500 mr-2"></i>
+        {% elif data_source.source_type == 'astrology' %}<i aria-hidden="true" class="fas fa-star text-indigo-500 mr-2"></i>
+        {% else %}<i aria-hidden="true" class="fas fa-database text-gray-500 mr-2"></i>{% endif %}
         {{ data_source.name }}
       </h1>
       <p class="text-lg text-muted-foreground">{{ data_source.get_source_type_display }}</p>
@@ -27,7 +27,7 @@
   <div class="card mb-8">
     <div class="p-6 border-b">
       <h2 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-info-circle text-primary"></i>
+        <i aria-hidden="true" class="fas fa-info-circle text-primary"></i>
         ข้อมูลแหล่ง
       </h2>
     </div>
@@ -50,7 +50,7 @@
             <p class="text-foreground">
               <a href="{{ data_source.url }}" target="_blank" class="text-primary hover:underline">
                 {{ data_source.url }}
-                <i class="fas fa-external-link-alt ml-1 text-xs"></i>
+                <i aria-hidden="true" class="fas fa-external-link-alt ml-1 text-xs"></i>
               </a>
             </p>
           </div>
@@ -72,9 +72,9 @@
                 {% if data_source.is_active %}bg-green-100 text-green-800
                 {% else %}bg-red-100 text-red-800{% endif %}">
                 {% if data_source.is_active %}
-                  <i class="fas fa-check-circle mr-1"></i>เปิดใช้งาน
+                  <i aria-hidden="true" class="fas fa-check-circle mr-1"></i>เปิดใช้งาน
                 {% else %}
-                  <i class="fas fa-times-circle mr-1"></i>ปิดใช้งาน
+                  <i aria-hidden="true" class="fas fa-times-circle mr-1"></i>ปิดใช้งาน
                 {% endif %}
               </span>
             </p>
@@ -110,7 +110,7 @@
   <div class="card mb-8">
     <div class="p-6 border-b">
       <h2 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-chart-bar text-secondary"></i>
+        <i aria-hidden="true" class="fas fa-chart-bar text-secondary"></i>
         สถิติข้อมูล
       </h2>
     </div>
@@ -140,7 +140,7 @@
   <div class="card mb-8">
     <div class="p-6 border-b flex items-center justify-between">
       <h2 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-clock text-accent"></i>
+        <i aria-hidden="true" class="fas fa-clock text-accent"></i>
         ข้อมูลล่าสุด
       </h2>
       <div class="flex items-center gap-2">
@@ -151,7 +151,7 @@
           <option value="all" {% if time_range == 'all' %}selected{% endif %}>ทั้งหมด</option>
         </select>
         <button onclick="applyTimeFilter()" class="btn btn-primary btn-sm">
-          <i class="fas fa-filter"></i>
+          <i aria-hidden="true" class="fas fa-filter"></i>
         </button>
       </div>
     </div>
@@ -170,13 +170,13 @@
               <div class="text-xs text-muted-foreground mb-2">
                 {% if record.metadata.sentiment %}
                 <span class="inline-flex items-center gap-1 mr-3">
-                  <i class="fas fa-smile"></i>
+                  <i aria-hidden="true" class="fas fa-smile"></i>
                   อารมณ์: {{ record.metadata.sentiment|capfirst }}
                 </span>
                 {% endif %}
                 {% if record.metadata.keywords %}
                 <span class="inline-flex items-center gap-1">
-                  <i class="fas fa-tags"></i>
+                  <i aria-hidden="true" class="fas fa-tags"></i>
                   คีย์เวิร์ด: {{ record.metadata.keywords|join:", " }}
                 </span>
                 {% endif %}
@@ -224,7 +224,7 @@
         <nav class="flex items-center gap-2">
           {% if page_obj.has_previous %}
           <a href="?page={{ page_obj.previous_page_number }}&time_range={{ time_range }}" class="btn btn-outline btn-sm">
-            <i class="fas fa-chevron-left"></i>
+            <i aria-hidden="true" class="fas fa-chevron-left"></i>
           </a>
           {% endif %}
           
@@ -238,7 +238,7 @@
           
           {% if page_obj.has_next %}
           <a href="?page={{ page_obj.next_page_number }}&time_range={{ time_range }}" class="btn btn-outline btn-sm">
-            <i class="fas fa-chevron-right"></i>
+            <i aria-hidden="true" class="fas fa-chevron-right"></i>
           </a>
           {% endif %}
         </nav>
@@ -247,7 +247,7 @@
       
       {% else %}
       <div class="text-center py-12">
-        <i class="fas fa-inbox text-4xl text-muted-foreground mb-4"></i>
+        <i aria-hidden="true" class="fas fa-inbox text-4xl text-muted-foreground mb-4"></i>
         <h3 class="text-lg font-semibold text-foreground mb-2">ไม่มีข้อมูล</h3>
         <p class="text-muted-foreground">ยังไม่มีข้อมูลที่เก็บจากแหล่งนี้ในช่วงเวลาที่เลือก</p>
       </div>
@@ -260,7 +260,7 @@
   <div class="card mb-8">
     <div class="p-6 border-b">
       <h2 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-calculator text-primary"></i>
+        <i aria-hidden="true" class="fas fa-calculator text-primary"></i>
         การวิเคราะห์เลขที่สกัด
       </h2>
     </div>
@@ -300,7 +300,7 @@
   <div class="card">
     <div class="p-6 border-b">
       <h2 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
-        <i class="fas fa-magic text-secondary"></i>
+        <i aria-hidden="true" class="fas fa-magic text-secondary"></i>
         การใช้งานในการทำนาย
       </h2>
     </div>
@@ -329,7 +329,7 @@
       </div>
       {% else %}
       <div class="text-center py-8">
-        <i class="fas fa-search text-3xl text-muted-foreground mb-3"></i>
+        <i aria-hidden="true" class="fas fa-search text-3xl text-muted-foreground mb-3"></i>
         <p class="text-muted-foreground">ยังไม่มีการใช้แหล่งข้อมูลนี้ในการทำนาย</p>
       </div>
       {% endif %}
@@ -339,12 +339,12 @@
   <!-- Navigation -->
   <div class="flex justify-center mt-8 gap-4">
     <a href="{% url 'ai_engine:data_sources' %}" class="btn btn-primary">
-      <i class="fas fa-arrow-left mr-2"></i>
+      <i aria-hidden="true" class="fas fa-arrow-left mr-2"></i>
       กลับหน้าแหล่งข้อมูล
     </a>
     {% if data_source.is_active %}
     <button onclick="triggerDataCollection()" class="btn btn-secondary">
-      <i class="fas fa-sync-alt mr-2"></i>
+      <i aria-hidden="true" class="fas fa-sync-alt mr-2"></i>
       เก็บข้อมูลใหม่
     </button>
     {% endif %}

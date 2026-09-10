@@ -7,7 +7,7 @@
 <div class="min-h-screen bg-background">
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold text-center mb-8 text-foreground">
-            <i class="fas fa-newspaper text-primary mr-3"></i>
+            <i aria-hidden="true" class="fas fa-newspaper text-primary mr-3"></i>
             ข่าวใบ้หวย
         </h1>
         
@@ -20,12 +20,13 @@
                         <input 
                             type="text" 
                             name="q" 
-                            value="{{ query }}"
+                            value="{{ query|default_if_none:'' }}"
                             placeholder="ค้นหาข่าว หรือเลข..." 
+                            aria-label="ค้นหาข่าว"
                             class="input pr-10"
                         >
                         <button type="submit" class="absolute right-2 top-2 text-muted-foreground hover:text-primary">
-                            <i class="fas fa-search"></i>
+                            <i aria-hidden="true" class="fas fa-search"></i>
                         </button>
                     </div>
                 </form>
@@ -50,7 +51,7 @@
         {% if latest_hints %}
         <div class="card bg-gradient-to-r from-primary/10 to-secondary/10 p-6 mb-8">
             <h2 class="text-2xl font-bold mb-4 text-foreground">
-                <i class="fas fa-star text-primary mr-2"></i>
+                <i aria-hidden="true" class="fas fa-star text-primary mr-2"></i>
                 เลขเด็ดล่าสุด
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -96,11 +97,11 @@
                     
                     <p class="text-muted-foreground mb-4">{{ article.intro|truncatewords:20 }}</p>
                     
-                    {% if article.extracted_numbers %}
+                    {% if article.numbers_with_reasons %}
                     <div class="border-t border-border pt-4">
                         <div class="flex items-center justify-between mb-2">
                             <p class="text-sm font-semibold text-foreground">
-                                <i class="fas fa-hashtag text-primary mr-1"></i>
+                                <i aria-hidden="true" class="fas fa-hashtag text-primary mr-1"></i>
                                 เลขจากข่าว:
                             </p>
                             {% if article.lottery_category %}
@@ -131,7 +132,7 @@
                     
                     <div class="flex items-center justify-between mt-4">
                         <span class="text-sm text-muted-foreground">
-                            <i class="fas fa-eye mr-1"></i> {{ article.views }} views
+                            <i aria-hidden="true" class="fas fa-eye mr-1"></i> {{ article.views }} views
                         </span>
                         <span class="text-primary hover:text-accent transition-colors text-sm">
                             ดูรายละเอียด →
@@ -140,8 +141,19 @@
                 </div>
             </a>
             {% empty %}
-            <div class="col-span-full text-center py-8">
-                <p class="text-muted-foreground">ยังไม่มีข่าว</p>
+            <div class="col-span-full text-center py-12 card p-8">
+                {% if category_slug %}
+                <p class="text-lg font-semibold text-foreground mb-2">ไม่พบหมวดข่าว "{{ category_slug }}"</p>
+                <p class="text-muted-foreground mb-4">หมวดนี้อาจถูกเปลี่ยนชื่อหรือลบไปแล้ว</p>
+                <a href="{% url 'news:news_list' %}" class="btn btn-primary">ดูข่าวทั้งหมด</a>
+                {% elif query %}
+                <p class="text-lg font-semibold text-foreground mb-2">ไม่พบข่าวที่ตรงกับ "{{ query }}"</p>
+                <p class="text-muted-foreground mb-4">ลองใช้คำค้นสั้นลงหรือล้างคำค้น</p>
+                <a href="{% url 'news:news_list' %}" class="btn btn-primary">ล้างคำค้น</a>
+                {% else %}
+                <p class="text-lg font-semibold text-foreground mb-2">ยังไม่มีข่าวในระบบ</p>
+                <p class="text-muted-foreground">เมื่อมีบทความใหม่ ระบบจะแสดงที่นี่</p>
+                {% endif %}
             </div>
             {% endfor %}
         </div>

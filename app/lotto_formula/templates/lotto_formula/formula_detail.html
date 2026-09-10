@@ -2,14 +2,10 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    <!-- เพิ่ม React component สำหรับรายละเอียดสูตร -->
-    <div id="formula-detail" data-formula-id="{{ formula.id }}"></div>
-    
-    <!-- Fallback content for SEO -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mt-8">
+    <div class="card p-6">
         <h1 class="text-3xl font-bold text-gray-800 mb-4">{{ formula.name }}</h1>
-        <p class="text-gray-600 mb-6">{{ formula.description }}</p>
-        
+        <p class="text-gray-600 mb-6">{{ formula.description|default:"ยังไม่มีคำอธิบายสูตร" }}</p>
+
         <div class="grid md:grid-cols-3 gap-4 mb-6">
             <div class="text-center p-4 bg-blue-50 rounded-lg">
                 <div class="text-2xl font-bold text-blue-600">{{ formula.accuracy_rate }}%</div>
@@ -28,9 +24,27 @@
         <div class="mb-6">
             <h2 class="text-xl font-semibold mb-3">วิธีการคำนวณ</h2>
             <div class="bg-gray-50 p-4 rounded-lg">
-                <pre class="whitespace-pre-wrap text-sm">{{ formula.method }}</pre>
+                <pre class="whitespace-pre-wrap text-sm">{{ formula.method|default:"ยังไม่มีรายละเอียดวิธีคำนวณ" }}</pre>
             </div>
         </div>
+
+        {% if predictions %}
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-3">ผลการทำนายล่าสุด</h2>
+            <div class="space-y-2">
+                {% for prediction in predictions %}
+                <div class="flex items-center justify-between border-b border-border pb-2 text-sm">
+                    <span>งวด {{ prediction.draw_date|date:"j M Y" }}: {{ prediction.predicted_numbers }}</span>
+                    <span class="badge {% if prediction.is_correct %}bg-primary{% else %}badge-outline{% endif %}">
+                        {% if prediction.is_correct %}ถูก{% else %}ไม่ถูก{% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <a href="{% url 'lotto_formula:calculator' %}" class="btn btn-primary">ลองคำนวณด้วยสูตรนี้</a>
     </div>
 </div>
 {% endblock %}

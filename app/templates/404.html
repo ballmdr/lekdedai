@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}ไม่พบหน้านี้ - LekdeDai{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto text-center py-16">
+    <div class="text-6xl font-bold text-primary mb-4">404</div>
+    <h1 class="text-2xl font-bold text-gray-800 mb-3">ไม่พบหน้าที่คุณกำลังมองหา</h1>
+    <p class="text-muted-foreground mb-8">ลิงก์อาจถูกย้ายหรือพิมพ์ที่อยู่ผิด ลองกลับไปเริ่มจากหน้าเหล่านี้</p>
+    <div class="flex flex-wrap justify-center gap-3">
+        <a href="/" class="btn btn-primary">กลับหน้าแรก</a>
+        <a href="/dreams/" class="btn btn-outline">วิเคราะห์ฝัน</a>
+        <a href="/lottery_checker/" class="btn btn-outline">ตรวจผลหวย</a>
+    </div>
+</div>
+{% endblock %}

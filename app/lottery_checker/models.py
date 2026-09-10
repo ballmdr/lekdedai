@@ -2,7 +2,11 @@ from django.db import models
 from django.utils import timezone
 
 class LottoResult(models.Model):
-    """ข้อมูลผลรางวัลหวยจาก API"""
+    """ข้อมูลผลรางวัลหวยจาก API — CANONICAL source-of-truth ไฟล์ดิบ.
+
+    writer เดียว: LottoService.save_to_database (idempotent ต่อ draw_date).
+    LotteryDraw ใน lotto_stats เป็น derived read model ที่ sync มาจากตารางนี้เท่านั้น.
+    """
     
     draw_date = models.DateField("วันที่ออกรางวัล", unique=True, db_index=True)
     result_data = models.JSONField("ข้อมูลผลรางวัลจาก API")

@@ -16,6 +16,69 @@ from .models import LottoResult
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# รางวัลแบบจับเต็มเลข 6 หลัก (เรียงตามความสำคัญ)
+FIXED_PRIZES = [
+    ("first", "รางวัลที่ 1", "6,000,000"),
+    ("second", "รางวัลที่ 2", "200,000"),
+    ("third", "รางวัลที่ 3", "80,000"),
+    ("fourth", "รางวัลที่ 4", "40,000"),
+    ("fifth", "รางวัลที่ 5", "20,000"),
+    ("near1", "รางวัลข้างเคียงรางวัลที่ 1", "100,000"),
+]
+
+
+def unwrap_result_data(lotto_data: Any) -> Optional[Dict[str, Any]]:
+    """คืน dict ข้อมูลรางวัล (first/last3f/... ) จาก raw GLO payload หรือข้อมูลที่ unwrap แล้ว"""
+    if not isinstance(lotto_data, dict):
+        return None
+
+    data = lotto_data
+    if "response" in data:
+        response = data.get("response") or {}
+        result = response.get("result") or {}
+        data = result.get("data")
+
+    if not isinstance(data, dict):
+        return None
+    return data
+
+
+def _prize_values(data: Dict[str, Any], key: str) -> list:
+    item = data.get(key)
+    if not isinstance(item, dict) or not isinstance(item.get("number"), list):
+        return []
+    return [str(n.get("value")) for n in item["number"] if isinstance(n, dict)]
+
+
+def check_numbers_against_result(lotto_data: Any, lottery_number: str) -> Optional[list]:
+    """ตรวจเลข 6 หลักกับข้อมูลรางวัลงวดเดียว (source of truth ใช้ร่วมหน้าแรก/หน้ารายละเอียด)
+
+    คืน list ชื่อรางวัลพร้อมจำนวนเงิน หรือ None ถ้าโครงสร้างข้อมูลไม่ถูกต้อง
+    """
+    data = unwrap_result_data(lotto_data)
+    if data is None:
+        return None
+
+    number = str(lottery_number)
+    prizes = []
+
+    # รางวัลที่จับเต็มเลข 6 หลัก
+    for key, label, amount in FIXED_PRIZES:
+        if number in _prize_values(data, key):
+            prizes.append(f"{label} ({amount} บาท)")
+
+    # รางวัลเลขหน้า/ท้าย 3 ตัว และท้าย 2 ตัว (คำนวณจากเลข 6 หลักเท่านั้น)
+    if len(number) == 6:
+        if number[:3] in _prize_values(data, "last3f"):
+            prizes.append("เลขหน้า 3 ตัว (4,000 บาท)")
+        if number[3:6] in _prize_values(data, "last3b"):
+            prizes.append("เลขท้าย 3 ตัว (4,000 บาท)")
+        if number[4:6] in _prize_values(data, "last2"):
+            prizes.append("เลขท้าย 2 ตัว (2,000 บาท)")
+
+    return prizes
+
+
 class LottoService:
     """บริการจัดการข้อมูลหวย"""
     
@@ -90,6 +153,8 @@ class LottoService:
                 return {
                     "success": True,
                     "source": "database",
+                    "origin": existing_result.source,
+                    "is_valid": existing_result.is_valid,
                     "data": existing_result.result_data,
                     "message": "ข้อมูลจากฐานข้อมูล",
                     "draw_date": existing_result.draw_date,
@@ -112,6 +177,7 @@ class LottoService:
             return {
                 "success": True,
                 "source": "api",
+                "origin": "GLO API",
                 "data": api_result,
                 "message": "ข้อมูลจาก API และบันทึกลงฐานข้อมูลแล้ว",
                 "database_saved": db_saved,
@@ -127,36 +193,60 @@ class LottoService:
             }
     
     def save_to_database(self, lotto_data: Dict[str, Any], draw_date: datetime.date) -> bool:
-        """บันทึกข้อมูลหวยลงฐานข้อมูล"""
+        """บันทึกข้อมูลหวยลงฐานข้อมูล (idempotent ต่อ draw_date).
+
+        กติกา canonical (Task 6): LottoResult เป็น source-of-truth ไฟล์ดิบ —
+        writer เดียวคือ service นี้เท่านั้น ห้ามเขียนจากที่อื่นโดยตรง.
+        - sync ซ้ำไม่สร้างแถวซ้ำ (unique draw_date + update path)
+        - ห้ามทับข้อมูลที่ valid แล้วด้วยข้อมูลเสีย
+        """
+        from django.db import IntegrityError
+
         try:
+            validation_result = self.validate_lotto_data(lotto_data)
+            is_valid = validation_result.get('is_valid', False)
+            errors = validation_result.get('error', '') if not is_valid else ""
+
             # ตรวจสอบว่ามีข้อมูลในฐานข้อมูลแล้วหรือไม่
             existing_result = LottoResult.objects.filter(draw_date=draw_date).first()
-            
+
             if existing_result:
+                if existing_result.is_valid and not is_valid:
+                    # ปกป้องข้อมูลที่ถูกแล้ว: อัปเดตแค่เวลาตรวจสอบ
+                    logger.warning(
+                        f"🛡️ ไม่ทับข้อมูลที่ valid แล้วสำหรับวันที่ {draw_date.strftime('%d/%m/%Y')}"
+                    )
+                    existing_result.last_checked = timezone.now()
+                    existing_result.save(update_fields=['last_checked'])
+                    return False
                 logger.info(f"📝 อัปเดตข้อมูลหวยที่มีอยู่แล้วสำหรับวันที่ {draw_date.strftime('%d/%m/%Y')}")
-                # อัปเดตข้อมูลที่มีอยู่
                 existing_result.result_data = lotto_data
-                existing_result.updated_at = timezone.now()
+                existing_result.raw_api_response = lotto_data
+                existing_result.is_valid = is_valid
+                existing_result.validation_errors = errors
+                existing_result.last_checked = timezone.now()
                 existing_result.save()
             else:
                 logger.info(f"💾 บันทึกข้อมูลหวยใหม่สำหรับวันที่ {draw_date.strftime('%d/%m/%Y')}")
-                
-                # ตรวจสอบความถูกต้องของข้อมูล
-                validation_result = self.validate_lotto_data(lotto_data)
-                
+
                 # สร้างข้อมูลใหม่
-                LottoResult.objects.create(
-                    draw_date=draw_date,
-                    result_data=lotto_data,
-                    source="GLO API",
-                    is_valid=validation_result.get('is_valid', False),
-                    last_checked=timezone.now(),
-                    raw_api_response=lotto_data,
-                    validation_errors=validation_result.get('error', '') if not validation_result.get('is_valid') else ""
-                )
-            
+                try:
+                    LottoResult.objects.create(
+                        draw_date=draw_date,
+                        result_data=lotto_data,
+                        source="GLO API",
+                        is_valid=is_valid,
+                        last_checked=timezone.now(),
+                        raw_api_response=lotto_data,
+                        validation_errors=errors
+                    )
+                except IntegrityError:
+                    # แข่งกันสร้างพร้อมกัน: ถอยกลับไป update path
+                    logger.warning(f"⚠️ แถวซ้ำสำหรับ {draw_date} ถอยไป update")
+                    return self.save_to_database(lotto_data, draw_date)
+
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ เกิดข้อผิดพลาดในการบันทึกลงฐานข้อมูล: {e}")
             return False

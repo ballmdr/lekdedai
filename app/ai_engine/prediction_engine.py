@@ -144,10 +144,9 @@ class JournalistAI:
         return confidence
     
     def _get_historical_factor(self, number: str) -> float:
-        """ปัจจัยจากประวัติการออกของเลข"""
+        """ปัจจัยจากประวัติการออกของเลข (ยังไม่ต่อ DB: คืน 0 กลางๆ ห้ามสุ่ม)"""
         # TODO: เชื่อมต่อกับฐานข้อมูลผลหวย
-        # ตอนนี้ใช้ค่าจำลอง
-        return random.uniform(0.05, 0.15)
+        return 0.0
     
     def _generate_reasoning(self, numbers: Dict, sources: List, sentiment: float) -> Dict[str, List[str]]:
         """สร้างเหตุผลประกอบ"""

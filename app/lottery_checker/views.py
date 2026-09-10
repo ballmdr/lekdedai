@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.utils import timezone
 from datetime import datetime, date, timedelta
 import json
@@ -9,7 +9,7 @@ import logging
 import time
 
 from .models import LottoResult
-from .lotto_service import LottoService
+from .lotto_service import LottoService, check_numbers_against_result
 from utils.lottery_dates import LOTTERY_DATES
 
 logger = logging.getLogger(__name__)
@@ -107,8 +107,14 @@ def specific_date_api(request, year, month, day):
             'success': False
         }, status=500)
 
+@require_POST
 def clear_data_api(request):
-    """API endpoint สำหรับล้างข้อมูลทั้งหมด"""
+    """API endpoint สำหรับล้างข้อมูลทั้งหมด (staff เท่านั้น)"""
+    if not request.user.is_staff:
+        return JsonResponse({
+            'success': False,
+            'error': 'ต้องเป็นผู้ดูแลระบบ'
+        }, status=403)
     try:
         service = LottoService()
         success = service.clear_all_data()
@@ -169,36 +175,18 @@ def check_number(request):
             if not result['success']:
                 return JsonResponse(result)
             
-            # ตรวจสอบเลข
-            lotto_data = result['data']
-            all_numbers = []
-            
-            # ดึงเลขรางวัลทั้งหมด
-            if isinstance(lotto_data, dict):
-                for prize_type, numbers in lotto_data.items():
-                    if isinstance(numbers, list):
-                        all_numbers.extend(numbers)
-                    elif isinstance(numbers, str):
-                        all_numbers.append(numbers)
-            
-            # ตรวจสอบว่าเลขที่ตรวจสอบอยู่ในรายการหรือไม่
-            is_winner = str(check_number) in all_numbers
-            
-            # หาประเภทรางวัล
-            prize_type = None
-            if is_winner:
-                for prize_type_name, numbers in lotto_data.items():
-                    if isinstance(numbers, list) and str(check_number) in numbers:
-                        prize_type = prize_type_name
-                        break
-                    elif isinstance(numbers, str) and str(check_number) == numbers:
-                        prize_type = prize_type_name
-                        break
-            
+            # ตรวจสอบเลขด้วย logic กลางชุดเดียวกับหน้าแรก/หน้ารายละเอียด
+            prizes_won = check_numbers_against_result(result['data'], str(check_number))
+            if prizes_won is None:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'ข้อมูลผลหวยไม่ถูกต้อง'
+                })
+
             return JsonResponse({
                 'success': True,
-                'is_winner': is_winner,
-                'prize_type': prize_type,
+                'is_winner': len(prizes_won) > 0,
+                'prizes_won': prizes_won,
                 'check_number': check_number,
                 'draw_date': f"{check_date:02d}/{check_month:02d}/{check_year}",
                 'source': result['source']
@@ -221,10 +209,9 @@ def check_number(request):
         'success': False
     }, status=405)
 
-@csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def refresh_lotto_data_api(request):
-    """API endpoint สำหรับอัปเดตข้อมูลหวยจาก API กองสลากใหม่"""
+    """API endpoint สำหรับอัปเดตข้อมูลหวยจาก API กองสลากใหม่ (staff เท่านั้น)"""
     
     # Handle CORS preflight
     if request.method == "OPTIONS":
@@ -233,20 +220,28 @@ def refresh_lotto_data_api(request):
         response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         response["Access-Control-Allow-Headers"] = "Content-Type"
         return response
-    
+
+    if not request.user.is_staff:
+        response = JsonResponse({
+            'error': 'ต้องเป็นผู้ดูแลระบบ',
+            'success': False
+        }, status=403)
+        response["Access-Control-Allow-Origin"] = "*"
+        return response
+
     try:
         # Parse JSON data
         data = json.loads(request.body)
         date = data.get('date')
         month = data.get('month')
         year = data.get('year')
-        
+
         if not all([date, month, year]):
             return JsonResponse({
                 'error': 'กรุณาระบุ date, month, และ year',
                 'success': False
             }, status=400)
-        
+
         # ใช้ LottoService เพื่ออัปเดตข้อมูล
         service = LottoService()
         result = service.refresh_data_from_api(date, month, year)
@@ -302,64 +297,22 @@ def check_lottery_quick(request):
                 'error': 'ไม่พบข้อมูลผลหวยล่าสุด'
             })
         
-        # ตรวจสอบเลข
-        result_data = latest_result.result_data
-        if not isinstance(result_data, dict):
+        # ตรวจสอบเลขด้วย logic กลางชุดเดียวกับหน้ารายละเอียด
+        prizes_won = check_numbers_against_result(latest_result.result_data, lottery_number)
+        if prizes_won is None:
             return JsonResponse({
                 'success': False,
                 'error': 'ข้อมูลผลหวยไม่ถูกต้อง'
             })
-        
-        # เก็บผลการตรวจสอบ
-        prizes_won = []
-        is_winner = False
-        
-        # ตรวจสอบรางวัลต่างๆ
-        for prize_type, numbers in result_data.items():
-            if isinstance(numbers, list):
-                for number in numbers:
-                    if str(number) == lottery_number:
-                        prizes_won.append(prize_type)
-                        is_winner = True
-            elif isinstance(numbers, str):
-                if numbers == lottery_number:
-                    prizes_won.append(prize_type)
-                    is_winner = True
-        
-        # ตรวจสอบเลข 2 ตัวท้าย และ 3 ตัวท้าย
-        last_2_digits = lottery_number[-2:]
-        last_3_digits = lottery_number[-3:]
-        
-        # ตรวจสอบกับรางวัลที่ 1 สำหรับเลข 2 ตัวและ 3 ตัวท้าย
-        if 'first' in result_data and isinstance(result_data['first'], list):
-            for first_prize in result_data['first']:
-                if str(first_prize)[-2:] == last_2_digits:
-                    prizes_won.append('เลข 2 ตัวท้าย')
-                    is_winner = True
-                if str(first_prize)[-3:] == last_3_digits:
-                    prizes_won.append('เลข 3 ตัวท้าย')
-                    is_winner = True
-        
+
+        is_winner = len(prizes_won) > 0
+
         # สร้างข้อความผลลัพธ์
         if is_winner:
-            prize_names = {
-                'first': 'รางวัลที่ 1',
-                'second': 'รางวัลที่ 2', 
-                'third': 'รางวัลที่ 3',
-                'fourth': 'รางวัลที่ 4',
-                'fifth': 'รางวัลที่ 5',
-                'เลข 2 ตัวท้าย': 'เลข 2 ตัวท้าย',
-                'เลข 3 ตัวท้าย': 'เลข 3 ตัวท้าย'
-            }
-            
-            won_prizes = []
-            for prize in prizes_won:
-                won_prizes.append(prize_names.get(prize, prize))
-            
-            message = f"🎉 ยินดีด้วย! เลข {lottery_number} ถูกรางวัล: {', '.join(won_prizes)}"
+            message = f"🎉 ยินดีด้วย! เลข {lottery_number} ถูกรางวัล: {', '.join(prizes_won)}"
         else:
             message = f"เลข {lottery_number} ไม่ถูกรางวัล งวดวันที่ {latest_result.formatted_date}"
-        
+
         return JsonResponse({
             'success': True,
             'result': {
@@ -383,10 +336,14 @@ def check_lottery_quick(request):
             'error': 'เกิดข้อผิดพลาดในระบบ'
         })
 
-@csrf_exempt
-@require_http_methods(["POST"])
+@require_POST
 def bulk_fetch_api(request):
-    """API สำหรับดึงข้อมูลจาก GLO API ตั้งแต่ 1 มกราคม 2567 (2024)"""
+    """API สำหรับดึงข้อมูลจาก GLO API ตั้งแต่ 1 มกราคม 2567 (2024) (staff เท่านั้น)"""
+    if not request.user.is_staff:
+        return JsonResponse({
+            'error': 'ต้องเป็นผู้ดูแลระบบ',
+            'success': False
+        }, status=403)
     try:
         data = json.loads(request.body)
         start_date_str = data.get('start_date', '2024-01-01')

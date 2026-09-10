@@ -3,7 +3,7 @@
 <div class="dream-prediction-widget bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4 mb-4">
     <div class="flex items-start gap-3">
         <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-moon text-white text-sm"></i>
+            <i aria-hidden="true" class="fas fa-moon text-white text-sm"></i>
         </div>
         <div class="flex-1">
             <h4 class="text-sm font-semibold text-gray-800 mb-2">{{ title }}</h4>
@@ -47,7 +47,7 @@
 {% elif not available %}
 <div class="dream-prediction-unavailable bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
     <div class="text-gray-500 text-xs">
-        <i class="fas fa-exclamation-circle mr-1"></i>
+        <i aria-hidden="true" class="fas fa-exclamation-circle mr-1"></i>
         {{ message|default:"ระบบตีความฝันไม่พร้อมใช้งาน" }}
     </div>
 </div>

@@ -11,11 +11,11 @@
   <div class="container mx-auto px-4 relative z-10">
     <div class="text-center mb-8">
       <h1 class="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
-        <i class="fas fa-brain text-primary mr-2"></i>
+        <i aria-hidden="true" class="fas fa-brain text-primary mr-2"></i>
         เลขเด็ด AI
       </h1>
       <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
-        ระบบ AI วิเคราะห์เลขเด็ดด้วยปัจจัยต่างๆ อย่างเป็นวิทยาศาสตร์
+        ระบบวิเคราะห์เลขจากสถิติและปัจจัยต่างๆ ผลลัพธ์เป็นเพียงแนวทาง ไม่รับประกันผลรางวัล
       </p>
     </div>
   </div>
@@ -26,13 +26,22 @@
     <div class="card border-primary/20 bg-primary/5 mb-8">
         <div class="p-8">
             <div class="text-center mb-6">
-                <h2 class="text-2xl font-serif font-bold text-foreground mb-2">การทำนายประจำวันที่</h2>
-                <p class="text-3xl font-bold text-primary mb-4">{{ prediction.prediction_date|date:"j F Y" }}</p>
+                <h2 class="text-2xl font-serif font-bold text-foreground mb-2">
+                    {% if prediction.for_draw_date %}
+                    ทำนายสำหรับงวดวันที่ {{ prediction.for_draw_date|date:"j F Y" }}
+                    {% else %}
+                    การทำนายล่าสุด
+                    {% endif %}
+                </h2>
+                <p class="text-sm text-muted-foreground">
+                    สร้างเมื่อ {{ prediction.prediction_date|date:"j F Y" }}
+                    {% if prediction.created_at %}เวลา {{ prediction.created_at|date:"H:i" }} น.{% endif %}
+                </p>
             </div>
             
             <div class="bg-card rounded-lg p-6 border border-border mb-6">
                 <h3 class="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <i class="fas fa-magic text-primary"></i>
+                    <i aria-hidden="true" class="fas fa-magic text-primary"></i>
                     เลขเด็ด 2 ตัว
                 </h3>
                 <div class="grid grid-cols-5 md:grid-cols-10 gap-3 mb-6">
@@ -44,7 +53,7 @@
                 </div>
                 
                 <h3 class="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <i class="fas fa-star text-secondary"></i>
+                    <i aria-hidden="true" class="fas fa-star text-secondary"></i>
                     เลขเด็ด 3 ตัว
                 </h3>
                 <div class="grid grid-cols-3 md:grid-cols-5 gap-3">
@@ -66,7 +75,7 @@
                 </div>
                 
                 <p class="text-sm text-muted-foreground">
-                    <i class="fas fa-robot mr-1"></i>
+                    <i aria-hidden="true" class="fas fa-robot mr-1"></i>
                     วิเคราะห์โดย {{ prediction.ai_model.name }} v{{ prediction.ai_model.version }}
                 </p>
             </div>
@@ -78,7 +87,7 @@
     <div class="card mb-8">
         <div class="p-6 border-b">
             <h3 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
-                <i class="fas fa-robot text-primary"></i>
+                <i aria-hidden="true" class="fas fa-robot text-primary"></i>
                 เหตุผลการทำนาย
             </h3>
         </div>
@@ -100,7 +109,7 @@
     <div class="card mb-8">
         <div class="p-6 border-b">
             <h3 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
-                <i class="fas fa-chart-bar text-secondary"></i>
+                <i aria-hidden="true" class="fas fa-chart-bar text-secondary"></i>
                 ปัจจัยที่ใช้ในการวิเคราะห์
             </h3>
         </div>
@@ -129,7 +138,7 @@
     <div class="card mb-8">
         <div class="p-6 border-b">
             <h3 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
-                <i class="fas fa-comments text-accent"></i>
+                <i aria-hidden="true" class="fas fa-comments text-accent"></i>
                 ความคิดเห็นผู้ใช้
             </h3>
         </div>
@@ -138,17 +147,18 @@
             <div class="mb-6 p-4 bg-muted/30 rounded-lg">
                 <h4 class="font-semibold text-foreground mb-3">ให้คะแนนการทำนาย</h4>
                 <div class="flex items-center gap-4 mb-3">
-                    <div class="flex gap-1" id="ratingStars">
+                    <div class="flex gap-1" id="ratingStars" role="group" aria-label="ให้คะแนนการทำนาย 1 ถึง 5 ดาว">
                         {% for i in "12345" %}
-                        <button onclick="setRating({{ i }})" class="text-2xl text-muted-foreground hover:text-primary transition">
+                        <button type="button" onclick="setRating({{ i }})" class="text-2xl text-muted-foreground hover:text-primary transition" aria-label="{{ i }} ดาว">
                             ⭐
                         </button>
                         {% endfor %}
                     </div>
-                    <span id="ratingText" class="text-sm text-muted-foreground"></span>
+                    <span id="ratingText" class="text-sm text-muted-foreground" aria-live="polite"></span>
                 </div>
                 <textarea id="feedbackComment" 
                           placeholder="แสดงความคิดเห็น (ไม่บังคับ)" 
+                          aria-label="แสดงความคิดเห็น"
                           class="textarea mb-3"
                           rows="3"></textarea>
                 <div class="flex items-center gap-4">
@@ -157,7 +167,7 @@
                         <span class="text-foreground">ฉันถูกรางวัล!</span>
                     </label>
                     <button onclick="submitFeedback()" class="btn btn-primary">
-                        <i class="fas fa-paper-plane mr-2"></i>
+                        <i aria-hidden="true" class="fas fa-paper-plane mr-2"></i>
                         ส่งความเห็น
                     </button>
                 </div>
@@ -204,7 +214,7 @@
     <div class="card">
         <div class="p-6 border-b">
             <h3 class="text-xl font-serif font-bold text-foreground flex items-center gap-2">
-                <i class="fas fa-history text-secondary"></i>
+                <i aria-hidden="true" class="fas fa-history text-secondary"></i>
                 การทำนายย้อนหลัง
             </h3>
         </div>
@@ -234,7 +244,7 @@
             <div class="text-center mt-6">
                 <a href="{% url 'ai_engine:history' %}" 
                    class="btn btn-outline">
-                    <i class="fas fa-history mr-2"></i>
+                    <i aria-hidden="true" class="fas fa-history mr-2"></i>
                     ดูประวัติทั้งหมด
                 </a>
             </div>
