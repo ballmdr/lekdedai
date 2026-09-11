@@ -115,6 +115,8 @@ class JournalistAI:
         three_digit = []
         
         for number, freq in frequency_counter.most_common(20):
+            if freq <= 0:
+                continue
             if len(number) == 2:
                 two_digit.append(number)
             elif len(number) == 3:
@@ -131,10 +133,15 @@ class JournalistAI:
         confidence = {'two_digit': [], 'three_digit': []}
         
         # คำนวณจากความถี่และปรับด้วยปัจจัยต่างๆ
-        max_freq = max(frequency.values()) if frequency else 1
+        # เฉพาะค่าความถี่ที่เป็นบวก (relevance_score = 0 ทำให้ความถี่เป็น 0 ได้)
+        max_freq = max((value for value in frequency.values() if value > 0), default=0)
+        if max_freq <= 0:
+            return confidence
         
         for category in ['two_digit', 'three_digit']:
             for number in numbers[category]:
+                if frequency[number] <= 0:
+                    continue
                 base_confidence = (frequency[number] / max_freq) * 0.8
                 # เพิ่มความมั่นใจถ้าเป็นเลขที่ไม่ออกนาน
                 historical_factor = self._get_historical_factor(number)
@@ -272,6 +279,8 @@ class InterpreterAI:
         three_digit = []
         
         for number, freq in combined.most_common(15):
+            if freq <= 0:
+                continue
             if len(number) == 2:
                 two_digit.append(number)
             elif len(number) == 3:
@@ -285,10 +294,14 @@ class InterpreterAI:
     def _calculate_mystical_confidence(self, numbers: Dict, combined: Counter) -> Dict[str, List[float]]:
         """คำนวณความมั่นใจเลขมงคล"""
         confidence = {'two_digit': [], 'three_digit': []}
-        max_freq = max(combined.values()) if combined else 1
+        max_freq = max((value for value in combined.values() if value > 0), default=0)
+        if max_freq <= 0:
+            return confidence
         
         for category in ['two_digit', 'three_digit']:
             for number in numbers[category]:
+                if combined[number] <= 0:
+                    continue
                 base_conf = (combined[number] / max_freq) * 0.75
                 mystical_bonus = 0.1  # โบนัสสำหรับเลขมงคล
                 confidence[category].append(min(0.9, base_conf + mystical_bonus))

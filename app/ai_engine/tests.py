@@ -384,3 +384,51 @@ class FeedbackCapsTests(TestCase):
         res = self._post({"rating": 5, "comment": "a" * 1500})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(UserFeedback.objects.get().comment), 1000)
+
+
+class PredictionZeroFrequencyTests(TestCase):
+    """Regression: relevance_score = 0 ทำให้ความถี่เป็น 0 — ต้องไม่หารศูนย์."""
+
+    def test_journalist_confidence_zero_frequency(self):
+        from collections import Counter
+
+        from ai_engine.prediction_engine import JournalistAI
+
+        ai = JournalistAI()
+        numbers = {"two_digit": ["45"], "three_digit": ["123"]}
+        confidence = ai._calculate_confidence(numbers, Counter({"45": 0, "123": 0}))
+        self.assertEqual(confidence, {"two_digit": [], "three_digit": []})
+
+    def test_journalist_empty_records_no_crash(self):
+        from ai_engine.prediction_engine import JournalistAI
+
+        result = JournalistAI().analyze_text_data([])
+        self.assertEqual(result["predicted_numbers"], {"two_digit": [], "three_digit": []})
+        self.assertEqual(result["confidence_scores"], {"two_digit": [], "three_digit": []})
+
+    def test_mystical_confidence_zero_frequency(self):
+        from collections import Counter
+
+        from ai_engine.prediction_engine import InterpreterAI
+
+        ai = InterpreterAI()
+        numbers = {"two_digit": ["45"], "three_digit": ["123"]}
+        confidence = ai._calculate_mystical_confidence(
+            numbers, Counter({"45": 0, "123": 0})
+        )
+        self.assertEqual(confidence, {"two_digit": [], "three_digit": []})
+
+    def test_zero_relevance_record_does_not_crash(self):
+        from collections import Counter
+
+        from ai_engine.prediction_engine import JournalistAI
+
+        ai = JournalistAI()
+        # จำลองตัวนับที่มีแต่ค่าศูนย์แบบเดียวกับที่เกิดจาก relevance_score = 0
+        freq = Counter()
+        freq["45"] += 0.0
+        self.assertEqual(max((v for v in freq.values() if v > 0), default=0), 0)
+        self.assertEqual(
+            ai._calculate_confidence({"two_digit": ["45"], "three_digit": []}, freq),
+            {"two_digit": [], "three_digit": []},
+        )
