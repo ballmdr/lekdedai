@@ -369,6 +369,6 @@ class PredictionAccuracyTrackingAdmin(admin.ModelAdmin):
     accuracy_display.short_description = 'ความแม่นยำ'
 
 # กำหนดหมวดหมู่ใน Admin Site
-admin.site.site_header = 'LekDedAI - ระบบจัดการ AI'
+admin.site.site_header = 'เลขเด็ดเอไอ - ระบบจัดการ AI'
 admin.site.site_title = 'AI Management'
 admin.site.index_title = 'ระบบทำนายเลขเด็ดด้วย AI'

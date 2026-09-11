@@ -128,7 +128,7 @@ def beta_gate(request):
         error = "รหัสเชิญไม่ถูกต้อง หมดอายุ หรือถูกใช้ครบแล้ว"
 
     return render(request, "qa/beta_gate.html", {
-        "page_title": "ช่วงทดลองใช้งาน (closed beta) - LekdeDai",
+        "page_title": "ช่วงทดลองใช้งาน (closed beta) - เลขเด็ดเอไอ",
         "error": error,
         "next": nxt,
         "status": status,
@@ -139,6 +139,6 @@ def beta_closed(request):
     """GET /beta/closed/ — ประกาศว่าระบบหยุดรับชั่วคราว (kill switch/P0)."""
     status = get_beta_status()
     return render(request, "qa/beta_closed.html", {
-        "page_title": "ระบบปิดชั่วคราว - LekdeDai",
+        "page_title": "ระบบปิดชั่วคราว - เลขเด็ดเอไอ",
         "status": status,
     })

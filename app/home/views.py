@@ -154,14 +154,14 @@ from .models import ContactMessage
 def privacy_policy(request):
     """นโยบายความเป็นส่วนตัว (Task 26)."""
     return render(request, "home/privacy.html", {
-        "page_title": "นโยบายความเป็นส่วนตัว - LekdeDai",
+        "page_title": "นโยบายความเป็นส่วนตัว - เลขเด็ดเอไอ",
     })
 
 
 def terms_of_use(request):
     """เงื่อนไขการใช้บริการ (Task 26)."""
     return render(request, "home/terms.html", {
-        "page_title": "เงื่อนไขการใช้ - LekdeDai",
+        "page_title": "เงื่อนไขการใช้ - เลขเด็ดเอไอ",
     })
 
 
@@ -189,7 +189,7 @@ def contact(request):
         messages.success(request, "ได้รับข้อความแล้ว ทีมงานจะตรวจสอบโดยเร็ว")
         return redirect("contact")
     return render(request, "home/contact.html", {
-        "page_title": "ติดต่อเรา - LekdeDai",
+        "page_title": "ติดต่อเรา - เลขเด็ดเอไอ",
         "selected_type": selected_type,
     })
 

@@ -87,7 +87,7 @@ class Command(BaseCommand):
             from django.core.mail import mail_admins
 
             mail_admins(
-                "[LekdeDai] alerts",
+                "[เลขเด็ดเอไอ] alerts",
                 "\n".join(f"- {a}" for a in alerts),
             )
             self.stdout.write("ส่งอีเมลแจ้งเตือนแล้ว")

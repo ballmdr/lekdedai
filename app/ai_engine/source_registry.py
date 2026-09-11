@@ -20,11 +20,11 @@ DEFAULT_FETCH_POLICY = {
 SOURCE_REGISTRY = [
     {
         "key": "internal-news",
-        "name": "ข่าวในระบบ LekdeDai",
+        "name": "ข่าวในระบบเลขเด็ดเอไอ",
         "source_type": "news",
         "category": "internal",
         "url": "/news/",
-        "attribution": "ระบบ LekdeDai",
+        "attribution": "ระบบเลขเด็ดเอไอ",
         "fetch_policy": {
             "store": "articles",
             "fulltext": True,
