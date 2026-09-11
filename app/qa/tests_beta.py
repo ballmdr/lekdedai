@@ -322,8 +322,9 @@ class ProductionSmokeTests(TestCase):
         )
 
         class Resp:
-            def __init__(self, status_code):
+            def __init__(self, status_code, headers=None):
                 self.status_code = status_code
+                self.headers = headers or {}
 
             def json(self):
                 return {"status": "ok"}
@@ -346,6 +347,7 @@ class ProductionSmokeTests(TestCase):
 
         class Resp:
             status_code = 200
+            headers = {}
 
             def json(self):
                 return {"status": "ok"}
@@ -353,5 +355,27 @@ class ProductionSmokeTests(TestCase):
         with patch(
             "qa.management.commands.production_smoke.requests.get",
             return_value=Resp(),
+        ):
+            self.assertEqual(collect_http_issues("https://example.com"), [])
+
+    def test_http_checks_accept_beta_redirect(self):
+        from qa.management.commands.production_smoke import collect_http_issues
+
+        class Resp:
+            def __init__(self, status_code, headers=None):
+                self.status_code = status_code
+                self.headers = headers or {}
+
+            def json(self):
+                return {"status": "ok"}
+
+        def fake_get(url, timeout=None):
+            if url.endswith("/health/"):
+                return Resp(200)
+            return Resp(302, {"Location": "/beta/?next=/"})
+
+        with patch(
+            "qa.management.commands.production_smoke.requests.get",
+            side_effect=fake_get,
         ):
             self.assertEqual(collect_http_issues("https://example.com"), [])

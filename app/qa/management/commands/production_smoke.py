@@ -49,8 +49,13 @@ def collect_http_issues(base_url, routes=None, timeout=10):
             continue
         try:
             res = requests.get(f"{base}{route}", timeout=timeout)
-            if res.status_code != 200:
-                issues.append(f"GET {route} -> {res.status_code}")
+            if res.status_code == 200:
+                continue
+            # ช่วง closed beta: 302 ไป /beta/ ถือว่าแอปยังทำงานปกติ
+            location = res.headers.get("Location", "")
+            if res.status_code in (301, 302, 303, 307, 308) and "/beta/" in location:
+                continue
+            issues.append(f"GET {route} -> {res.status_code}")
         except requests.RequestException as exc:
             issues.append(f"GET {route} เข้าไม่ถึง: {type(exc).__name__}")
 
