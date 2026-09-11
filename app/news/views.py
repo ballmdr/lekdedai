@@ -9,6 +9,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 
 from .models import NewsArticle, NewsCategory, LuckyNumberHint, NewsComment
+from .ingestion import get_news_freshness
 # from .news_analyzer import NewsAnalyzer  # ใช้ analyzer_switcher แทน
 
 def news_list(request):
@@ -54,6 +55,7 @@ def news_list(request):
         'categories': categories,
         'latest_hints': latest_hints,
         'query': query,
+        'freshness': get_news_freshness(),
     }
     
     return render(request, 'news/news_list.html', context)

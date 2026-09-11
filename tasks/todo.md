@@ -39,10 +39,10 @@
 - [x] Task 13 — กำหนดนิยามและแก้ความถูกต้องของสถิติ (แยกเลขท้าย 2 ตัวกับเลขคู่ในรางวัลที่ 1 ทั้งคำนวณ/ชื่อ/UI; fixture 5 งวดรวมเลขซ้ำ+ศูนย์นำหน้าตรงมือ; 92 tests เขียว)
 - [x] Task 14 — ทำ contract สูตรหวยและ seed ที่ใช้ production ได้ (code/version/specs/approved + migration; dispatch ตาม code; seed idempotent ไม่สร้างผล/วัดปลอม + ไม่ล้างผลวัดเดิม; ผูกเข้า setup; 100 tests เขียว)
 - [x] Task 15 — เชื่อมสูตรกับผลจริงและวัดผลย้อนหลังอย่างซื่อสัตย์ (บันทึกเฉพาะงวดหน้า + recompute กันปลอม, กติกาตรวจประกาศชัด, verify command พร้อม numerator/denominator/ช่วงวันที่, UI ผลย้อนหลัง/รอตรวจ, 111 tests เขียว)
-- [ ] Task 16 — คืนทะเบียนแหล่งข่าวและ provenance
-- [ ] Task 17 — ทำ RSS ingestion เป็นเส้นทางหลัก
-- [ ] Task 18 — ทำ category scraper เป็น fallback พร้อม editorial gate
-- [ ] Task 19 — เชื่อมข่าวที่ผ่านการคัดเข้าสู่หน้าเว็บ
+- [x] Task 16 — คืนทะเบียนแหล่งข่าวและ provenance (registry version-controlled 4 แหล่งที่ยืนยันดึงได้จริง, seed idempotent ไม่ล้าง timestamp, หน้า data-sources โชว์สำเร็จ/ล้มเหลวล่าสุด, 115 tests เขียว)
+- [x] Task 17 — ทำ RSS ingestion เป็นเส้นทางหลัก (service แยก testable + normalize/dedupe/hash/provenance + draft/published ตามนโยบาย + AI best-effort + dry-run; fixture offline + mocked network; dry-run + จริงกับ feed ไทยรัฐ/INN ได้ 18 ข่าว; 125 tests เขียว)
+- [x] Task 18 — ทำ category scraper เป็น fallback พร้อม editorial gate (รวม scraper พัง 2 ตัวเป็น owner เดียว + ลบของเก่า; รันเฉพาะเมื่อ RSS เงียบ; draft เสมอ + admin อนุมัติ/ปฏิเสธ; กันซ้ำแม้ URL เปลี่ยน; staging ได้ร่างจริง 3 ข่าว; 138 tests เขียว)
+- [x] Task 19 — เชื่อมข่าวที่ผ่านการคัดเข้าสู่หน้าเว็บ (partial ที่มาชุดเดียวทุกหน้า: source link/วันเผยแพร่/วันดึง/ป้ายวิเคราะห์; banner ตรง ingestion failure/stale; draft ไม่โผล่; 145 tests เขียว)
 - [ ] Task 20 — ทำ metadata และ readiness gate ของ AI prediction
 
 ### Checkpoint C

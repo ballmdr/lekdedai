@@ -100,7 +100,7 @@
               <div class="flex items-center gap-3 text-sm text-muted-foreground mb-2">
                 <span class="inline-flex items-center gap-1">
                   <i aria-hidden="true" class="fas fa-tag"></i>
-                  {{ source.get_source_type_display }}
+                  {{ source.get_source_type_display }} · {{ source.get_category_display }}
                 </span>
                 {% if source.url %}
                 <span class="inline-flex items-center gap-1">
@@ -111,8 +111,8 @@
                 </span>
                 {% endif %}
               </div>
-              {% if source.description %}
-              <p class="text-sm text-foreground">{{ source.description }}</p>
+              {% if source.attribution %}
+              <p class="text-sm text-foreground">ที่มา: {{ source.attribution }}</p>
               {% endif %}
             </div>
           </div>
@@ -136,7 +136,7 @@
         </div>
 
         <!-- Source Statistics -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
           <div class="text-center p-3 bg-muted/30 rounded-lg">
             <div class="text-lg font-bold text-foreground">{{ source.get_total_records }}</div>
             <div class="text-xs text-muted-foreground">ข้อมูลทั้งหมด</div>
@@ -150,11 +150,18 @@
             <div class="text-xs text-muted-foreground">ความถี่เก็บ</div>
           </div>
           <div class="text-center p-3 bg-muted/30 rounded-lg">
-            <div class="text-lg font-bold text-foreground">
-              {% if source.last_scraped %}{{ source.last_scraped|timesince }}
-              {% else %}ไม่เคย{% endif %}
+            <div class="text-lg font-bold text-green-700">
+              {% if source.last_success_at %}{{ source.last_success_at|timesince }}ที่แล้ว
+              {% else %}ยังไม่เคย{% endif %}
             </div>
-            <div class="text-xs text-muted-foreground">เก็บล่าสุด</div>
+            <div class="text-xs text-muted-foreground">สำเร็จล่าสุด</div>
+          </div>
+          <div class="text-center p-3 bg-muted/30 rounded-lg">
+            <div class="text-lg font-bold text-red-600">
+              {% if source.last_failure_at %}{{ source.last_failure_at|timesince }}ที่แล้ว
+              {% else %}ยังไม่เคย{% endif %}
+            </div>
+            <div class="text-xs text-muted-foreground">ล้มเหลวล่าสุด</div>
           </div>
         </div>
 

@@ -187,7 +187,11 @@ class UserFeedback(models.Model):
         ordering = ['-created_at']
 
 class DataSource(models.Model):
-    """แหล่งข้อมูลสำหรับ AI"""
+    """แหล่งข้อมูลสำหรับ AI — ทะเบียนที่อนุมัติอยู่ใน ai_engine/source_registry.py (Task 16).
+
+    key คือตัวตนของแหล่ง (seed ยึด key ไม่ยึดชื่อ), category บอกวิธีดึง,
+    last_success_at/last_failure_at อัปเดตโดย ingestion (Task 17) ไม่ถูก seed ล้าง.
+    """
     SOURCE_TYPES = [
         ('news', 'ข่าว'),
         ('social_media', 'โซเชียลมีเดีย'),
@@ -196,16 +200,33 @@ class DataSource(models.Model):
         ('trends', 'เทรนด์'),
         ('astrology', 'โหราศาสตร์'),
     ]
-    
+    FETCH_CATEGORIES = [
+        ('rss', 'RSS Feed'),
+        ('category_page', 'หน้าหมวดหมู่ (fallback)'),
+        ('api', 'API'),
+        ('internal', 'ภายในระบบ'),
+    ]
+
+    key = models.SlugField(
+        "รหัสแหล่งข้อมูล", max_length=50, unique=True, null=True, blank=True,
+        default=None,
+        help_text="ว่างได้สำหรับแหล่งที่เพิ่มเอง (NULL ไม่ชน unique); แถวทะเบียนต้องมี key",
+    )
     name = models.CharField("ชื่อแหล่งข้อมูล", max_length=100)
     source_type = models.CharField("ประเภท", max_length=20, choices=SOURCE_TYPES)
+    category = models.CharField("วิธีดึงข้อมูล", max_length=20, choices=FETCH_CATEGORIES, default="rss")
     url = models.URLField("URL", blank=True)
+    attribution = models.CharField("ที่มา/เครดิต", max_length=200, blank=True)
+    fetch_policy = models.JSONField("นโยบายเก็บข้อมูล", default=dict)
     api_endpoint = models.URLField("API Endpoint", blank=True)
     api_key = models.CharField("API Key", max_length=255, blank=True)
     is_active = models.BooleanField("ใช้งานอยู่", default=True)
     scraping_interval = models.IntegerField("ความถี่เก็บข้อมูล (ชั่วโมง)", default=6)
-    
+
     last_scraped = models.DateTimeField("เก็บข้อมูลล่าสุด", null=True, blank=True)
+    last_success_at = models.DateTimeField("สำเร็จล่าสุด", null=True, blank=True)
+    last_failure_at = models.DateTimeField("ล้มเหลวล่าสุด", null=True, blank=True)
+    last_error = models.TextField("ข้อผิดพลาดล่าสุด", blank=True, default="")
     
     class Meta:
         verbose_name = "แหล่งข้อมูล"

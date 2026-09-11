@@ -74,6 +74,33 @@ class NewsArticle(models.Model):
         help_text="รูปแบบ: [{'number': '24', 'reason': 'วันที่เกิดเหตุ'}, ...]"
     )
 
+    # ที่มาและการดึงข้อมูล (Task 17: provenance ครบทุกรายการที่ ingestion สร้าง)
+    data_source = models.ForeignKey(
+        "ai_engine.DataSource",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="articles",
+        verbose_name="แหล่งที่ดึงมา",
+    )
+    source_url = models.URLField("URL ต้นฉบับ", max_length=500, blank=True)
+    content_hash = models.CharField(
+        "แฮชเนื้อหา (กันซ้ำ)",
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+        default=None,
+    )
+    fetched_at = models.DateTimeField("เวลาที่ดึง", default=timezone.now)
+    analysis_status = models.CharField(
+        "สถานะวิเคราะห์",
+        max_length=10,
+        choices=[("pending", "รอวิเคราะห์"), ("analyzed", "วิเคราะห์แล้ว"), ("failed", "วิเคราะห์ล้มเหลว")],
+        default="pending",
+    )
+    analysis_error = models.TextField("ข้อผิดพลาดวิเคราะห์", blank=True, default="")
+
     
     # การเผยแพร่
     status = models.CharField(

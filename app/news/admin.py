@@ -18,11 +18,11 @@ class NewsCategoryAdmin(admin.ModelAdmin):
 @admin.register(NewsArticle)
 class NewsArticleAdmin(admin.ModelAdmin):
     form = NewsArticleForm
-    list_display = ['title', 'numbers_display', 'category', 'status', 'published_date', 'views']
-    list_filter = ['status', 'category', 'published_date']
+    list_display = ['title', 'numbers_display', 'category', 'status', 'analysis_status', 'published_date', 'views']
+    list_filter = ['status', 'analysis_status', 'category', 'published_date']
     search_fields = ['title', 'content']
     date_hierarchy = 'published_date'
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = ['created_at', 'updated_at', 'fetched_at', 'content_hash']
 
     def numbers_display(self, obj):
         """แสดงเลขพร้อมเหตุผลในรายการ"""
@@ -61,6 +61,9 @@ class NewsArticleAdmin(admin.ModelAdmin):
         ('การเผยแพร่', {
             'fields': ('status', 'published_date', 'views')
         }),
+        ('ที่มาและการดึงข้อมูล (Task 17/18 provenance)', {
+            'fields': ('data_source', 'source_url', 'content_hash', 'fetched_at', 'analysis_status', 'analysis_error'),
+        }),
         ('SEO', {
             'fields': ('meta_description',),
             'classes': ('collapse',)
@@ -72,18 +75,27 @@ class NewsArticleAdmin(admin.ModelAdmin):
         }),
     )
     
-    actions = ['publish_articles', 'extract_numbers']
+    actions = ['publish_articles', 'archive_articles', 'extract_numbers']
     
     def publish_articles(self, request, queryset):
         queryset.update(status='published', published_date=timezone.now())
         self.message_user(request, f"เผยแพร่ {queryset.count()} บทความแล้ว")
     publish_articles.short_description = "เผยแพร่บทความที่เลือก"
-    
+
+    def archive_articles(self, request, queryset):
+        queryset.update(status='archived')
+        self.message_user(request, f"ปฏิเสธ {queryset.count()} บทความแล้ว (เก็บถาวร)")
+    archive_articles.short_description = "ปฏิเสธบทความที่เลือก (เก็บถาวร)"
+
     def extract_numbers(self, request, queryset):
         for article in queryset:
             numbers = article.extract_numbers_from_content()
-            article.extracted_numbers = ', '.join(numbers)
-            article.save()
+            article.numbers_with_reasons = [
+                {'number': num, 'reason': 'สกัดจากเนื้อหาโดยผู้ดูแล'}
+                for num in numbers[:10]
+            ]
+            article.analysis_status = 'analyzed'
+            article.save(update_fields=['numbers_with_reasons', 'analysis_status'])
         self.message_user(request, f"วิเคราะห์เลขจาก {queryset.count()} บทความแล้ว")
     extract_numbers.short_description = "วิเคราะห์เลขจากเนื้อหา"
 

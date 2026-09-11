@@ -214,6 +214,11 @@
               </h2>
               <a href="/news/" class="btn btn-outline">ดูทั้งหมด</a>
             </div>
+            {% if news_freshness.is_stale and latest_news %}
+            <p class="text-xs text-orange-600 mb-4" role="status">
+              ข่าวชุดนี้อาจไม่อัปเดต — ดึงล่าสุด {{ news_freshness.latest_fetched|date:"j M Y H:i" }}
+            </p>
+            {% endif %}
 
             <div class="space-y-4">
               {% for article in latest_news %}
@@ -248,6 +253,9 @@
                             <i aria-hidden="true" class="fas fa-users"></i>
                             อ่าน {{ article.views }} ครั้ง
                           </span>
+                        </div>
+                        <div class="mt-2">
+                          {% include "news/_article_meta.html" with article=article %}
                         </div>
                       </div>
                     </div>

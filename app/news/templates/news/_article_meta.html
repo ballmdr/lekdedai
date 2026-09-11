@@ -1,0 +1,22 @@
+{# Task 19: แถบที่มาข่าวชุดเดียว ใช้ร่วมกันทุกหน้า (list/detail/home) #}
+<div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+  {% if article.data_source %}
+  <span>แหล่ง: {{ article.data_source.attribution|default:article.data_source.name }}</span>
+  {% endif %}
+  {% if article.source_url %}
+  <a href="{{ article.source_url }}" target="_blank" rel="noopener" class="text-primary hover:underline">อ่านต้นฉบับ</a>
+  {% endif %}
+  {% if article.published_date %}
+  <span>เผยแพร่ {{ article.published_date|date:"j M Y H:i" }}</span>
+  {% endif %}
+  {% if article.fetched_at %}
+  <span>ดึงข้อมูล {{ article.fetched_at|date:"j M Y H:i" }}</span>
+  {% endif %}
+  {% if article.analysis_status == "analyzed" %}
+  <span class="badge bg-primary text-primary-foreground">วิเคราะห์แล้ว</span>
+  {% elif article.analysis_status == "failed" %}
+  <span class="badge badge-outline">วิเคราะห์ไม่สำเร็จ</span>
+  {% else %}
+  <span class="badge badge-outline">รอวิเคราะห์</span>
+  {% endif %}
+</div>

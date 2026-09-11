@@ -10,6 +10,16 @@
             <i aria-hidden="true" class="fas fa-newspaper text-primary mr-3"></i>
             ข่าวใบ้หวย
         </h1>
+
+        {% if freshness.failure_newer %}
+        <div class="card p-4 mb-6 border-orange-200 bg-orange-50 text-sm text-orange-800" role="alert">
+            การดึงข่าวล่าสุดล้มเหลว — กำลังแสดงข่าวที่ยืนยันแล้ว (ดึงล่าสุด {{ freshness.latest_fetched|date:"j M Y H:i"|default:"—" }})
+        </div>
+        {% elif freshness.is_stale and articles %}
+        <div class="card p-4 mb-6 text-sm text-muted-foreground" role="status">
+            ข่าวชุดนี้อาจไม่อัปเดต — ดึงล่าสุด {{ freshness.latest_fetched|date:"j M Y H:i" }}
+        </div>
+        {% endif %}
         
         <!-- Search and Filter -->
         <div class="card p-6 mb-8">
@@ -88,6 +98,8 @@
                             {{ article.published_date|date:"j M Y" }}
                         </span>
                     </div>
+
+                    {% include "news/_article_meta.html" with article=article %}
                     
                     <h3 class="text-xl font-bold mb-2">
                         <span class="text-foreground hover:text-primary transition-colors">

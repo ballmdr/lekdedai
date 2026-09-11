@@ -9,6 +9,7 @@ import json
 
 # Import models จาก apps ต่างๆ
 from news.models import NewsArticle
+from news.ingestion import get_news_freshness
 from ai_engine.models import (
     LuckyNumberPrediction, EnsemblePrediction, 
     PredictionAccuracyTracking, DataIngestionRecord
@@ -272,6 +273,7 @@ def home(request):
     # จัดเตรียม context สำหรับ template
     context = {
         'latest_news': latest_news,
+        'news_freshness': get_news_freshness(),
         'latest_prediction': latest_prediction,
         'ai_prediction': latest_prediction,  # เพิ่ม alias สำหรับ template ใหม่
         'ai_card': ai_card,

@@ -90,20 +90,20 @@ class UserFeedbackAdmin(admin.ModelAdmin):
 
 @admin.register(DataSource)
 class DataSourceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'source_type', 'is_active', 'scraping_interval', 'last_scraped_display']
-    list_filter = ['source_type', 'is_active']
-    search_fields = ['name']
+    list_display = ['key', 'name', 'source_type', 'category', 'is_active', 'scraping_interval', 'last_scraped_display']
+    list_filter = ['source_type', 'category', 'is_active']
+    search_fields = ['key', 'name', 'attribution']
     actions = ['activate_sources', 'deactivate_sources', 'run_ingestion']
     
     fieldsets = (
         ('ข้อมูลพื้นฐาน', {
-            'fields': ('name', 'source_type', 'is_active')
+            'fields': ('key', 'name', 'source_type', 'category', 'attribution', 'is_active')
         }),
         ('การตั้งค่า', {
-            'fields': ('url', 'api_endpoint', 'api_key', 'scraping_interval')
+            'fields': ('url', 'api_endpoint', 'api_key', 'scraping_interval', 'fetch_policy')
         }),
         ('สถิติ', {
-            'fields': ('last_scraped',),
+            'fields': ('last_scraped', 'last_success_at', 'last_failure_at', 'last_error'),
             'classes': ('collapse',)
         })
     )
