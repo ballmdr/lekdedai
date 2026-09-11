@@ -253,3 +253,32 @@ class HomepageScoreLabelTests(TestCase):
         html = res.content.decode()
         if "คะแนนจัดอันดับเท่ากัน" not in html:
             self.assertNotIn("เรียงตามคะแนนจัดอันดับ", html)
+
+
+class MainNavTests(TestCase):
+    """Task 31: เมนูหลักต้องมีครบทุกฟีเจอร์ + active state ถูกต้อง."""
+
+    HREFS = [
+        "/", "/dreams/", "/lottery_checker/", "/notebook/",
+        "/lotto_stats/", "/news/", "/ai/", "/lotto_formula/",
+    ]
+
+    def test_all_links_present(self):
+        res = self.client.get("/")
+        self.assertEqual(res.status_code, 200)
+        for href in self.HREFS:
+            self.assertContains(res, f'href="{href}"')
+        # ต้องมีเมนูชุดเดียวในหน้าจริง
+        self.assertEqual(res.content.decode().count('aria-label="เมนูหลัก"'), 1)
+
+    def test_active_state_home(self):
+        res = self.client.get("/")
+        by_href = {i["href"]: i for i in res.context["main_nav"]}
+        self.assertTrue(by_href["/"]["active"])
+        self.assertFalse(by_href["/news/"]["active"])
+
+    def test_active_state_news_subpage(self):
+        res = self.client.get("/news/")
+        by_href = {i["href"]: i for i in res.context["main_nav"]}
+        self.assertTrue(by_href["/news/"]["active"])
+        self.assertFalse(by_href["/"]["active"])

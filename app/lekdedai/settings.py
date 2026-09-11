@@ -116,6 +116,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'qa.context_processors.beta_status',  # Task 30: ประกาศสถานะ beta/kill switch
+                'home.context_processors.main_nav',   # Task 31: เมนูหลัก + active state
             ],
         },
     },

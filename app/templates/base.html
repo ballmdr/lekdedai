@@ -25,45 +25,7 @@
         </div>
     </div>
     {% endif %}
-    <nav class="bg-white shadow-lg border-b-4 border-primary">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-2">
-                    <div class="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
-                        <span class="text-white font-bold text-xl" aria-hidden="true">หวย</span>
-                    </div>
-                    <span class="text-2xl font-bold text-gray-800">LekdeDai</span>
-                </a>
-                <div class="hidden md:flex space-x-6">
-                    <a href="/" class="text-gray-700 hover:text-primary transition-colors">หน้าแรก</a>
-                    <a href="/dreams/" class="text-gray-700 hover:text-primary transition-colors">วิเคราะห์ฝัน</a>
-                    <a href="/lottery_checker/" class="text-gray-700 hover:text-primary transition-colors">ตรวจหวย</a>
-                    <a href="/lotto_stats/" class="text-gray-700 hover:text-primary transition-colors">สถิติ</a>
-                    <a href="/news/" class="text-gray-700 hover:text-primary transition-colors">ข่าวหวย</a>
-                    <a href="/ai/" class="text-gray-700 hover:text-primary transition-colors">AI ทำนาย</a>
-                    <a href="/lotto_formula/" class="text-gray-700 hover:text-primary transition-colors">สูตรหวย</a>
-                    <a href="/notebook/" class="text-gray-700 hover:text-primary transition-colors">สมุดเลข</a>
-                </div>
-                <button id="navToggle" type="button"
-                        class="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100"
-                        aria-label="เปิดเมนูหลัก" aria-controls="mobileNav" aria-expanded="false">
-                    <i aria-hidden="true" class="fas fa-bars text-xl" aria-hidden="true"></i>
-                </button>
-            </div>
-            <div id="mobileNav" class="hidden md:hidden border-t border-border">
-                <div class="flex flex-col py-2">
-                    <a href="/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">หน้าแรก</a>
-                    <a href="/dreams/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">วิเคราะห์ฝัน</a>
-                    <a href="/lottery_checker/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">ตรวจหวย</a>
-                    <a href="/lotto_stats/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">สถิติ</a>
-                    <a href="/news/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">ข่าวหวย</a>
-                    <a href="/ai/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">AI ทำนาย</a>
-                    <a href="/lotto_formula/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">สูตรหวย</a>
-                    <a href="/notebook/" class="px-2 py-3 text-gray-700 hover:bg-gray-50 rounded">สมุดเลข</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    {% include "partials/_main_nav.html" %}
 
     <main class="container mx-auto px-4 py-8">
         {% block content %}
