@@ -249,25 +249,25 @@ async function loadLottoResultsForDate(selectedDateFull) {
         // Prize Grid
         htmlContent += `
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="card bg-gradient-to-br from-primary to-accent text-primary-foreground p-6 text-center">
+                <div class="card prize-tile prize-sky p-6 text-center">
                     <h4 class="text-lg font-semibold mb-2">รางวัลที่ 1</h4>
                     <p class="text-sm mb-3 opacity-90">1 รางวัล รางวัลละ 6,000,000 บาท</p>
                     <div class="text-3xl font-bold">${firstPrizeNumber}</div>
                 </div>
                 
-                <div class="card bg-gradient-to-br from-secondary to-primary/80 text-secondary-foreground p-6 text-center">
+                <div class="card prize-tile prize-mint p-6 text-center">
                     <h4 class="text-lg font-semibold mb-2">เลขหน้า 3 ตัว</h4>
                     <p class="text-sm mb-3 opacity-90">2 รางวัล รางวัลละ 4,000 บาท</p>
                     <div class="text-2xl font-bold">${front3Numbers}</div>
                 </div>
                 
-                <div class="card bg-gradient-to-br from-accent to-secondary/80 text-accent-foreground p-6 text-center">
+                <div class="card prize-tile prize-lilac p-6 text-center">
                     <h4 class="text-lg font-semibold mb-2">เลขท้าย 3 ตัว</h4>
                     <p class="text-sm mb-3 opacity-90">2 รางวัล รางวัลละ 4,000 บาท</p>
                     <div class="text-2xl font-bold">${last3Numbers}</div>
                 </div>
                 
-                <div class="card bg-gradient-to-br from-primary/90 to-secondary text-primary-foreground p-6 text-center">
+                <div class="card prize-tile prize-butter p-6 text-center">
                     <h4 class="text-lg font-semibold mb-2">เลขท้าย 2 ตัว</h4>
                     <p class="text-sm mb-3 opacity-90">1 รางวัล รางวัลละ 2,000 บาท</p>
                     <div class="text-2xl font-bold">${last2Number}</div>
@@ -278,7 +278,7 @@ async function loadLottoResultsForDate(selectedDateFull) {
         // รางวัลข้างเคียง
         if (near1Numbers.length > 0) {
             htmlContent += `
-                <div class="card bg-gradient-to-br from-primary to-accent text-primary-foreground p-6 text-center mb-8">
+                <div class="card prize-tile prize-cloud p-6 text-center mb-8">
                     <h4 class="text-xl font-semibold mb-2">รางวัลข้างเคียงรางวัลที่ 1</h4>
                     <p class="text-sm mb-3 opacity-90">2 รางวัล รางวัลละ 100,000 บาท</p>
                     <div class="text-2xl font-bold">${near1Numbers.join(' ')}</div>
@@ -297,7 +297,7 @@ async function loadLottoResultsForDate(selectedDateFull) {
                     <div class="flex flex-wrap justify-center gap-3">
             `;
             lottoData.second.number.forEach(item => {
-                htmlContent += `<span class="badge bg-secondary text-secondary-foreground px-4 py-2 font-semibold text-lg">${item.value}</span>`;
+                htmlContent += `<span class="badge prize-badge-mint px-4 py-2 font-semibold text-lg">${item.value}</span>`;
             });
             htmlContent += `</div></div>`;
         }
@@ -313,7 +313,7 @@ async function loadLottoResultsForDate(selectedDateFull) {
                     <div class="flex flex-wrap justify-center gap-3">
             `;
             lottoData.third.number.forEach(item => {
-                htmlContent += `<span class="badge bg-accent text-accent-foreground px-4 py-2 font-semibold">${item.value}</span>`;
+                htmlContent += `<span class="badge prize-badge-lilac px-4 py-2 font-semibold">${item.value}</span>`;
             });
             htmlContent += `</div></div>`;
         }

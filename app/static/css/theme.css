@@ -600,3 +600,93 @@ h1, h2, h3, h4, h5, h6 {
 .border-green-200 { border-color: #bbf7d0; }
 .border-orange-200 { border-color: #fed7aa; }
 .border-red-200 { border-color: #fecaca; }
+/* Task 31: prize tiles — พาสเทลอ่อน อ่านง่าย ไม่แสบตา (หน้าตรวจหวย) */
+.prize-tile {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.prize-sky {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e3a8a;
+}
+
+.prize-mint {
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.prize-lilac {
+  background-color: #f5f3ff;
+  border-color: #ddd6fe;
+  color: #5b21b6;
+}
+
+.prize-butter {
+  background-color: #fefce8;
+  border-color: #fde68a;
+  color: #854d0e;
+}
+
+.prize-cloud {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+.prize-badge-mint {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.prize-badge-lilac {
+  background-color: #f5f3ff;
+  color: #5b21b6;
+  border: 1px solid #ddd6fe;
+}
+
+/* dark mode: ปรับให้ยังอ่านได้บนพื้นเข้ม */
+.dark .prize-sky {
+  background-color: #172554;
+  border-color: #1e3a8a;
+  color: #bfdbfe;
+}
+
+.dark .prize-mint {
+  background-color: #052e2b;
+  border-color: #065f46;
+  color: #a7f3d0;
+}
+
+.dark .prize-lilac {
+  background-color: #2e1065;
+  border-color: #5b21b6;
+  color: #ddd6fe;
+}
+
+.dark .prize-butter {
+  background-color: #422006;
+  border-color: #854d0e;
+  color: #fde68a;
+}
+
+.dark .prize-cloud {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.dark .prize-badge-mint {
+  background-color: #052e2b;
+  color: #a7f3d0;
+  border-color: #065f46;
+}
+
+.dark .prize-badge-lilac {
+  background-color: #2e1065;
+  color: #ddd6fe;
+  border-color: #5b21b6;
+}
