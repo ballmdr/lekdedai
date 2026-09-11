@@ -18,6 +18,8 @@ import requests
 from bs4 import BeautifulSoup
 from django.utils import timezone
 
+from qa import metrics as qa_metrics
+
 from news.models import NewsArticle, NewsCategory
 
 logger = logging.getLogger(__name__)
@@ -270,10 +272,12 @@ def ingest_source(source, limit=20, analyzer=None, dry_run=False):
                         numbers.append(num)
                         seen.add(num)
                 analysis_status = "analyzed"
+                qa_metrics.incr("external_ai_calls", "ingestion|ok")
             except Exception as exc:
                 logger.warning("AI analysis failed, keeping raw article: %r", exc)
                 analysis_status = "failed"
                 summary["analysis_failed"] += 1
+                qa_metrics.incr("external_ai_calls", "ingestion|error")
 
         kwargs = build_article_kwargs(normalized, numbers, source, category, analysis_status)
         if dry_run:

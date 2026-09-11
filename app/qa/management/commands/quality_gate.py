@@ -24,6 +24,7 @@ TEST_APPS = [
 
 SMOKE_GET_ROUTES = [
     "/",
+    "/health/",
     "/dreams/",
     "/lottery_checker/",
     "/notebook/",

@@ -68,6 +68,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'qa.middleware.RequestMetricsMiddleware',  # Task 25: นับ request/latency/5xx
 ]
 
 ROOT_URLCONF = 'lekdedai.urls'
@@ -130,3 +131,38 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Mock ingestion ใช้ได้เฉพาะ dev/test ที่เปิด flag ชัดเจน ห้ามเปิดใน production
 ALLOW_MOCK_INGESTION = os.environ.get('ALLOW_MOCK_INGESTION', 'False') == 'True'
+
+# Task 25: structured logs — console เสมอ + ไฟล์ถ้าตั้ง LOG_FILE;
+# production (DEBUG=False) ออก JSON บรรทัดละรายการ
+LOG_FILE = os.environ.get('LOG_FILE', '')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} {levelname} {name}: {message}',
+            'style': '{',
+        },
+        'json': {
+            '()': 'qa.logging.JSONFormatter',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'json' if not DEBUG else 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+if LOG_FILE:
+    LOGGING['handlers']['file'] = {
+        'class': 'logging.FileHandler',
+        'filename': LOG_FILE,
+        'formatter': 'json',
+    }
+    LOGGING['root']['handlers'].append('file')

@@ -10,6 +10,7 @@ import logging
 
 from .models import NewsArticle, NewsCategory, LuckyNumberHint, NewsComment
 from .ingestion import extract_numbers, get_news_freshness
+from qa import metrics as qa_metrics
 from utils.api import api_server_error, audit
 from utils.rate_limit import ratelimit
 # from .news_analyzer import NewsAnalyzer  # ใช้ analyzer_switcher แทน
@@ -172,8 +173,10 @@ def analyze_news(request, article_id):
 
         switcher = AnalyzerSwitcher(preferred_analyzer="groq")
         analysis_result = switcher.analyze_news_for_lottery(article.title, article.content)
+        qa_metrics.incr("external_ai_calls", "analyze_news|attempt")
     except Exception as exc:
         logger.warning("analyze_news AI failed for article %s: %r", article_id, exc)
+        qa_metrics.incr("external_ai_calls", "analyze_news|error")
         analysis_result = {"success": False}
 
     if (analysis_result or {}).get("success"):

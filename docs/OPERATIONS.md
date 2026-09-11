@@ -37,3 +37,17 @@
 3. ถ้าค้างสถานะ running เกิน timeout 2 เท่า: ตรวจสอบ process ซ้ำ แล้วลบแถว
    `JobRun` นั้นทิ้งได้ (รอบถัดไปสร้างใหม่เอง) — ห้ามลบแถว success/failure ปกติ
 4. ห้ามแก้ `next_run_at` ด้วยมือเพื่อเร่งงาน ยกเว้นเหตุฉุกเฉิน (บันทึกเหตุผลไว้)
+
+## เฝ้าระวัง + backup + rollback (Task 25)
+
+- Health สาธารณะ: `GET /health/` (200 ok / 503 degraded พร้อมรายการปัญหา)
+  เอาไว้ผูก uptime monitor ภายนอกได้เลย
+- Metrics ละเอียด: `GET /metrics/` (staff เท่านั้น) — จำนวน request/latency/5xx/AI
+- Logs: console เสมอ (production เป็น JSON) + ตั้ง `LOG_FILE` เพื่อเขียนไฟล์
+- Alerts: `manage.py check_alerts` (cron ทุก 30 นาที) ตรวจ job ล้ม/stale,
+  ingestion ล้ม, 5xx พุ่ง, AI ล้ม; `--send` ส่งอีเมลถ้าตั้ง SMTP ไว้
+- Backup: `manage.py backup_db` (cron รายวัน, เก็บ 7 ไฟล์ล่าสุด)
+- Restore (ซ้อม): หยุด web -> `manage.py restore_db --file <ไฟล์> --confirm`
+  -> สตาร์ท web -> ตรวจ `/health/` และจำนวนแถวสำคัญ
+- Rollback: `APP_DIR=/opt/lekdedai bash deploy/rollback.sh <commit-หรือ-tag>`
+  (backup อัตโนมัติก่อนย้อนทุกครั้ง)

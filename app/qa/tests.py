@@ -160,3 +160,167 @@ class FreshnessTests(TestCase):
         )
         res = self.client.get("/lotto_stats/")
         self.assertContains(res, "ล่าช้าเกินกำหนด")
+
+
+class HealthEndpointTests(TestCase):
+    """Task 25: /health/ สาธารณะ 200 ok / 503 degraded."""
+
+    def test_healthy(self):
+        res = self.client.get("/health/")
+        self.assertEqual(res.status_code, 200)
+        body = res.json()
+        self.assertEqual(body["status"], "ok")
+        self.assertEqual(body["problems"], [])
+
+    def test_degraded_on_failed_job(self):
+        JobRun.objects.create(key="rss_ingest", status="failed")
+        res = self.client.get("/health/")
+        self.assertEqual(res.status_code, 503)
+        body = res.json()
+        self.assertEqual(body["status"], "degraded")
+        self.assertTrue(any("rss_ingest" in p for p in body["problems"]))
+
+
+class MetricsTests(TestCase):
+    """Task 25: middleware เก็บสถิติ, /metrics/ staff-only."""
+
+    def setUp(self):
+        from qa import metrics
+
+        metrics.reset()
+
+    def test_requests_counted_with_latency(self):
+        from qa import metrics
+
+        self.client.get("/notebook/")
+        snap = metrics.snapshot()
+        self.assertIn("requests_total{notebook:index|2xx}", snap["counters"])
+        self.assertIn("notebook:index", snap["latency_avg_seconds"])
+
+    def test_metrics_staff_only(self):
+        res = self.client.get("/metrics/")
+        self.assertEqual(res.status_code, 302)
+        from django.contrib.auth import get_user_model
+
+        staff = get_user_model().objects.create_user(
+            "staff", password="pw", is_staff=True
+        )
+        self.client.force_login(staff)
+        res = self.client.get("/metrics/")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("counters", res.json())
+
+    def test_json_formatter(self):
+        import json
+        import logging
+
+        from qa.logging import JSONFormatter
+
+        record = logging.LogRecord(
+            "test", logging.ERROR, __file__, 1, "boom %s", ("x",), None
+        )
+        payload = json.loads(JSONFormatter().format(record))
+        self.assertEqual(
+            (payload["level"], payload["logger"], payload["message"]),
+            ("ERROR", "test", "boom x"),
+        )
+        self.assertIn("timestamp", payload)
+
+
+class AlertTests(TestCase):
+    """Task 25: fault injection แล้ว alert ต้องจับได้."""
+
+    def setUp(self):
+        from qa import metrics
+
+        metrics.reset()
+
+    def test_no_alerts_when_healthy(self):
+        from qa.management.commands.check_alerts import collect_alerts
+
+        self.assertEqual(collect_alerts(), [])
+
+    def test_failed_job_alert(self):
+        from qa.management.commands.check_alerts import collect_alerts
+
+        JobRun.objects.create(
+            key="rss_ingest", status="failed",
+            last_run_at=timezone.now(), last_error="boom",
+        )
+        alerts = collect_alerts()
+        self.assertTrue(any("rss_ingest" in a for a in alerts))
+
+    def test_stale_job_alert(self):
+        from qa.management.commands.check_alerts import collect_alerts
+
+        JobRun.objects.create(
+            key="lotto_sync",
+            status="success",
+            last_success_at=timezone.now() - timedelta(hours=50),
+        )
+        alerts = collect_alerts()
+        self.assertTrue(any("stale" in a for a in alerts))
+
+    def test_5xx_spike_alert(self):
+        from qa import metrics
+        from qa.management.commands.check_alerts import collect_alerts
+
+        metrics.incr("server_errors_total", "home:index", 25)
+        alerts = collect_alerts()
+        self.assertTrue(any("5xx" in a for a in alerts))
+
+    def test_command_exit_codes(self):
+        from django.core.management import call_command
+
+        call_command("check_alerts")  # healthy -> exit 0
+        JobRun.objects.create(
+            key="rss_ingest", status="failed",
+            last_run_at=timezone.now(), last_error="x",
+        )
+        with self.assertRaises(SystemExit) as ctx:
+            call_command("check_alerts", fail=True)
+        self.assertEqual(ctx.exception.code, 1)
+
+
+class BackupRestoreTests(TestCase):
+    """Task 25: backup/restore drill ด้วยไฟล์ชั่วคราว."""
+
+    def test_backup_restore_roundtrip(self):
+        import pathlib
+        import tempfile
+
+        from qa.backup import backup_sqlite, prune_backups, restore_sqlite
+
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = backup_sqlite(dest_dir=tmp, keep=7)
+            self.assertTrue(dest.exists())
+            self.assertTrue((dest.parent / (dest.name + ".sha256")).exists())
+
+            scratch = str(pathlib.Path(tmp) / "restored.sqlite3")
+            tables = restore_sqlite(dest, target=scratch)
+            self.assertGreater(tables, 0)
+
+            for _ in range(3):
+                backup_sqlite(dest_dir=tmp, keep=2)
+            remaining = list(pathlib.Path(tmp).glob("*.sqlite3.gz"))
+            self.assertLessEqual(len(remaining), 2)
+            prune_backups(tmp, keep=7)
+
+    def test_backup_command(self):
+        import tempfile
+
+        from django.core.management import call_command
+        from django.test import override_settings
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with override_settings(BACKUP_DIR=tmp):
+                call_command("backup_db")
+            import pathlib
+
+            self.assertEqual(len(list(pathlib.Path(tmp).glob("*.sqlite3.gz"))), 1)
+
+    def test_restore_requires_confirm(self):
+        from django.core.management import call_command
+
+        with self.assertRaises(Exception):
+            call_command("restore_db", file_="x.gz")

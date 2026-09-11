@@ -60,7 +60,7 @@
 - [x] Task 22 — แยก production runtime และจัดการ secrets (ไม่ใช้ Docker: settings ตาม env + gunicorn/systemd/deploy script + ไม่มีรหัส hard-code + check --deploy; WSGI บูตผ่าน)
 - [x] Task 23 — ปิดช่องโหว่ endpoint และจำกัดการใช้งานเกินขอบเขต (เลิก csrf_exempt + CSRF ทุกฟอร์ม, api_predict staff-only, rate limit + body cap + timeout, error ไม่รั่ว, audit log, bump deps ตาม pip-audit เหลือแค่ Django 4.2 EOL, เจอบั๊ก add_feedback ฟิลด์ผิด, 172 tests เขียว)
 - [x] Task 24 — ตั้ง schedule และ freshness control (JobRun lock/retry/timeout + registry 6 jobs + tick รันจริง 5/6 สำเร็จ + UI stale หน้า stats + runbook; ai_generate ล้มเพราะไม่มี keys ตามคาด)
-- [ ] Task 25 — เพิ่ม observability, backup และ rollback
+- [x] Task 25 — เพิ่ม observability, backup และ rollback (/health/+metrics+middleware, structured logs, check_alerts, backup/restore drill ผ่าน, rollback script+runbook; smoke จริงจับ ai_generate ล้มได้)
 - [ ] Task 26 — จัดทำนโยบายผู้ใช้และสิทธิ์เนื้อหา
 - [ ] Task 27 — ทำ performance, accessibility และ compatibility gate
 
