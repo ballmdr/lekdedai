@@ -85,6 +85,16 @@ class DreamToNotebookTests(TestCase):
             data=json.dumps({"dream_text": "ฝันเห็นงู " * 500}),
             content_type="application/json",
         )
+        # Task 23: เกิน 2000 ตัวอักษรต้องถูกปฏิเสธอย่างสุภาพ (ไม่ crash/ไม่ตัดเงียบ)
+        self.assertEqual(res.status_code, 413)
+        self.assertFalse(res.json()["success"])
+
+    def test_analyze_at_cap_succeeds(self):
+        res = self.client.post(
+            "/dreams/analyze/",
+            data=json.dumps({"dream_text": "dream about snake x" * 100}),
+            content_type="application/json",
+        )
         self.assertEqual(res.status_code, 200)
 
     def test_notebook_prefill_handoff(self):

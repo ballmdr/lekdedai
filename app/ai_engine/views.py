@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.db.models import Count, Q
 from datetime import datetime, timedelta
 import json
+import logging
 
 from .models import (
     AIModel, LuckyNumberPrediction, UserFeedback,
@@ -15,6 +16,10 @@ from .models import (
     ModelPrediction, DataSource, DataIngestionRecord
 )
 from .ml_engine import LotteryAIEngine
+from utils.rate_limit import ratelimit
+from utils.api import api_server_error, audit, read_json_body
+
+logger = logging.getLogger(__name__)
 
 def ai_prediction_page(request):
     """หน้าแสดงการทำนายเลขด้วย AI — แสดงเฉพาะที่พร้อม (Task 20: ไม่สร้างอัตโนมัติเมื่อเปิดหน้า)."""
@@ -121,11 +126,19 @@ def generate_new_prediction(target_date=None):
     
     return prediction
 
+@ratelimit("20/m")
 def api_predict(request):
-    """API สำหรับขอการทำนายใหม่"""
+    """API สำหรับขอการทำนายใหม่ (Task 23: staff เท่านั้น — สร้างแถวข้อมูล)"""
+    if not request.user.is_staff:
+        return JsonResponse({
+            'success': False,
+            'error': 'ต้องเป็นผู้ดูแลระบบ'
+        }, status=403)
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
+            data, error_response = read_json_body(request)
+            if error_response is not None:
+                return error_response
             target_date = data.get('date')
             
             if target_date:
@@ -142,7 +155,9 @@ def api_predict(request):
                 prediction = existing
             else:
                 prediction = generate_new_prediction(target_date)
-            
+                audit(request, "ai_predict_generate",
+                      f"date={target_date}")
+
             return JsonResponse({
                 'success': True,
                 'prediction': {
@@ -153,13 +168,10 @@ def api_predict(request):
                     'details': prediction.prediction_details
                 }
             })
-            
+
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=400)
-    
+            return api_server_error(request, e)
+
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 def prediction_detail(request, prediction_id):
@@ -182,32 +194,46 @@ def prediction_detail(request, prediction_id):
     
     return render(request, 'ai_engine/prediction_detail.html', context)
 
+@ratelimit("30/m")
 @require_http_methods(["POST"])
 def add_feedback(request, prediction_id):
-    """เพิ่ม feedback"""
+    """เพิ่ม feedback (จำกัดคะแนน 1-5 และความยาวความเห็น)"""
     prediction = get_object_or_404(LuckyNumberPrediction, id=prediction_id)
-    
+
+    data, error_response = read_json_body(request)
+    if error_response is not None:
+        return error_response
+
     try:
-        data = json.loads(request.body)
-        
+        rating = int(data.get('rating', 3))
+    except (TypeError, ValueError):
+        return JsonResponse({
+            'success': False,
+            'error': 'คะแนนต้องเป็นตัวเลข 1-5'
+        }, status=400)
+    if rating < 1 or rating > 5:
+        return JsonResponse({
+            'success': False,
+            'error': 'คะแนนต้องอยู่ระหว่าง 1-5'
+        }, status=400)
+    comment = str(data.get('comment', ''))[:1000]
+
+    try:
         feedback = UserFeedback.objects.create(
-            prediction=prediction,
+            old_prediction=prediction,
             user=request.user if request.user.is_authenticated else None,
-            rating=int(data.get('rating', 3)),
-            comment=data.get('comment', ''),
-            is_winner=data.get('is_winner', False)
+            rating=rating,
+            comment=comment,
+            is_winner=bool(data.get('is_winner', False))
         )
         
         return JsonResponse({
             'success': True,
             'feedback_id': feedback.id
         })
-        
+
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
+        return api_server_error(request, e)
 
 def ai_history(request):
     """ประวัติการทำนายทั้งหมด"""
@@ -533,21 +559,19 @@ def api_refresh_data_sources(request):
                     'records_collected': len(records)
                 })
             except Exception as e:
+                logger.error(f"collect failed for source {source.id}: {e}")
                 results.append({
                     'source': source.name,
-                    'error': str(e)
+                    'error': 'เก็บข้อมูลไม่สำเร็จ'
                 })
-        
+
         return JsonResponse({
             'success': True,
             'results': results
         })
-        
+
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
+        return api_server_error(request, e)
 
 @require_http_methods(["POST"])
 def api_trigger_data_collection(request, source_id):
@@ -568,57 +592,18 @@ def api_trigger_data_collection(request, source_id):
         
         from .data_ingestion import DataIngestionManager
         manager = DataIngestionManager()
-        
+
         records = manager.collect_from_source(data_source)
-        
+        audit(request, "ai_collect_source", f"source_id={source_id}")
+
         return JsonResponse({
             'success': True,
             'records_collected': len(records),
             'message': f'เก็บข้อมูลจาก {data_source.name} แล้ว {len(records)} รายการ'
         })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
 
-# Backward compatibility สำหรับ API เก่า
-def api_generate_prediction(request):
-    """API สำหรับสร้างการทำนายใหม่"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            target_date = data.get('date')
-            
-            if target_date:
-                target_date = datetime.strptime(target_date, '%Y-%m-%d').date()
-            else:
-                target_date = timezone.now().date()
-            
-            # ตรวจสอบว่ามีการทำนาย AI Ensemble แล้วหรือไม่
-            from .prediction_engine import PredictionEngine
-            engine = PredictionEngine()
-            
-            session = engine.create_prediction_session(target_date)
-            prediction = engine.run_prediction(session)
-            
-            return JsonResponse({
-                'success': True,
-                'prediction': {
-                    'session_id': session.session_id,
-                    'date': target_date.strftime('%Y-%m-%d'),
-                    'two_digit': [item['number'] for item in prediction.get_top_two_digit_numbers()[:5]],
-                    'three_digit': [item['number'] for item in prediction.get_top_three_digit_numbers()[:5]],
-                    'confidence': prediction.overall_confidence,
-                    'summary': prediction.prediction_summary
-                }
-            })
-            
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=400)
-    
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    except Exception as e:
+        return api_server_error(request, e)
+
+# หมายเหตุ Task 23: api_generate_prediction (เก่า ไม่มี auth) ถูกลบออกแล้ว —
+# เส้นทางสร้างการทำนายที่ใช้ได้คือ management command generate_ai_prediction (staff)

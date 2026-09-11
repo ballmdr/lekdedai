@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -315,3 +317,68 @@ class AiReadinessViewTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "พร้อมใช้")
         self.assertContains(res, "รอข้อมูล")
+
+
+class ApiPredictStaffTests(TestCase):
+    """Task 23: ขอทำนายใหม่ต้องเป็น staff (สร้างแถวข้อมูล)."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        self.staff = User.objects.create_user("staff", password="pw", is_staff=True)
+        self.user = User.objects.create_user("plain", password="pw")
+
+    def _post(self):
+        from django.utils import timezone
+
+        return self.client.post(
+            "/ai/api/predict/",
+            data=json.dumps({"date": timezone.localdate().isoformat()}),
+            content_type="application/json",
+        )
+
+    def test_anonymous_forbidden(self):
+        self.assertEqual(self._post().status_code, 403)
+
+    def test_non_staff_forbidden(self):
+        self.client.force_login(self.user)
+        self.assertEqual(self._post().status_code, 403)
+
+    def test_staff_returns_existing(self):
+        from django.utils import timezone
+
+        _make_old_prediction(prediction_date=timezone.localdate())
+        self.client.force_login(self.staff)
+        res = self._post()
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.json()["success"])
+
+
+class FeedbackCapsTests(TestCase):
+    """Task 23: คะแนน/ความเห็นต้องอยู่ในขอบเขต."""
+
+    def setUp(self):
+        self.prediction = _make_old_prediction()
+
+    def _post(self, payload):
+        return self.client.post(
+            f"/ai/prediction/{self.prediction.id}/feedback/",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+    def test_rating_out_of_range_rejected(self):
+        from ai_engine.models import UserFeedback
+
+        for bad in (0, 6):
+            res = self._post({"rating": bad})
+            self.assertEqual(res.status_code, 400)
+        self.assertEqual(UserFeedback.objects.count(), 0)
+
+    def test_long_comment_truncated(self):
+        from ai_engine.models import UserFeedback
+
+        res = self._post({"rating": 5, "comment": "a" * 1500})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(UserFeedback.objects.get().comment), 1000)

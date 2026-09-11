@@ -34,3 +34,17 @@ python app/manage.py quality_gate
 - เปิด TLS ข้างหน้าแล้วค่อยเปิด `SECURE_SSL_REDIRECT`, `*_COOKIE_SECURE`, `SECURE_HSTS_SECONDS`
 - หมายเหตุ: gunicorn รันบน Linux เท่านั้น ตรวจบน Windows ไม่ได้ —
   ความถูกต้องของ WSGI/settings ตรวจด้วย `check --deploy` + `quality_gate` แทน
+
+## Security (Task 23)
+
+- mutation endpoint ทุกตัว: staff-only (ยกเว้นที่ผู้ใช้ต้องใช้เอง: comment/feedback/
+  วิเคราะห์ฝัน/บันทึกสูตร/ตรวจหวย) + CSRF + audit log (`AUDIT user=...`)
+- public JSON API: rate limit ต่อ IP (`app/utils/rate_limit.py`, ค่า default ต่อ view)
+  + จำกัด body 4KB (`read_json_body`) + timeout ปลายทาง
+- error 4xx/5xx ส่งข้อความทั่วไปเสมอ (`utils.api.api_server_error`, dev เห็น detail)
+  ห้าม `str(e)` ออก response
+- ทดสอบ abuse ด้วย `RATELIMIT_OVERRIDES = {"module.view": "2/m"}` ใน tests
+  (cache ใช้ร่วมกันทั้ง process — `cache.clear()` ก่อน test ที่กำหนด rate เอง)
+- dependency scan: `pip-audit -r requirements.txt` (ต้องอัปเกรดแล้วยิงซ้ำ)
+- ค้าง: Django 4.2 EOL มี CVE ที่แก้เฉพาะสาย 5.2+ — ต้องวางแผนย้าย Django 5.x แยก
+  (งานใหญ่ แยก task ต่างหาก ไม่รวมใน Task 23)

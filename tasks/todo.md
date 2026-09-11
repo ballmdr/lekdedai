@@ -58,7 +58,7 @@
 
 - [x] Task 21 — สร้าง automated quality gate (`quality_gate`: check+deploy+migrations+migrate+tests+static+smoke ล้มทันทีเมื่อผิด; CI workflow; docs/TESTING.md; ผ่านทั้ง DEBUG True/False)
 - [x] Task 22 — แยก production runtime และจัดการ secrets (ไม่ใช้ Docker: settings ตาม env + gunicorn/systemd/deploy script + ไม่มีรหัส hard-code + check --deploy; WSGI บูตผ่าน)
-- [ ] Task 23 — ปิดช่องโหว่ endpoint และจำกัดการใช้งานเกินขอบเขต
+- [x] Task 23 — ปิดช่องโหว่ endpoint และจำกัดการใช้งานเกินขอบเขต (เลิก csrf_exempt + CSRF ทุกฟอร์ม, api_predict staff-only, rate limit + body cap + timeout, error ไม่รั่ว, audit log, bump deps ตาม pip-audit เหลือแค่ Django 4.2 EOL, เจอบั๊ก add_feedback ฟิลด์ผิด, 172 tests เขียว)
 - [ ] Task 24 — ตั้ง schedule และ freshness control
 - [ ] Task 25 — เพิ่ม observability, backup และ rollback
 - [ ] Task 26 — จัดทำนโยบายผู้ใช้และสิทธิ์เนื้อหา

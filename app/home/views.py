@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.db.models import Sum
 from django.utils import timezone
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
 import json
@@ -10,6 +9,7 @@ import json
 # Import models จาก apps ต่างๆ
 from news.models import NewsArticle
 from news.ingestion import get_news_freshness
+from utils.api import api_server_error
 from ai_engine.models import (
     LuckyNumberPrediction, EnsemblePrediction, 
     PredictionAccuracyTracking, DataIngestionRecord
@@ -339,7 +339,6 @@ def home(request):
 # get_recent_news_for_selection_api function removed for simplified version
 
 
-@csrf_exempt
 @require_http_methods(["GET"])
 def daily_numbers_status_api(request):
     """
@@ -381,8 +380,4 @@ def daily_numbers_status_api(request):
         })
         
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e),
-            'message': 'เกิดข้อผิดพลาดในการตรวจสอบสถานะ'
-        }, status=500)
+        return api_server_error(request, e, "เกิดข้อผิดพลาดในการตรวจสอบสถานะ")

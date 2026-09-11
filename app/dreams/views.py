@@ -2,10 +2,15 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from .models import DreamKeyword, DreamInterpretation
+from utils.rate_limit import ratelimit
+from utils.api import api_server_error, audit, read_json_body
 import json
 import re
 import os
 import sys
+
+# Task 23: จำกัดความยาวข้อความฝันกัน abuse (เก็บสูงสุดตาม privacy notice)
+DREAM_TEXT_MAX_LENGTH = 2000
 
 # Import Specialized AI Services
 MCP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mcp_dream_analysis')
@@ -41,17 +46,26 @@ def dream_form(request):
     
     return render(request, 'dreams/dream_form.html', context)
 
+@ratelimit("60/m")
 @require_http_methods(["POST"])
 def analyze_dream(request):
     """วิเคราะห์ความฝัน (ไม่เก็บ IP; ข้อความฝันเก็บเท่าที่ต้องใช้แสดงประวัติ)"""
     try:
-        data = json.loads(request.body)
+        data, error_response = read_json_body(request)
+        if error_response is not None:
+            return error_response
         dream_text = data.get('dream_text', '').strip()
-        
+
         if not dream_text:
             return JsonResponse({
                 'success': False,
                 'error': 'กรุณากรอกความฝัน'
+            }, status=400)
+
+        if len(dream_text) > DREAM_TEXT_MAX_LENGTH:
+            return JsonResponse({
+                'success': False,
+                'error': f'ข้อความฝันยาวเกินไป (สูงสุด {DREAM_TEXT_MAX_LENGTH} ตัวอักษร)'
             }, status=400)
         
         # วิเคราะห์ความฝัน - ใช้ Expert AI โมเดลใหม่
@@ -82,6 +96,7 @@ def analyze_dream(request):
             main_symbols=', '.join(result.get('keywords', [])),
             ip_address=None
         )
+        audit(request, "dream_analyze", f"chars={len(dream_text)}")
         
         return JsonResponse({
             'success': True,
@@ -101,10 +116,7 @@ def analyze_dream(request):
             'error': 'Invalid JSON data'
         }, status=400)
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        return api_server_error(request, e)
 
 def analyze_dream_text(dream_text):
     """วิเคราะห์ข้อความความฝัน"""

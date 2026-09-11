@@ -389,3 +389,64 @@ class CheckDrawApiTests(TestCase):
         self.assertFalse(LottoResult.objects.filter(draw_date=self.stale_day).exists())
         self._check(self.stale_day.isoformat(), "012345")
         self.assertFalse(LottoResult.objects.filter(draw_date=self.stale_day).exists())
+
+
+class SecurityAbuseTests(TestCase):
+    """Task 23: rate limit, payload cap, ไม่รั่ว error ภายใน."""
+
+    def _post_draw(self, draw_date, number):
+        return self.client.post(
+            "/lottery_checker/api/check-draw/",
+            data=json.dumps({"draw_date": draw_date, "number": number}),
+            content_type="application/json",
+        )
+
+    def test_rate_limit_returns_429(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        cache.clear()
+        with override_settings(
+            RATELIMIT_OVERRIDES={"lottery_checker.views.check_draw": "2/m"}
+        ):
+            self.assertEqual(
+                self._post_draw("2026-09-01", "012345").status_code, 200
+            )
+            self.assertEqual(
+                self._post_draw("2026-09-01", "012345").status_code, 200
+            )
+            res = self._post_draw("2026-09-01", "012345")
+            self.assertEqual(res.status_code, 429)
+            self.assertFalse(res.json()["success"])
+
+    def test_oversized_body_rejected(self):
+        res = self.client.post(
+            "/lottery_checker/api/lotto/check/",
+            data=json.dumps({
+                "date": "01", "month": "09", "year": "2026",
+                "number": "0" * 5000,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 413)
+
+    def test_server_error_hides_internals_in_prod(self):
+        from datetime import date
+        from unittest.mock import patch
+
+        from django.test import override_settings
+
+        from lottery_checker.lotto_service import LottoService
+
+        self.assertTrue(
+            LottoService().save_to_database(_leading_zero_payload(), date(2026, 9, 1))
+        )
+        with patch(
+            "lottery_checker.views.check_numbers_against_result",
+            side_effect=RuntimeError("db exploded: SECRET=xyz"),
+        ), override_settings(DEBUG=False):
+            res = self._post_draw("2026-09-01", "012345")
+        self.assertEqual(res.status_code, 500)
+        body = res.json()
+        self.assertEqual(body["error"], "เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่")
+        self.assertNotIn("SECRET", res.content.decode())

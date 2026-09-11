@@ -511,6 +511,63 @@ class NewsAdminReviewTests(TestCase):
         self.assertEqual(article.analysis_status, "analyzed")
 
 
+class AnalyzeNewsSecurityTests(TestCase):
+    """Task 23: วิเคราะห์ข่าวต้องมี CSRF, ไม่พัง, ไม่เขียนฟิลด์ผี."""
+
+    def _article(self):
+        from news.models import NewsArticle
+
+        return NewsArticle.objects.create(
+            title="ข่าวทดสอบวิเคราะห์",
+            intro="x",
+            content="อุบัติเหตุที่บ้านเลขที่ 45 รถทะเบียน กข 1234 มีผู้เห็นเหตุการณ์หลายคนเล่าให้ฟังอย่างละเอียด",
+            status="draft",
+        )
+
+    def test_csrf_enforced(self):
+        from django.test import Client
+
+        article = self._article()
+        strict = Client(enforce_csrf_checks=True)
+        res = strict.post(f"/news/api/analyze/{article.id}/")
+        self.assertEqual(res.status_code, 403)
+
+    def test_basic_fallback_without_ai(self):
+        article = self._article()
+        res = self.client.post(f"/news/api/analyze/{article.id}/")
+        self.assertEqual(res.status_code, 200)
+        body = res.json()
+        self.assertTrue(body["success"])
+        article.refresh_from_db()
+        self.assertTrue(article.get_numbers_only())
+        self.assertIn(article.analysis_status, ("analyzed", "failed"))
+
+    def test_comment_caps_and_rate_redirect(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        from news.models import NewsComment
+
+        cache.clear()
+        article = self._article()
+        url = f"/news/article/{article.slug}/comment/"
+        res = self.client.post(url, data={
+            "content": "ดีมาก " * 500, "name": "n" * 200,
+        })
+        self.assertEqual(res.status_code, 302)
+        comment = NewsComment.objects.get()
+        self.assertLessEqual(len(comment.content), 1000)
+        self.assertLessEqual(len(comment.name), 100)
+
+        with override_settings(
+            RATELIMIT_OVERRIDES={"news.views.add_comment": "1/m"}
+        ):
+            before = NewsComment.objects.count()
+            res = self.client.post(url, data={"content": "สแปม"})
+            self.assertEqual(res.status_code, 302)
+            self.assertEqual(NewsComment.objects.count(), before)
+
+
 def _make_curated_article(**kwargs):
     from datetime import timedelta
 

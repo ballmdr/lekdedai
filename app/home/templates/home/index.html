@@ -370,6 +370,7 @@
                 inputmode="numeric"
               />
               <div id="lotteryError" class="hidden text-sm text-red-600" role="alert" aria-live="polite"></div>
+              {% csrf_token %}
               <button onclick="checkLottery()" id="lotteryBtn" class="btn btn-primary w-full">ตรวจผลหวย</button>
               <a href="/lottery_checker/" class="btn btn-outline w-full">
                 <i aria-hidden="true" class="fas fa-search mr-2"></i>

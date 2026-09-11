@@ -9,7 +9,9 @@ from django.views.generic import ListView, DetailView
 
 from .models import LotteryFormula, LotteryResult, Prediction
 from .verification import get_verified_stats
+from utils.api import audit, read_json_body
 from utils.lottery_dates import LotteryDates
+from utils.rate_limit import ratelimit
 from utils.thai_date import format_thai_date
 
 class HomeView(ListView):
@@ -57,12 +59,12 @@ def calculator_view(request):
         'meta_description': 'เครื่องคำนวณหวยออนไลน์ เลือกสูตรและคำนวณเลขเด็ดได้ทันที'
     })
 
+@ratelimit("60/m")
 @require_http_methods(["POST"])
 def calculate_numbers(request):
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'ข้อมูลที่ส่งมาไม่ถูกต้อง'}, status=400)
+    data, error_response = read_json_body(request)
+    if error_response is not None:
+        return error_response
 
     formula_id = data.get('formula_id')
     input_numbers = str(data.get('input_numbers') or '').strip()
@@ -85,6 +87,7 @@ def calculate_numbers(request):
         'formula_version': formula.version
     })
 
+@ratelimit("30/m")
 @require_http_methods(["POST"])
 def save_prediction(request):
     """บันทึกการทำนายสำหรับงวดที่ยังไม่ออก (Task 15).
@@ -92,10 +95,9 @@ def save_prediction(request):
     บังคับ: สูตรที่อนุมัติ + งวดหวยจริงในอนาคต + เลขตรงกับที่สูตรคำนวณได้
     (เซิร์ฟเวอร์คำนวณซ้ำ กันส่งเลขปลอม). สถานะเริ่มที่รอตรวจ (is_correct=None).
     """
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'ข้อมูลที่ส่งมาไม่ถูกต้อง'}, status=400)
+    data, error_response = read_json_body(request)
+    if error_response is not None:
+        return error_response
 
     formula_id = data.get('formula_id')
     input_numbers = str(data.get('input_numbers') or '').strip()
@@ -127,6 +129,9 @@ def save_prediction(request):
         input_numbers=input_numbers,
         predicted_numbers=predicted,
     )
+    if created:
+        audit(request, "formula_save_prediction",
+              f"formula={formula.code} draw={draw_date_str} input_len={len(input_numbers)}")
     return JsonResponse({
         'success': True,
         'created': created,

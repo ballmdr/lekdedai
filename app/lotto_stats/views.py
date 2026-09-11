@@ -11,6 +11,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from .models import LotteryDraw
 from .stats_calculator import StatsCalculator
 from .lotto_sync_service import LottoSyncService
+from utils.api import api_server_error, audit
+from utils.rate_limit import ratelimit
 
 logger = logging.getLogger(__name__)
 
@@ -91,10 +93,18 @@ def statistics_page(request):
     
     return render(request, 'lotto_stats/statistics.html', context)
 
+@ratelimit("120/m")
 def api_hot_cold_numbers(request):
     """API สำหรับดึงเลขฮอต/เย็น"""
-    days = int(request.GET.get('days', 90))
-    limit = int(request.GET.get('limit', 10))
+    try:
+        days = int(request.GET.get('days', 90))
+        limit = int(request.GET.get('limit', 10))
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'days/limit ต้องเป็นตัวเลข'}, status=400)
+    if not 1 <= days <= 365 or not 1 <= limit <= 100:
+        return JsonResponse(
+            {'error': 'days ต้องอยู่ระหว่าง 1-365 และ limit 1-100'}, status=400
+        )
     
     calculator = StatsCalculator()
     
@@ -110,6 +120,7 @@ def api_hot_cold_numbers(request):
     
     return JsonResponse(data)
 
+@ratelimit("120/m")
 def api_number_detail(request, number):
     """API สำหรับดูรายละเอียดของเลข"""
     try:
@@ -149,8 +160,9 @@ def api_number_detail(request, number):
         })
         
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        return api_server_error(request, e, "ค้นหาสถิติไม่สำเร็จ")
 
+@ratelimit("120/m")
 def api_sync_status(request):
     """API สำหรับดูสถานะการซิงค์ข้อมูล"""
     try:
@@ -170,16 +182,13 @@ def api_sync_status(request):
         })
         
     except Exception as e:
-        logger.error(f"Error in api_sync_status: {e}")
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        return api_server_error(request, e)
 
 @require_POST
 @staff_member_required
 def api_sync_data(request):
     """API สำหรับซิงค์ข้อมูลจาก lottery_checker"""
+    audit(request, "stats_sync_data")
     try:
         data = json.loads(request.body)
         days_back = data.get('days_back', 7)
@@ -207,16 +216,13 @@ def api_sync_data(request):
             'error': 'Invalid JSON'
         }, status=400)
     except Exception as e:
-        logger.error(f"Error in api_sync_data: {e}")
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        return api_server_error(request, e)
 
 @require_POST
 @staff_member_required
 def api_sync_specific_date(request):
     """API สำหรับซิงค์ข้อมูลวันที่เฉพาะ"""
+    audit(request, "stats_sync_date")
     try:
         data = json.loads(request.body)
         date_str = data.get('date')  # Format: 'YYYY-MM-DD'
@@ -250,8 +256,4 @@ def api_sync_specific_date(request):
             'error': 'Invalid JSON'
         }, status=400)
     except Exception as e:
-        logger.error(f"Error in api_sync_specific_date: {e}")
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        return api_server_error(request, e)

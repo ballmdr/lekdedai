@@ -3,14 +3,18 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.utils import timezone
 from datetime import datetime, timedelta
+import logging
 
 from .models import NewsArticle, NewsCategory, LuckyNumberHint, NewsComment
-from .ingestion import get_news_freshness
+from .ingestion import extract_numbers, get_news_freshness
+from utils.api import api_server_error, audit
+from utils.rate_limit import ratelimit
 # from .news_analyzer import NewsAnalyzer  # ใช้ analyzer_switcher แทน
+
+logger = logging.getLogger(__name__)
 
 def news_list(request):
     """หน้ารวมข่าวทั้งหมด"""
@@ -131,14 +135,15 @@ def lucky_hints(request):
     
     return render(request, 'news/lucky_hints.html', context)
 
+@ratelimit("30/m", redirect_back=True)
 @require_POST
 def add_comment(request, slug):
-    """เพิ่มความคิดเห็น"""
+    """เพิ่มความคิดเห็น (จำกัดความยาว + ต้องรออนุมัติก่อนแสดง)"""
     article = get_object_or_404(NewsArticle, slug=slug)
-    
-    content = request.POST.get('content', '').strip()
-    suggested_numbers = request.POST.get('suggested_numbers', '').strip()
-    
+
+    content = request.POST.get('content', '').strip()[:1000]
+    suggested_numbers = request.POST.get('suggested_numbers', '').strip()[:100]
+
     if not content:
         messages.error(request, 'กรุณากรอกความคิดเห็น')
         return redirect('news:article_detail', slug=slug)
@@ -146,8 +151,8 @@ def add_comment(request, slug):
     comment = NewsComment.objects.create(
         article=article,
         user=request.user if request.user.is_authenticated else None,
-        name=request.POST.get('name', 'ผู้ไม่ประสงค์ออกนาม'),
-        email=request.POST.get('email', ''),
+        name=request.POST.get('name', 'ผู้ไม่ประสงค์ออกนาม')[:100],
+        email=request.POST.get('email', '')[:254],
         content=content,
         suggested_numbers=suggested_numbers,
         is_approved=False  # ต้องรออนุมัติ
@@ -156,75 +161,69 @@ def add_comment(request, slug):
     messages.success(request, 'ส่งความคิดเห็นแล้ว รอการอนุมัติ')
     return redirect('news:article_detail', slug=slug)
 
-@csrf_exempt
+@ratelimit("20/m")
 @require_POST
 def analyze_news(request, article_id):
-    """API วิเคราะห์เลขจากข่าว"""
-    
-    # Debug info (remove in production)
-    # print(f"DEBUG: analyze_news called for article_id: {article_id}")
-    # print(f"DEBUG: user authenticated: {request.user.is_authenticated}")
-    # print(f"DEBUG: user is staff: {request.user.is_staff}")
-    
-    # เอาการตรวจสอบสิทธิ์ออก - ให้ทุกคนใช้ได้
-    # if not request.user.is_staff:
-    #     return JsonResponse({
-    #         'success': False,
-    #         'error': 'ไม่มีสิทธิ์ในการวิเคราะห์'
-    #     }, status=403)
-    
+    """API วิเคราะห์เลขจากข่าว (Task 23: ต้องมี CSRF + rate limit; เขียนเฉพาะฟิลด์ปัจจุบัน)."""
     article = get_object_or_404(NewsArticle, id=article_id)
-    
+
     try:
-        # ใช้ Analyzer Switcher (Groq/Gemini) แทน News Analyzer เก่า
         from .analyzer_switcher import AnalyzerSwitcher
-        
-        # วิเคราะห์ด้วย AI Analyzer (Groq หรือ Gemini)
-        switcher = AnalyzerSwitcher(preferred_analyzer='groq')
+
+        switcher = AnalyzerSwitcher(preferred_analyzer="groq")
         analysis_result = switcher.analyze_news_for_lottery(article.title, article.content)
-        
-        if analysis_result['success']:
-            # อัพเดตข้อมูลในบทความ
-            article.extracted_numbers = ','.join(analysis_result['numbers'][:15])
-            article.confidence_score = min(analysis_result.get('relevance_score', 50), 100)
-            article.lottery_relevance_score = analysis_result.get('relevance_score', 50)
-            article.lottery_category = analysis_result.get('category', 'other')
-            article.save()
-            
-            return JsonResponse({
-                'success': True,
-                'numbers': analysis_result['numbers'][:15],
-                'confidence': analysis_result.get('relevance_score', 50),
-                'category': analysis_result.get('category', 'other'),
-                'reasoning': analysis_result.get('reasoning', ''),
-                'analyzer_type': analysis_result.get('analyzer_type', 'unknown'),
-                'is_insight_ai': True,  # ใช้ AI แล้ว
-                'message': f'วิเคราะห์ด้วย {analysis_result.get("analyzer_type", "AI").upper()} สำเร็จ - พบ {len(analysis_result["numbers"])} เลข'
-            })
-        else:
-            # AI ล้มเหลว - ใช้การวิเคราะห์พื้นฐาน
-            basic_numbers = article.extract_numbers_from_content()[:10]
-            article.extracted_numbers = ','.join(basic_numbers)
-            article.confidence_score = 30  # คะแนนต่ำสำหรับการวิเคราะห์พื้นฐาน
-            article.save()
-            
-            return JsonResponse({
-                'success': True,
-                'numbers': basic_numbers,
-                'confidence': 30,
-                'category': 'other',
-                'reasoning': 'ใช้การวิเคราะห์พื้นฐาน (AI ไม่สามารถใช้งานได้)',
-                'analyzer_type': 'basic',
-                'is_insight_ai': False,
-                'message': f'วิเคราะห์ด้วยระบบพื้นฐาน - พบ {len(basic_numbers)} เลข'
-            })
-        
-    except Exception as e:
-        # print(f"DEBUG: Exception in analyze_news: {str(e)}")
-        # import traceback
-        # traceback.print_exc()
+    except Exception as exc:
+        logger.warning("analyze_news AI failed for article %s: %r", article_id, exc)
+        analysis_result = {"success": False}
+
+    if (analysis_result or {}).get("success"):
+        numbers = [
+            str(n) for n in (analysis_result.get("numbers") or [])
+            if str(n).isdigit() and len(str(n)) in (2, 3)
+        ][:15]
+        _merge_article_numbers(article, numbers, "วิเคราะห์ด้วย AI")
+        article.analysis_status = "analyzed"
+        article.save(update_fields=["numbers_with_reasons", "analysis_status"])
+        audit(request, "news_analyze", f"article={article_id} engine=ai")
         return JsonResponse({
-            'success': False,
-            'error': f'เกิดข้อผิดพลาดในการวิเคราะห์: {str(e)}'
-        }, status=500)
+            "success": True,
+            "numbers": numbers,
+            "confidence": analysis_result.get("relevance_score"),
+            "category": analysis_result.get("category", "other"),
+            "reasoning": analysis_result.get("reasoning", ""),
+            "analyzer_type": analysis_result.get("analyzer_type", "unknown"),
+            "is_insight_ai": True,
+            "message": f"วิเคราะห์ด้วย {(analysis_result.get('analyzer_type') or 'AI').upper()} สำเร็จ - พบ {len(numbers)} เลข",
+        })
+
+    # AI ล้มเหลว — ใช้ regex ภายใน ไม่ทิ้งข้อมูล
+    try:
+        numbers = extract_numbers(article.content or "", article.title or "")[:10]
+    except Exception as exc:
+        return api_server_error(request, exc)
+    _merge_article_numbers(article, numbers, "วิเคราะห์พื้นฐาน")
+    article.analysis_status = "analyzed" if numbers else "failed"
+    article.save(update_fields=["numbers_with_reasons", "analysis_status"])
+    audit(request, "news_analyze", f"article={article_id} engine=basic")
+    return JsonResponse({
+        "success": True,
+        "numbers": numbers,
+        "confidence": None,
+        "category": "other",
+        "reasoning": "ใช้การวิเคราะห์พื้นฐาน (AI ไม่สามารถใช้งานได้)",
+        "analyzer_type": "basic",
+        "is_insight_ai": False,
+        "message": f"วิเคราะห์ด้วยระบบพื้นฐาน - พบ {len(numbers)} เลข",
+    })
+
+
+def _merge_article_numbers(article, numbers, reason):
+    """รวมเลขใหม่เข้า numbers_with_reasons (กันซ้ำ เก็บสูงสุด 15 เลข)."""
+    existing = {item.get("number") for item in article.get_numbers_with_reasons()}
+    merged = list(article.get_numbers_with_reasons())
+    for num in numbers:
+        if num not in existing:
+            merged.append({"number": num, "reason": reason})
+            existing.add(num)
+    article.numbers_with_reasons = merged[:15]
 

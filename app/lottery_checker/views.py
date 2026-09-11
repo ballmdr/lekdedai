@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 from django.utils import timezone
 from datetime import datetime, date, timedelta
@@ -11,6 +10,8 @@ import time
 from .models import LottoResult
 from .lotto_service import LottoService, check_numbers_against_result
 from utils.lottery_dates import LOTTERY_DATES
+from utils.rate_limit import ratelimit
+from utils.api import api_server_error, audit, read_json_body
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def index(request):
     
     return render(request, 'lottery_checker/index.html', context)
 
-@csrf_exempt
+@ratelimit("120/m")
 @require_http_methods(["POST", "OPTIONS"])
 def lotto_result_api(request):
     """API endpoint สำหรับดึงข้อมูลหวย"""
@@ -70,28 +71,33 @@ def lotto_result_api(request):
             'success': False
         }, status=400)
     except Exception as e:
-        logger.error(f"Error in lotto_result_api: {e}")
-        return JsonResponse({
-            'error': 'Internal server error',
-            'success': False
-        }, status=500)
+        return api_server_error(request, e)
 
+@ratelimit("60/m")
 def latest_results_api(request):
-    """API endpoint สำหรับดึงข้อมูลหวยล่าสุด"""
+    """API endpoint สำหรับดึงข้อมูลหวยล่าสุด (จำกัด days กันยิง GLO รัว)"""
     try:
-        days_back = int(request.GET.get('days', 7))
+        try:
+            days_back = int(request.GET.get('days', 7))
+        except (TypeError, ValueError):
+            return JsonResponse({
+                'error': 'days ต้องเป็นตัวเลข',
+                'success': False
+            }, status=400)
+        if days_back < 1 or days_back > 90:
+            return JsonResponse({
+                'error': 'days ต้องอยู่ระหว่าง 1-90',
+                'success': False
+            }, status=400)
         service = LottoService()
         results = service.get_latest_results(days_back)
         
         return JsonResponse(results)
         
     except Exception as e:
-        logger.error(f"Error in latest_results_api: {e}")
-        return JsonResponse({
-            'error': 'Internal server error',
-            'success': False
-        }, status=500)
+        return api_server_error(request, e)
 
+@ratelimit("120/m")
 def specific_date_api(request, year, month, day):
     """API endpoint สำหรับดึงข้อมูลหวยวันที่เฉพาะ"""
     try:
@@ -101,11 +107,7 @@ def specific_date_api(request, year, month, day):
         return JsonResponse(result)
         
     except Exception as e:
-        logger.error(f"Error in specific_date_api: {e}")
-        return JsonResponse({
-            'error': 'Internal server error',
-            'success': False
-        }, status=500)
+        return api_server_error(request, e)
 
 @require_POST
 def clear_data_api(request):
@@ -118,7 +120,8 @@ def clear_data_api(request):
     try:
         service = LottoService()
         success = service.clear_all_data()
-        
+        audit(request, "lotto_clear_all", f"success={success}")
+
         if success:
             return JsonResponse({
                 'success': True,
@@ -129,13 +132,9 @@ def clear_data_api(request):
                 'success': False,
                 'error': 'ไม่สามารถล้างข้อมูลได้'
             }, status=500)
-        
+
     except Exception as e:
-        logger.error(f"Error in clear_data_api: {e}")
-        return JsonResponse({
-            'error': 'Internal server error',
-            'success': False
-        }, status=500)
+        return api_server_error(request, e)
 
 def statistics_api(request):
     """API endpoint สำหรับดึงสถิติข้อมูล"""
@@ -146,17 +145,16 @@ def statistics_api(request):
         return JsonResponse(stats)
         
     except Exception as e:
-        logger.error(f"Error in statistics_api: {e}")
-        return JsonResponse({
-            'error': 'Internal server error',
-            'success': False
-        }, status=500)
+        return api_server_error(request, e)
 
 def check_number(request):
-    """ตรวจสอบเลขหวย"""
+    """ตรวจสอบเลขหวย (Task 23: rate limit + ไม่รั่ว error ภายใน)"""
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
+            data, error_response = read_json_body(request)
+            if error_response is not None:
+                return error_response
+            check_date = data.get('date')
             check_date = data.get('date')
             check_month = data.get('month')
             check_year = data.get('year')
@@ -198,11 +196,7 @@ def check_number(request):
                 'success': False
             }, status=400)
         except Exception as e:
-            logger.error(f"Error in check_number: {e}")
-            return JsonResponse({
-                'error': 'Internal server error',
-                'success': False
-            }, status=500)
+            return api_server_error(request, e)
     
     return JsonResponse({
         'error': 'Method not allowed',
@@ -212,16 +206,20 @@ def check_number(request):
 # งวดที่ผ่านมาเกินจำนวนวันนี้แล้วยังไม่มีผลที่ยืนยันแล้ว = ข้อมูลค้าง (stale)
 CHECK_DRAW_STALE_AFTER_DAYS = 3
 
+@ratelimit("120/m")
 @require_POST
 def check_draw(request):
     """ตรวจเลขต่องวดแบบ read-only สำหรับประวัติสมุดเลข (อ่านเฉพาะแถวที่มีใน DB ห้ามดึง API)."""
     try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'error': 'ข้อมูลที่ส่งมาไม่ถูกต้อง'
-        }, status=400)
+        return _check_draw_impl(request)
+    except Exception as exc:
+        return api_server_error(request, exc)
+
+
+def _check_draw_impl(request):
+    data, error_response = read_json_body(request)
+    if error_response is not None:
+        return error_response
 
     draw_date_str = str(data.get('draw_date') or '').strip()
     lottery_number = str(data.get('number') or '').strip()
@@ -323,6 +321,7 @@ def refresh_lotto_data_api(request):
         response["Access-Control-Allow-Origin"] = "*"
         return response
 
+    audit(request, "lotto_refresh")
     try:
         # Parse JSON data
         data = json.loads(request.body)
@@ -350,18 +349,16 @@ def refresh_lotto_data_api(request):
             'success': False
         }, status=400)
     except Exception as e:
-        logger.error(f"Error in refresh_lotto_data_api: {e}")
-        return JsonResponse({
-            'error': 'Internal server error',
-            'success': False
-        }, status=500)
+        return api_server_error(request, e)
 
-@csrf_exempt
+@ratelimit("120/m")
 @require_http_methods(["POST"])
 def check_lottery_quick(request):
     """API สำหรับตรวจหวยด่วนในหน้าแรก - ใช้ผลหวยงวดล่าสุด"""
     try:
-        data = json.loads(request.body)
+        data, error_response = read_json_body(request)
+        if error_response is not None:
+            return error_response
         lottery_number = data.get('lottery_number', '').strip()
         
         if not lottery_number:
@@ -424,11 +421,7 @@ def check_lottery_quick(request):
             'error': 'ข้อมูลที่ส่งมาไม่ถูกต้อง'
         })
     except Exception as e:
-        logger.error(f"Error in check_lottery_quick: {e}")
-        return JsonResponse({
-            'success': False,
-            'error': 'เกิดข้อผิดพลาดในระบบ'
-        })
+        return api_server_error(request, e)
 
 @require_POST
 def bulk_fetch_api(request):
@@ -438,6 +431,7 @@ def bulk_fetch_api(request):
             'error': 'ต้องเป็นผู้ดูแลระบบ',
             'success': False
         }, status=403)
+    audit(request, "lotto_bulk_fetch")
     try:
         data = json.loads(request.body)
         start_date_str = data.get('start_date', '2024-01-01')
@@ -521,11 +515,7 @@ def bulk_fetch_api(request):
             'success': False
         }, status=400)
     except Exception as e:
-        logger.error(f"Error in bulk_fetch_api: {e}")
-        return JsonResponse({
-            'error': str(e),
-            'success': False
-        }, status=500)
+        return api_server_error(request, e)
 
 def _has_valid_lottery_data(result_data):
     """ตรวจสอบว่าข้อมูลมีรางวัลจริงหรือไม่"""
