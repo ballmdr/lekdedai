@@ -122,7 +122,16 @@ def get_next_draw_prediction():
     
     has_data = bool(unique_numbers)
     if has_data:
-        data_source_summary = f'วิเคราะห์จากสถิติ + ข่าวใหญ่ตั้งแต่ {last_draw_date.strftime("%d/%m/%Y")}'
+        since = last_draw_date.strftime("%d/%m/%Y")
+        if analyzed_articles:
+            data_source_summary = (
+                f'วิเคราะห์จากสถิติ + ข่าวที่ผ่านการวิเคราะห์ {analyzed_articles} บทความ '
+                f'ตั้งแต่ {since}'
+            )
+        else:
+            data_source_summary = (
+                f'วิเคราะห์จากสถิติเท่านั้น (ยังไม่มีข่าวที่ผ่านการวิเคราะห์) ตั้งแต่ {since}'
+            )
     else:
         data_source_summary = 'ยังไม่มีข้อมูลสถิติหรือข่าวที่วิเคราะห์ได้ จึงยังไม่แสดงเลขแนะนำ'
 

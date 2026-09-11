@@ -35,7 +35,7 @@
           </p>
           {% endif %}
           
-          <p class="text-xl text-muted-foreground mb-2">วิเคราะห์จากสถิติและข่าวใหญ่</p>
+          <p class="text-xl text-muted-foreground mb-2">วิเคราะห์จากสถิติและข่าวที่ผ่านการวิเคราะห์</p>
           <p class="text-base text-muted-foreground">{{ next_draw_prediction.data_source_summary }}</p>
 
           <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
@@ -97,7 +97,7 @@
               <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i aria-hidden="true" class="fas fa-newspaper text-2xl text-white"></i>
               </div>
-              <h2 class="text-xl font-bold text-foreground mb-2">📰 จากข่าวใหญ่</h2>
+              <h2 class="text-xl font-bold text-foreground mb-2">📰 จากข่าวที่ผ่านการวิเคราะห์</h2>
               <p class="text-sm text-muted-foreground mb-4">เลข 2 ตัวจากข่าวที่วิเคราะห์ได้</p>
               <div class="flex justify-center gap-3 flex-wrap mb-4">
                 {% for item in next_draw_prediction.prediction_numbers %}
@@ -117,7 +117,7 @@
                 <div class="text-sm text-muted-foreground">ยังไม่มีข้อมูลข่าว</div>
                 {% endfor %}
               </div>
-              <p class="text-xs text-muted-foreground">📈 วิเคราะห์จาก {{ next_draw_prediction.total_news_analyzed }} ข่าวใหญ่</p>
+              <p class="text-xs text-muted-foreground">📈 วิเคราะห์จาก {{ next_draw_prediction.total_news_analyzed }} ข่าวที่ผ่านการวิเคราะห์</p>
             </div>
           </div>
           
