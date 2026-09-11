@@ -16,6 +16,15 @@
     <meta name="robots" content="index, follow">
 </head>
 <body class="bg-gradient-to-br from-orange-50 to-yellow-50 min-h-screen" {% block body_attr %}{% endblock %}>
+    {% if beta_status and beta_status.state != "open" %}
+    <div class="{% if beta_status.state == 'closed' %}bg-red-700{% else %}bg-yellow-500{% endif %} text-white text-sm" role="status">
+        <div class="container mx-auto px-4 py-2">
+            <strong>{{ beta_status.label }}</strong>
+            <span class="ml-2">{{ beta_status.message }}</span>
+            {% if beta_status.reasons %}<span class="ml-2 opacity-90">({{ beta_status.reasons|join:"; " }})</span>{% endif %}
+        </div>
+    </div>
+    {% endif %}
     <nav class="bg-white shadow-lg border-b-4 border-primary">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center py-4">

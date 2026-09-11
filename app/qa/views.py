@@ -1,12 +1,24 @@
 """Task 25: health check สาธารณะ + metrics สำหรับ staff."""
+from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.http import JsonResponse
+from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_http_methods
 
 from qa import metrics
 from qa.jobs import get_job_freshness
+from qa.rollout import (
+    BETA_ACCESS_SESSION_KEY,
+    gate_enabled,
+    get_beta_status,
+    mark_beta_access,
+    redeem_beta_code,
+)
+from utils.rate_limit import ratelimit
 
 
 def _db_ok():
@@ -78,3 +90,55 @@ def health(request):
 def metrics_view(request):
     """GET /metrics/ — staff เท่านั้น (ตัวเลขรวม ไม่มี PII)."""
     return JsonResponse(metrics.snapshot())
+
+
+def _safe_next(request, candidate, default="/"):
+    """กัน open redirect: ยอมเฉพาะ path ในโดเมนเดียวกัน."""
+    if candidate and url_has_allowed_host_and_scheme(
+        candidate,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return candidate
+    return default
+
+
+@ratelimit("20/m")
+@require_http_methods(["GET", "POST"])
+def beta_gate(request):
+    """GET/POST /beta/ — กรอกรหัสเชิญเข้า closed beta (Task 30)."""
+    if not gate_enabled():
+        return redirect("home")
+
+    status = get_beta_status()
+    if status["state"] == "closed":
+        return redirect("qa:beta_closed")
+
+    nxt = request.POST.get("next") or request.GET.get("next") or ""
+    if request.session.get(BETA_ACCESS_SESSION_KEY):
+        return redirect(_safe_next(request, nxt))
+
+    error = ""
+    if request.method == "POST":
+        invite = redeem_beta_code(request.POST.get("code", ""))
+        if invite is not None:
+            mark_beta_access(request, invite.code)
+            messages.success(request, "ยืนยันรหัสแล้ว ยินดีต้อนรับสู่ช่วง beta")
+            return redirect(_safe_next(request, nxt))
+        error = "รหัสเชิญไม่ถูกต้อง หมดอายุ หรือถูกใช้ครบแล้ว"
+
+    return render(request, "qa/beta_gate.html", {
+        "page_title": "ช่วงทดลองใช้งาน (closed beta) - LekdeDai",
+        "error": error,
+        "next": nxt,
+        "status": status,
+    })
+
+
+def beta_closed(request):
+    """GET /beta/closed/ — ประกาศว่าระบบหยุดรับชั่วคราว (kill switch/P0)."""
+    status = get_beta_status()
+    return render(request, "qa/beta_closed.html", {
+        "page_title": "ระบบปิดชั่วคราว - LekdeDai",
+        "status": status,
+    })

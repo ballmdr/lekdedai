@@ -40,9 +40,28 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'same-origin'
 X_FRAME_OPTIONS = 'DENY'
 
+# Task 31: อยู่หลัง nginx/Cloudflare — เชื่อ X-Forwarded-Proto เพื่อให้ is_secure()/CSRF ถูกต้อง
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Task 27: static caching — WhiteNoise เสิร์ฟ static พร้อม cache นาน
 # (production เท่านั้น; DEV ปล่อยให้ Django เสิร์ฟเพื่อ autoreload)
 WHITENOISE_MAX_AGE = 0 if DEBUG else 31536000
+
+# Task 30: closed beta — ปิดประตูเว็บจนกว่าจะมี invite code
+# BETA_MODE=True หรือ ROLLOUT_STAGE=beta/pct10 จะเปิดประตู (ดู qa/rollout.py)
+BETA_MODE = os.environ.get('BETA_MODE', 'False') == 'True'
+# รหัสเชิญตั้งต้นจาก env คั่นด้วยจุลภาค (seed ลง DB ตอน redeem อัตโนมัติ)
+BETA_INVITE_CODES = [
+    c.strip() for c in os.environ.get('BETA_INVITE_CODES', '').split(',') if c.strip()
+]
+# Task 30: cache สถานะ beta/health กันยิง DB ทุก request (วินาที)
+BETA_STATUS_CACHE_SECONDS = int(os.environ.get('BETA_STATUS_CACHE_SECONDS', '60'))
+
+# Task 31: staged rollout — beta -> pct10 -> public + kill switch
+ROLLOUT_STAGE = os.environ.get('ROLLOUT_STAGE', 'public').strip().lower()
+ROLLOUT_PERCENT = int(os.environ.get('ROLLOUT_PERCENT', '10'))
+# ปิดเว็บชั่วคราว (kill switch) — staff ยังเข้าได้ normal user เห็นหน้าปิด
+ROLLOUT_KILL_SWITCH = os.environ.get('ROLLOUT_KILL_SWITCH', 'False') == 'True'
 
 # Application definition - เริ่มต้นด้วย apps พื้นฐานก่อน
 INSTALLED_APPS = [
@@ -79,6 +98,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'qa.middleware.RequestMetricsMiddleware',  # Task 25: นับ request/latency/5xx
+    'qa.middleware.BetaAccessMiddleware',      # Task 30: ประตูปิด beta + kill switch
 ]
 
 ROOT_URLCONF = 'lekdedai.urls'
@@ -94,6 +114,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'qa.context_processors.beta_status',  # Task 30: ประกาศสถานะ beta/kill switch
             ],
         },
     },

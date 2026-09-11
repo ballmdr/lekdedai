@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+    <h1 class="text-3xl font-bold text-foreground mb-2">ช่วงทดลองใช้งาน (closed beta)</h1>
+    <p class="text-muted-foreground mb-8">
+        ขอบคุณที่สนใจ LekdeDai ตอนนี้เรากำลังทดสอบกับผู้ใช้กลุ่มเล็ก
+        กรุณากรอกรหัสเชิญเพื่อเข้าใช้งาน
+    </p>
+
+    {% if status.state == "paused" %}
+    <div class="card p-4 mb-6 border-l-4 border-yellow-500" role="status">
+        <p class="font-medium text-foreground">{{ status.label }}</p>
+        <p class="text-sm text-muted-foreground">{{ status.message }}</p>
+        <ul class="list-disc pl-5 mt-2 text-sm text-muted-foreground">
+            {% for reason in status.reasons %}<li>{{ reason }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="card p-4 mb-6 text-red-600" role="alert">{{ error }}</div>
+    {% endif %}
+
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="card p-4 text-sm {% if message.tags == 'error' %}text-red-600{% else %}text-green-700{% endif %}" role="status">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" class="card p-6">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <div class="mb-4">
+            <label for="betaCode" class="block text-sm font-medium text-foreground mb-1">รหัสเชิญ</label>
+            <input id="betaCode" name="code" type="text" maxlength="64" required autocomplete="off"
+                   class="input" placeholder="กรอกรหัสเชิญที่ได้รับ">
+        </div>
+        <button type="submit" class="btn btn-primary w-full">เข้าใช้งาน</button>
+    </form>
+
+    <p class="text-sm text-muted-foreground mt-6">
+        มีปัญหาหรือข้อเสนอแนะ? <a class="text-primary underline" href="/contact/?type=beta">ส่งข้อความถึงทีมงาน</a>
+    </p>
+</div>
+{% endblock %}

@@ -77,7 +77,18 @@
 - [x] Task 28 — เพิ่ม analytics ขั้นต่ำแบบรักษาความเป็นส่วนตัว (app analytics: event 9 ตัว ไม่เก็บฝัน/เลข/IP, opt-out/Do-Not-Track, endpoint validate whitelist+rate limit, รายงาน activation/result-check/cross-draw รายงวด, อัปเดต privacy)
 - [x] Task 29 — ทำ staging dress rehearsal (`rehearsal_check` รันจริง 13 ขั้น: happy path ครบวงจร + fault injection upstream/AI/ผลช้า → degraded + backup/restore + cleanup + รายงาน sha256/git rev; LAUNCH_CHECKLIST + INCIDENT_RUNBOOK; 240 tests เขียว) ครบหนึ่งรอบงวด
 - [ ] Task 30 — เปิด closed beta อย่างน้อยสองงวด
+  - [x] ประตูปิด beta: `BETA_MODE`/`BETA_INVITE_CODES` + middleware + `/beta/` (staff/exempt paths ยกเว้น)
+  - [x] เก็บรหัสที่ใช้แล้ว: `qa.BetaInvite` + `seed_beta_invites` + admin
+  - [x] ฟอร์ม feedback: `ContactMessage` type `beta` + `/contact/?type=beta` + admin
+  - [x] รายงานต่อ 2 งวด: `beta_report --draws 2` + `analytics_report --output`/`--format json`
+  - [x] เกณฑ์หยุดอัตโนมัติ: P0 flag/kill switch → closed, job ล้ม/stale/ข่าวล้ม → paused + แบนเนอร์
+  - [x] `docs/BETA_RUNBOOK.md` (เชิญ/support/go-no-go)
+  - [ ] (ต้องมีคนจริง) เชิญผู้ใช้ 5–20 คน, ตอบ feedback, ผ่าน 2 งวด, go/no-go
 - [ ] Task 31 — เปิด public แบบ staged rollout
+  - [x] `ROLLOUT_STAGE` beta→pct10→public + `ROLLOUT_KILL_SWITCH` + `ROLLOUT_PERCENT`
+  - [x] `production_smoke` (health/route หลัก/static/ผลหวยล่าสุด) + `SMOKE_BASE_URL`
+  - [x] post-launch review templates 24 ชม./7 วัน/งวดแรก ใน `docs/ROLLOUT_RUNBOOK.md`
+  - [ ] (ต้องมีคนจริง) domain/HTTPS/DNS + smoke จริง + sign-off
 
 ### Checkpoint E
 
@@ -85,6 +96,7 @@
 - [ ] มี cross-draw retention อย่างน้อยสองงวด
 - [ ] ระบุฟีเจอร์ที่ทำให้ผู้ใช้กลับมาได้
 - [ ] มีหลักฐานความตั้งใจจ่าย หรือข้อสรุปว่ายังไม่ควรสร้าง billing
+- [x] เครื่องมือประกอบ: `beta_report` (Checkpoint E inputs) + `docs/CHECKPOINT_E.md`
 
 ## ระยะที่ 5: ทดลองรายได้
 

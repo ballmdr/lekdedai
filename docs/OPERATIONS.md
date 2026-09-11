@@ -46,7 +46,12 @@
 - Logs: console เสมอ (production เป็น JSON) + ตั้ง `LOG_FILE` เพื่อเขียนไฟล์
 - Alerts: `manage.py check_alerts` (cron ทุก 30 นาที) ตรวจ job ล้ม/stale,
   ingestion ล้ม, 5xx พุ่ง, AI ล้ม; `--send` ส่งอีเมลถ้าตั้ง SMTP ไว้
+- Beta/rollout (Task 30–31): สถานะเปิด/หยุดประเมินจาก `JobRun`+`SystemFlag` ใน
+  `qa.rollout.compute_beta_status` — P0 flag/kill switch = closed, job ล้ม/stale = paused
+  (ดู `docs/BETA_RUNBOOK.md`, `docs/ROLLOUT_RUNBOOK.md`)
 - Backup: `manage.py backup_db` (cron รายวัน, เก็บ 7 ไฟล์ล่าสุด)
+- Production smoke: `manage.py production_smoke --base-url <โดเมน>` หลัง deploy
+  (health/route หลัก/static/ผลหวยล่าสุด; exit 1 เมื่อพบปัญหา)
 - Restore (ซ้อม): หยุด web -> `manage.py restore_db --file <ไฟล์> --confirm`
   -> สตาร์ท web -> ตรวจ `/health/` และจำนวนแถวสำคัญ
 - Rollback: `APP_DIR=/opt/lekdedai bash deploy/rollback.sh <commit-หรือ-tag>`

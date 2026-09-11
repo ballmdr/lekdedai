@@ -28,6 +28,15 @@
 - [ ] cron: `check_alerts --send` ทุก 30 นาที
 - [ ] cron: `backup_db` รายวัน (เก็บ ≥7 ไฟล์)
 - [ ] cron: `analytics_report` รายงวด (Task 28)
+- [ ] cron: `beta_report --draws 2 --output reports/beta-2draws.json --format json` รายงวด (Task 30)
+
+## 4.1 Closed beta / staged rollout (Task 30–31)
+- [ ] `BETA_MODE`/`BETA_INVITE_CODES` หรือ `ROLLOUT_STAGE` ตั้งถูก stage
+- [ ] `seed_beta_invites` แล้ว และทดสอบ `/beta/` + รหัสจริง
+- [ ] `ROLLOUT_KILL_SWITCH` ทดสอบแล้ว (ผู้ใช้ทั่วไปเห็น `/beta/closed/`, staff เข้าได้)
+- [ ] `production_smoke --base-url <โดเมน>` ผ่าน
+- [ ] เกณฑ์หยุดอัตโนมัติทำงาน (สร้าง `SystemFlag` P0 แล้วทดสอบ → closed)
+- [ ] ดู `docs/BETA_RUNBOOK.md` + `docs/ROLLOUT_RUNBOOK.md`
 
 ## 5. Rehearsal & recovery
 - [ ] `manage.py rehearsal_check` = pass/degraded (ไม่มี fail) + เก็บรายงาน

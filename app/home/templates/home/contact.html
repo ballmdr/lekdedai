@@ -22,9 +22,10 @@
         <div class="mb-4">
             <label for="contactType" class="block text-sm font-medium text-foreground mb-1">ประเภท</label>
             <select id="contactType" name="message_type" class="input">
-                <option value="contact">ติดต่อทั่วไป</option>
-                <option value="report">แจ้งเนื้อหาไม่เหมาะสม</option>
-                <option value="removal">ขอลบข้อมูล</option>
+                <option value="contact" {% if selected_type == "contact" %}selected{% endif %}>ติดต่อทั่วไป</option>
+                <option value="report" {% if selected_type == "report" %}selected{% endif %}>แจ้งเนื้อหาไม่เหมาะสม</option>
+                <option value="removal" {% if selected_type == "removal" %}selected{% endif %}>ขอลบข้อมูล</option>
+                <option value="beta" {% if selected_type == "beta" %}selected{% endif %}>ข้อเสนอแนะช่วง beta</option>
             </select>
         </div>
         <div class="grid md:grid-cols-2 gap-4 mb-4">

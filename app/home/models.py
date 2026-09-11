@@ -15,6 +15,7 @@ class ContactMessage(models.Model):
         ("contact", "ติดต่อทั่วไป"),
         ("report", "แจ้งเนื้อหาไม่เหมาะสม"),
         ("removal", "ขอลบข้อมูล"),
+        ("beta", "ข้อเสนอแนะช่วง beta"),
     ]
     STATUS_CHOICES = [
         ("new", "ใหม่"),

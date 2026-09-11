@@ -155,9 +155,13 @@ def terms_of_use(request):
 @ratelimit("30/m", redirect_back=True)
 def contact(request):
     """ติดต่อ/แจ้งเนื้อหา/ขอลบข้อมูล (Task 26)."""
+    valid_types = [choice[0] for choice in ContactMessage.TYPE_CHOICES]
+    selected_type = request.GET.get("type", "contact")
+    if selected_type not in valid_types:
+        selected_type = "contact"
     if request.method == "POST":
         message_type = request.POST.get("message_type", "contact")
-        if message_type not in ("contact", "report", "removal"):
+        if message_type not in valid_types:
             message_type = "contact"
         message = request.POST.get("message", "").strip()[:2000]
         if not message:
@@ -173,6 +177,7 @@ def contact(request):
         return redirect("contact")
     return render(request, "home/contact.html", {
         "page_title": "ติดต่อเรา - LekdeDai",
+        "selected_type": selected_type,
     })
 
 

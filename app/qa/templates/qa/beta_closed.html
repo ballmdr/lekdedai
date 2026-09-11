@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto text-center">
+    <h1 class="text-3xl font-bold text-foreground mb-2">ระบบปิดชั่วคราว</h1>
+    <p class="text-muted-foreground mb-8">{{ status.message|default:"ระบบปิดปรับปรุงชั่วคราว กรุณากลับมาใหม่ภายหลัง" }}</p>
+
+    {% if status.reasons %}
+    <div class="card p-4 mb-8 text-left" role="status">
+        <p class="font-medium text-foreground mb-1">{{ status.label }}</p>
+        <ul class="list-disc pl-5 text-sm text-muted-foreground">
+            {% for reason in status.reasons %}<li>{{ reason }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <p class="text-sm text-muted-foreground">
+        แจ้งปัญหาได้ที่ <a class="text-primary underline" href="/contact/">หน้าติดต่อเรา</a>
+    </p>
+</div>
+{% endblock %}
