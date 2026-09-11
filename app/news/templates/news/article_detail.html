@@ -72,7 +72,9 @@
             <!-- Article Content -->
             <div class="card p-8">
                 <div class="prose max-w-none mb-8">
+                    {% if article.intro and not article.intro_duplicates_content %}
                     <p class="text-lg font-medium text-muted-foreground mb-6">{{ article.intro }}</p>
+                    {% endif %}
                     <div class="text-foreground leading-relaxed whitespace-pre-line">
                         {{ article.content }}
 
@@ -80,8 +82,8 @@
                 </div>
                 
 
-                    <!-- Numbers with Reasons -->
-                    {% if article.get_numbers_with_reasons %}
+                    <!-- Numbers with Reasons (เฉพาะข่าวที่วิเคราะห์แล้ว) -->
+                    {% if article.analysis_status == "analyzed" and article.get_numbers_with_reasons %}
                     <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
                         <h4 class="font-bold text-blue-900 mb-4 flex items-center gap-2">
                             <i aria-hidden="true" class="fas fa-list-ol"></i>เลขจากข่าวพร้อมเหตุผล
@@ -174,21 +176,29 @@
                     {% csrf_token %}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <input type="text" 
+                               id="commentName"
                                name="name" 
+                               aria-label="ชื่อ (ไม่บังคับ)"
                                placeholder="ชื่อ (ไม่บังคับ)" 
                                class="input">
                         <input type="email" 
+                               id="commentEmail"
                                name="email" 
+                               aria-label="อีเมล (ไม่บังคับ)"
                                placeholder="อีเมล (ไม่บังคับ)" 
                                class="input">
                     </div>
-                    <textarea name="content" 
+                    <textarea id="commentContent"
+                              name="content" 
                               rows="4" 
+                              aria-label="ความคิดเห็น"
                               placeholder="แสดงความคิดเห็น..." 
                               class="input mb-4 min-h-24"
                               required></textarea>
                     <input type="text" 
+                           id="commentNumbers"
                            name="suggested_numbers" 
+                           aria-label="เลขที่คิดว่าจะออก (ไม่บังคับ)"
                            placeholder="เลขที่คิดว่าจะออก (ไม่บังคับ)" 
                            class="input mb-4">
                     <button type="submit" 
@@ -265,8 +275,6 @@ async function analyzeAgain(articleId) {
         const insightAnalysis = document.getElementById('insightAnalysis');
         insightAnalysis.classList.add('hidden');
         
-        console.log('Sending analysis request for article:', articleId);
-        console.log('CSRF Token:', getCsrfToken());
         
         const response = await fetch(`/news/api/analyze/${articleId}/`, {
             method: 'POST',
@@ -276,15 +284,12 @@ async function analyzeAgain(articleId) {
             }
         });
         
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Response data:', data);
         if (data.success) {
             // อัปเดตผลลัพธ์บนหน้าจอ
             if (data.is_insight_ai) {
@@ -304,7 +309,6 @@ async function analyzeAgain(articleId) {
         showErrorMessage('เกิดข้อผิดพลาด: ' + error.message);
     } finally {
         // คืนค่าปุ่มเดิม
-        console.log('Finally block - restoring button');
         const button = document.getElementById('analyzeButton');
         if (button) {
             button.innerHTML = originalText;
@@ -316,12 +320,9 @@ async function analyzeAgain(articleId) {
 }
 
 function updateInsightAIResults(data) {
-    console.log('updateInsightAIResults called with data:', data);
     const analysisResults = document.getElementById('analysisResults');
     const insightAnalysis = document.getElementById('insightAnalysis');
     const articleId = {{ article.id }};
-    console.log('analysisResults element:', analysisResults);
-    console.log('insightAnalysis element:', insightAnalysis);
     
     // อัปเดตเลขหลัก
     if (data.numbers && data.numbers.length > 0) {
@@ -440,10 +441,8 @@ function updateInsightAIResults(data) {
 }
 
 function updateTraditionalResults(data) {
-    console.log('updateTraditionalResults called with data:', data);
     const analysisResults = document.getElementById('analysisResults');
     const articleId = {{ article.id }};
-    console.log('analysisResults element (traditional):', analysisResults);
     
     if (data.numbers && data.numbers.length > 0) {
         const numbersHTML = data.numbers.slice(0, 10).map(num => 
@@ -629,7 +628,6 @@ document.addEventListener('DOMContentLoaded', function() {
         is_insight_ai: {{ insight_analysis.is_insight_ai|yesno:"true,false" }}
     };
     
-    console.log('Auto-loading analysis:', analysisData);
     
     // เรียกฟังก์ชันที่เหมาะสม
     if (analysisData.is_insight_ai) {

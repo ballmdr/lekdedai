@@ -160,7 +160,6 @@ async function loadLottoResultsForDate(selectedDateFull) {
         });
 
         const data = await res.json();
-        console.log("Full Lotto Results API Response:", data);
 
         if (!data || !data.success) {
             displayDiv.innerHTML = `
@@ -401,7 +400,27 @@ async function checkLotto(selectedDate) {
     `;
     resultDiv.classList.remove('hidden');
 
-    const numbers = input.split(",").map(n => n.trim()).filter(n => /^\d{6}$/.test(n)).slice(0, 10);
+    const rawEntries = input.split(",").map(n => n.trim()).filter(Boolean);
+    const invalidEntries = rawEntries.filter(n => !/^\d{6}$/.test(n));
+    const numbers = rawEntries.filter(n => /^\d{6}$/.test(n)).slice(0, 10);
+
+    if (invalidEntries.length > 0) {
+        // แจ้งรายการที่ไม่ถูกต้อง (ไม่ตัดทิ้งเงียบ ๆ) — สร้าง DOM ปลอดภัยจาก XSS
+        const wrapper = document.createElement("div");
+        wrapper.className = "text-red-600 text-center";
+        const line1 = document.createElement("p");
+        line1.className = "text-lg";
+        line1.textContent = "❌ พบรายการที่ไม่ถูกต้อง (ต้องเป็นเลข 6 หลัก):";
+        const line2 = document.createElement("p");
+        line2.className = "text-sm mt-1";
+        line2.textContent = invalidEntries.join(", ");
+        wrapper.appendChild(line1);
+        wrapper.appendChild(line2);
+        resultDiv.innerHTML = "";
+        resultDiv.appendChild(wrapper);
+        resultDiv.classList.remove("hidden");
+        return;
+    }
 
     if (numbers.length === 0) {
         resultDiv.innerHTML = `
@@ -432,7 +451,6 @@ async function checkLotto(selectedDate) {
         });
 
         const data = await res.json();
-        console.log("API Response:", data);
 
         if (!data || !data.success) {
             resultDiv.innerHTML = `
@@ -659,7 +677,6 @@ async function refreshDataFromGLO() {
         });
         
         const data = await res.json();
-        console.log("Refresh API Response:", data);
         
         if (data.success) {
             // แสดงข้อความสำเร็จ

@@ -156,6 +156,15 @@ class NewsArticle(models.Model):
                 numbers.append(item['number'])
         return numbers
 
+    @property
+    def intro_duplicates_content(self):
+        """True = intro คือช่วงต้นของ content (ข่าวจาก ingestion) — ไม่ต้องแสดงซ้ำ."""
+        intro = (self.intro or "").strip()
+        content = (self.content or "").strip()
+        if not intro or not content:
+            return False
+        return content.startswith(intro)
+
     def add_number_with_reason(self, number, reason):
         """เพิ่มเลขพร้อมเหตุผล"""
         if not self.numbers_with_reasons:

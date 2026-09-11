@@ -109,7 +109,7 @@
                     
                     <p class="text-muted-foreground mb-4">{{ article.intro|truncatewords:20 }}</p>
                     
-                    {% if article.numbers_with_reasons %}
+                    {% if article.analysis_status == "analyzed" and article.numbers_with_reasons %}
                     <div class="border-t border-border pt-4">
                         <div class="flex items-center justify-between mb-2">
                             <p class="text-sm font-semibold text-foreground">

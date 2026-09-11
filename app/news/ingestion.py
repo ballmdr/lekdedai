@@ -2,7 +2,9 @@
 
 นโยบาย (policy):
 - เก็บทุกข่าวที่ดึงได้ (draft) ไม่ทิ้งข้อมูลต้นฉบับ แม้ AI วิเคราะห์ล้มเหลว
-- เลขจาก regex ภายใน (deterministic) ถ้าพบเลข -> สถานะ published พร้อมเลข+เหตุผล
+- เก็บทุกข่าวเป็น draft ก่อน; จะ published อัตโนมัติเฉพาะที่วิเคราะห์สำเร็จแล้ว
+  (analysis_status=analyzed) เท่านั้น — ข่าว "รอวิเคราะห์"/"ล้มเหลว" ต้องผ่าน
+  การอนุมัติใน admin ก่อน จึงไม่เอาเลขที่ยังไม่ตรวจไปใช้
 - ไม่พบเลข -> สถานะ draft (เก็บไว้ ไม่โชว์สาธารณะ)
 - AI ภายนอกเป็น best-effort เท่านั้น: ล้มเหลวได้ แต่ข้อมูลต้นฉบับต้องอยู่
 - dedupe ด้วย content_hash (link+title) กันข่าวซ้ำข้ามรอบ
@@ -248,7 +250,8 @@ def build_article_kwargs(normalized, numbers, source, category, analysis_status=
         "content_hash": content_hash(normalized["title"], normalized["link"]),
         "published_date": normalized["published"],
         "numbers_with_reasons": numbered,
-        "status": "published" if numbered else "draft",
+        # เผยแพร่อัตโนมัติเฉพาะข่าวที่วิเคราะห์สำเร็จแล้วเท่านั้น
+        "status": "published" if (numbered and analysis_status == "analyzed") else "draft",
         "analysis_status": analysis_status,
     }
 

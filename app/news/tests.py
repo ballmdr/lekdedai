@@ -70,7 +70,8 @@ def _make_source(**kwargs):
 class RssIngestionTests(TestCase):
     """Task 17: feed ปกติ/ผิดรูป/timeout/ซ้ำ/AI ล้มเหลว ต้องคาดเดาได้."""
 
-    def test_normal_ingest_publishes_numbered_and_drafts_rest(self):
+    def test_ingest_without_analyzer_keeps_all_drafts(self):
+        """ไม่มี analyzer = ยังไม่วิเคราะห์ → ต้องไม่ publish อัตโนมัติ (กันเลขข่าวดิบ)."""
         from unittest.mock import patch
 
         from news.ingestion import ingest_source
@@ -83,17 +84,16 @@ class RssIngestionTests(TestCase):
         self.assertTrue(summary["ok"])
         self.assertEqual(summary["examined"], 3)
         self.assertEqual(summary["created"], 2)
-        self.assertEqual(summary["published"], 1)
-        self.assertEqual(summary["drafts"], 1)
+        self.assertEqual(summary["published"], 0)
+        self.assertEqual(summary["drafts"], 2)
         self.assertEqual(summary["duplicates"], 1)
 
         article = NewsArticle.objects.get(source_url="https://example.com/news/1")
-        self.assertEqual(article.status, "published")
+        self.assertEqual(article.status, "draft")
         self.assertTrue(article.get_numbers_only())
         self.assertTrue(article.content_hash)
         self.assertIsNotNone(article.fetched_at)
         self.assertEqual(article.data_source, source)
-        self.assertIsNotNone(article.published_date)
         self.assertEqual(article.analysis_status, "pending")
 
         draft = NewsArticle.objects.get(source_url="https://example.com/news/2")
@@ -102,6 +102,28 @@ class RssIngestionTests(TestCase):
         source.refresh_from_db()
         self.assertIsNotNone(source.last_success_at)
         self.assertEqual(source.last_error, "")
+
+    def test_ingest_publishes_only_when_analyzed(self):
+        from unittest.mock import patch
+
+        from news.ingestion import ingest_source
+        from news.models import NewsArticle
+
+        class GoodAnalyzer:
+            def analyze_article(self, article):
+                return {"numbers": ["45"]}
+
+        source = _make_source()
+        with patch("news.ingestion.fetch_feed_content", return_value=FEED_FIXTURE):
+            summary = ingest_source(source, limit=10, analyzer=GoodAnalyzer())
+
+        # ทั้ง 2 รายการมีเลข (regex + AI) และวิเคราะห์สำเร็จ → published ทั้งคู่
+        self.assertEqual(summary["published"], 2)
+        self.assertEqual(summary["drafts"], 0)
+        article = NewsArticle.objects.get(source_url="https://example.com/news/1")
+        self.assertEqual(article.status, "published")
+        self.assertEqual(article.analysis_status, "analyzed")
+        self.assertIsNotNone(article.published_date)
 
     def test_rerun_dedupes_everything(self):
         from unittest.mock import patch
@@ -665,10 +687,16 @@ class CuratedNewsDisplayTests(TestCase):
         from news.ingestion import ingest_source
         from news.models import NewsArticle
 
+        class GoodAnalyzer:
+            def analyze_article(self, article):
+                return {"numbers": ["45"]}
+
         source = _make_source(key="e2e-rss", name="E2E RSS")
         with patch("news.ingestion.fetch_feed_content", return_value=FEED_FIXTURE):
-            ingest_source(source, limit=10)
-        article = NewsArticle.objects.get(status="published")
+            ingest_source(source, limit=10, analyzer=GoodAnalyzer())
+        article = NewsArticle.objects.get(
+            source_url="https://example.com/news/1", status="published"
+        )
         for url in ("/news/", "/"):
             html = self.client.get(url).content.decode()
             self.assertEqual(html.count(article.get_absolute_url()), 1, url)
@@ -776,3 +804,39 @@ class LicenseGateTests(TestCase):
             call_command("check_source_compliance", source="comp-bad", approve=True)
         source.refresh_from_db()
         self.assertEqual(source.license_status, "pending")
+
+
+class DemoteUnanalyzedNewsTests(TestCase):
+    """QA: ข่าว published ที่ยังไม่วิเคราะห์ต้องถูก demote ได้ (editorial gate)."""
+
+    def _article(self, **kwargs):
+        from news.models import NewsArticle
+
+        defaults = {
+            "title": "ข่าว generic",
+            "intro": "x",
+            "content": "เนื้อหา " * 30,
+            "status": "published",
+            "analysis_status": "pending",
+        }
+        defaults.update(kwargs)
+        return NewsArticle.objects.create(**defaults)
+
+    def test_dry_run_then_confirm(self):
+        from django.core.management import call_command
+
+        from news.models import NewsArticle
+
+        pending = self._article()
+        analyzed = self._article(title="ข่าววิเคราะห์แล้ว", analysis_status="analyzed")
+
+        call_command("demote_unanalyzed_news")  # dry-run
+        pending.refresh_from_db()
+        self.assertEqual(pending.status, "published")
+
+        call_command("demote_unanalyzed_news", confirm=True)
+        pending.refresh_from_db()
+        analyzed.refresh_from_db()
+        self.assertEqual(pending.status, "draft")
+        self.assertEqual(analyzed.status, "published")
+        self.assertEqual(NewsArticle.objects.filter(status="published").count(), 1)

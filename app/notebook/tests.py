@@ -18,6 +18,14 @@ class NotebookPageTests(TestCase):
         latest = LOTTERY_DATES.get_dropdown_options(limit=1)[0]["value"]
         self.assertContains(res, latest)
 
+    def test_default_draw_is_next_draw(self):
+        """ค่าเริ่มต้นต้องเป็นงวดถัดไป ไม่ใช่รางวัลเก่า (กันผู้ใช้บันทึกผิดงวด)."""
+        from utils.lottery_dates import LOTTERY_DATES
+
+        res = self.client.get("/notebook/")
+        self.assertEqual(res.context["default_draw"], LOTTERY_DATES.get_next_draw_date())
+        self.assertContains(res, LOTTERY_DATES.get_next_draw_date())
+
 
 class NotebookHistoryUiTests(TestCase):
     """Task 11: หน้าประวัติต้องมีปุ่มตรวจ ที่มา/เหตุผล/งวด/ผลในแถวเดียว."""

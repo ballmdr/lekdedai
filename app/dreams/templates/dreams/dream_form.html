@@ -327,7 +327,7 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
                             </div>
                         </div>
                         <div class="mt-3 text-sm text-muted-foreground leading-relaxed">
-                            ${pred.reason}
+                            ${formatInterpretation(pred.reason)}
                         </div>
                     `;
                     const saveLink = document.createElement('a');

@@ -95,6 +95,10 @@ class NumberStatisticsSplitTests(TestCase):
         self.assertEqual(stats["total_appearances"], 1)
         self.assertEqual(stats["appearance_dates"], ["16/07/2026"])
         self.assertEqual(stats["first_prize"]["total_appearances"], 2)
+        # ออกครั้งเดียว = คำนวณระยะห่างไม่ได้ ต้องเป็น None (ไม่ใช่ 0 วัน)
+        self.assertIsNone(stats["average_gap"])
+        self.assertIsNone(stats["max_gap"])
+        self.assertIsNone(stats["min_gap"])
 
     def test_positions_label_present(self):
         stats = self.calc.get_number_statistics("04")
@@ -173,3 +177,51 @@ class NumberDetailApiTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "เลขคู่พบบ่อยในรางวัลที่ 1")
         self.assertContains(res, "งวดละ 1 ค่า")
+
+
+class SyncConsistencyTests(TestCase):
+    """P0 regression: sync ต้องอ่าน last3f/last3b ไม่ใช่ second/third/fourth/fifth.
+
+    ป้องกันหน้า /lotto_stats/ กับ /lottery_checker/ แสดงเลขหน้า/ท้าย 3 ตัวคนละชุด.
+    """
+
+    def _lotto_result(self, draw_date):
+        from lottery_checker.models import LottoResult
+
+        return LottoResult.objects.create(
+            draw_date=draw_date,
+            is_valid=True,
+            result_data={
+                "response": {
+                    "result": {
+                        "data": {
+                            "first": {"number": [{"value": "417212"}]},
+                            "second": {"number": [{"value": "082727"}, {"value": "713900"}]},
+                            "third": {"number": [{"value": "070925"}]},
+                            "fourth": {"number": [{"value": "001368"}, {"value": "048553"}]},
+                            "fifth": {"number": [{"value": "003249"}]},
+                            "last3f": {"number": [{"value": "257"}, {"value": "346"}]},
+                            "last3b": {"number": [{"value": "136"}, {"value": "740"}]},
+                            "last2": {"number": [{"value": "04"}]},
+                        }
+                    }
+                }
+            },
+        )
+
+    def test_sync_uses_last3f_last3b(self):
+        from django.core.management import call_command
+
+        draw_date = date(2026, 9, 1)
+        self._lotto_result(draw_date)
+
+        call_command("sync_lotto_data", days_back=30, force=True)
+
+        draw = LotteryDraw.objects.get(draw_date=draw_date)
+        self.assertEqual(draw.first_prize, "417212")
+        self.assertEqual(draw.two_digit, "04")
+        self.assertEqual(draw.three_digit_front, "257, 346")
+        self.assertEqual(draw.three_digit_back, "136, 740")
+        # หน้าสถิติต้องเห็นชุดเดียวกับหน้าตรวจหวย
+        self.assertEqual(draw.get_three_digit_front_list(), ["257", "346"])
+        self.assertEqual(draw.get_three_digit_back_list(), ["136", "740"])

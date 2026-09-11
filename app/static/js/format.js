@@ -11,5 +11,6 @@ function formatInterpretation(text) {
     .replace(/"/g, '&quot;');
   return escaped
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
     .replace(/^#{1,6}\s*(.+)$/gm, '<strong>$1</strong>');
 }

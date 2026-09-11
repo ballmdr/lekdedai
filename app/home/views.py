@@ -79,8 +79,10 @@ def get_next_draw_prediction():
     
     try:
         # ข่าวใหญ่ที่มีเลขตั้งแต่งวดที่แล้ว
+        # ใช้เฉพาะข่าวที่วิเคราะห์แล้วเท่านั้น (ห้ามเลขจากข่าว "รอวิเคราะห์")
         major_news = NewsArticle.objects.filter(
             status='published',
+            analysis_status='analyzed',
             published_date__date__gte=last_draw_date
         ).exclude(numbers_with_reasons=[]).order_by('-published_date')[:8]
         

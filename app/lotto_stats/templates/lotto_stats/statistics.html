@@ -34,8 +34,16 @@
             <i aria-hidden="true" class="fas fa-chart-bar text-primary mr-3"></i>
             สถิติหวยย้อนหลัง
         </h1>
-        
-        
+
+        {% if window_draws < 12 %}
+        <div class="card p-4 mb-6 border-l-4 border-yellow-500" role="status">
+            <p class="text-sm text-foreground">
+                <strong>ข้อมูลตัวอย่างยังน้อย</strong> — มีผลหวยเพียง {{ window_draws }} งวด
+                ตัวเลขสถิติด้านล่างจึงยังไม่พอใช้คาดการณ์แนวโน้มหรือความน่าจะเป็น
+            </p>
+        </div>
+        {% endif %}
+
         <!-- สรุปสถิติ -->
         {% if stats_summary %}
         <div class="card p-6 mb-8 relative">
@@ -283,7 +291,7 @@
                     สถิติเลขเบิ้ล/เลขหาม
                 </h2>
                 <p class="text-sm text-muted-foreground mb-4">
-                    เลขซ้ำ เช่น 11, 22, 99, 111, 222 ที่ออกในรอบปี
+                    เลขซ้ำ เช่น 11, 22, 99, 111, 222 ที่พบในช่วงข้อมูล (จาก {{ window_draws }} งวด)
                 </p>
                 
                 <!-- เลขเบิ้ล 2 ตัว -->
@@ -327,7 +335,7 @@
                     สถิติเลขเรียง
                 </h2>
                 <p class="text-sm text-muted-foreground mb-4">
-                    เลขต่อเนื่อง เช่น 12, 23, 34, 123, 234, 789 ที่ออกในรอบปี
+                    เลขต่อเนื่อง เช่น 12, 23, 34, 123, 234, 789 ที่พบในช่วงข้อมูล (จาก {{ window_draws }} งวด)
                 </p>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -606,11 +614,11 @@ async function searchNumber() {
                     </div>
                     <div>
                         <p class="text-sm text-muted-foreground">ไม่ออกมา</p>
-                        <p class="text-xl font-bold text-accent">${data.statistics.days_since_last} วัน</p>
+                        <p class="text-xl font-bold text-accent">${data.statistics.total_appearances === 0 ? 'ไม่เคยออก' : data.statistics.days_since_last + ' วัน'}</p>
                     </div>
                     <div>
                         <p class="text-sm text-muted-foreground">ระยะห่างเฉลี่ย</p>
-                        <p class="text-xl font-bold text-foreground">${data.statistics.average_gap} วัน</p>
+                        <p class="text-xl font-bold text-foreground">${data.statistics.average_gap === null || data.statistics.average_gap === undefined ? 'ข้อมูลไม่เพียงพอ' : data.statistics.average_gap + ' วัน'}</p>
                     </div>
                 </div>
         `;

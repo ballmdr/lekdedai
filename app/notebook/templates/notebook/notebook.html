@@ -275,7 +275,7 @@ function shareNotebook() {
 document.addEventListener('DOMContentLoaded', () => {
   if (window.LekAnalytics) LekAnalytics.track('history_viewed');
   const q = new URLSearchParams(window.location.search);
-  nbInitDraws(q.get('draw'));
+  nbInitDraws(q.get('draw') || '{{ default_draw }}');
   const qn = (q.get('number') || '').replace(/\D/g, '').slice(0, 6);
   if (qn) document.getElementById('nbNumber').value = qn;
   if (q.get('source') && NB_SOURCES[q.get('source')]) document.getElementById('nbSource').value = q.get('source');

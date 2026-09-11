@@ -269,9 +269,10 @@ class StatsCalculator:
             'last_appeared': None,
             'days_since_last': 0,
             'appearance_dates': [],
-            'average_gap': 0,
-            'max_gap': 0,
-            'min_gap': 999,
+            # None = ข้อมูลไม่พอคำนวณ (ออกครั้งเดียว/ไม่เคยออก) — ห้ามโชว์ 0 วัน
+            'average_gap': None,
+            'max_gap': None,
+            'min_gap': None,
             'positions': '',
         }
 
@@ -306,9 +307,9 @@ class StatsCalculator:
             'last_appeared': None,
             'days_since_last': 0,
             'appearance_dates': [],
-            'average_gap': 0,
-            'max_gap': 0,
-            'min_gap': 999,
+            'average_gap': None,
+            'max_gap': None,
+            'min_gap': None,
         }
         StatsCalculator._summarize_into(summary, appearances)
         return summary

@@ -241,7 +241,7 @@
                       <div class="flex-1">
                         <h3 class="font-semibold mb-2 text-foreground hover:text-primary transition-colors">{{ article.title }}</h3>
                         <p class="text-sm text-muted-foreground mb-2">{{ article.intro|truncatechars:100 }}</p>
-                        {% if article.get_numbers_only %}
+                        {% if article.analysis_status == "analyzed" and article.get_numbers_only %}
                           <div class="flex gap-1 mb-2">
                             {% for number in article.get_numbers_only|slice:":3" %}
                               <span class="badge badge-outline text-xs">{{ number }}</span>
@@ -453,23 +453,23 @@
             <div class="p-4">
               <div class="text-center space-y-4">
                 <div>
-                  {% if ai_card.has_number %}
+                  {% if ai_card.status == "ready" and ai_card.has_number %}
                     <div class="text-2xl font-bold text-primary mb-1">{{ ai_card.number }}</div>
                     <div class="text-sm text-muted-foreground">เลขบน 3 ตัว</div>
                     {% if ai_card.draw_date %}
                     <div class="text-xs text-muted-foreground mt-1">งวดวันที่ {{ ai_card.draw_date|date:"j F Y" }}</div>
                     {% endif %}
-                    {% if ai_card.status == "ready" and ai_card.confidence %}
+                    {% if ai_card.confidence %}
                     <div class="badge bg-primary/10 text-primary mt-2">{{ ai_card.confidence }} คะแนน (เพื่อความบันเทิง)</div>
-                    {% elif ai_card.status == "stale" %}
-                    <div class="badge bg-primary/10 text-primary mt-2">งวดนี้ออกผลแล้ว</div>
-                    {% else %}
-                    <div class="badge bg-primary/10 text-primary mt-2">รอข้อมูลให้ครบก่อนแสดงคะแนน</div>
                     {% endif %}
+                  {% elif ai_card.status == "stale" %}
+                    <div class="text-2xl font-bold text-muted-foreground mb-1">—</div>
+                    <div class="text-sm text-muted-foreground">เลขบน 3 ตัว</div>
+                    <div class="badge bg-primary/10 text-primary mt-2">งวดนี้ออกผลแล้ว — รอการทำนายใหม่</div>
                   {% else %}
                     <div class="text-2xl font-bold text-muted-foreground mb-1">—</div>
                     <div class="text-sm text-muted-foreground">เลขบน 3 ตัว</div>
-                    <div class="badge bg-primary/10 text-primary mt-2">ยังไม่มีการทำนายที่มีเลข</div>
+                    <div class="badge bg-primary/10 text-primary mt-2">ยังไม่มีการทำนายที่พร้อมแสดง</div>
                   {% endif %}
                 </div>
                 <a href="/ai/" class="btn btn-primary w-full">
