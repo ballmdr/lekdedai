@@ -209,6 +209,100 @@ def check_number(request):
         'success': False
     }, status=405)
 
+# งวดที่ผ่านมาเกินจำนวนวันนี้แล้วยังไม่มีผลที่ยืนยันแล้ว = ข้อมูลค้าง (stale)
+CHECK_DRAW_STALE_AFTER_DAYS = 3
+
+@require_POST
+def check_draw(request):
+    """ตรวจเลขต่องวดแบบ read-only สำหรับประวัติสมุดเลข (อ่านเฉพาะแถวที่มีใน DB ห้ามดึง API)."""
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'ข้อมูลที่ส่งมาไม่ถูกต้อง'
+        }, status=400)
+
+    draw_date_str = str(data.get('draw_date') or '').strip()
+    lottery_number = str(data.get('number') or '').strip()
+
+    try:
+        draw_date = datetime.strptime(draw_date_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        return JsonResponse({
+            'success': False,
+            'error': 'รูปแบบงวดไม่ถูกต้อง (ต้องเป็น YYYY-MM-DD)'
+        }, status=400)
+
+    if not lottery_number.isdigit() or len(lottery_number) not in (2, 3, 6):
+        return JsonResponse({
+            'success': False,
+            'error': 'เลขต้องเป็นตัวเลขยาว 2, 3 หรือ 6 หลัก'
+        }, status=400)
+
+    today = timezone.localdate()
+    drawn_label = draw_date.strftime('%d/%m/%Y')
+    row = LottoResult.objects.filter(draw_date=draw_date).first()
+
+    if row is None or not row.is_valid:
+        if row is not None:
+            status, message = 'error', 'ข้อมูลผลงวดนี้ไม่สมบูรณ์ — รอผู้ดูแลตรวจสอบ'
+        elif draw_date > today:
+            status, message = 'pending', f'งวดวันที่ {drawn_label} ยังไม่ออก — กลับมาตรวจหลังวันหวยออก'
+        elif (today - draw_date).days > CHECK_DRAW_STALE_AFTER_DAYS:
+            status, message = 'stale', 'ผลงวดนี้ค้างเกิน 3 วัน — ระบบยังไม่มีข้อมูลที่ยืนยันแล้ว'
+        else:
+            status, message = 'pending', 'ยังไม่มีผลที่ยืนยันแล้วในระบบ — ลองใหม่หลังวันหวยออก'
+        return JsonResponse({
+            'success': True,
+            'status': status,
+            'message': message,
+            'is_winner': False,
+            'prizes_won': [],
+            'check_number': lottery_number,
+            'draw_date': drawn_label,
+            'source': row.source if row else None,
+        })
+
+    prizes_won = check_numbers_against_result(row.result_data, lottery_number)
+    if prizes_won is None:
+        return JsonResponse({
+            'success': True,
+            'status': 'error',
+            'message': 'ข้อมูลผลงวดนี้ไม่สมบูรณ์ — รอผู้ดูแลตรวจสอบ',
+            'is_winner': False,
+            'prizes_won': [],
+            'check_number': lottery_number,
+            'draw_date': row.formatted_date,
+            'source': row.source,
+        })
+
+    if prizes_won:
+        return JsonResponse({
+            'success': True,
+            'status': 'won',
+            'message': f"ถูก{len(prizes_won)} รางวัล: {', '.join(prizes_won)}",
+            'is_winner': True,
+            'prizes_won': prizes_won,
+            'check_number': lottery_number,
+            'draw_date': row.formatted_date,
+            'source': row.source,
+        })
+
+    scope = {6: 'เต็มใบ 6 หลัก + เลขหน้า/ท้าย 3 ตัว + เลขท้าย 2 ตัว',
+             3: 'เลขหน้า/ท้าย 3 ตัว',
+             2: 'เลขท้าย 2 ตัว'}[len(lottery_number)]
+    return JsonResponse({
+        'success': True,
+        'status': 'lost',
+        'message': f'ไม่ถูกรางวัล (ตรวจตามกติกา{scope})',
+        'is_winner': False,
+        'prizes_won': [],
+        'check_number': lottery_number,
+        'draw_date': row.formatted_date,
+        'source': row.source,
+    })
+
 @require_http_methods(["POST", "OPTIONS"])
 def refresh_lotto_data_api(request):
     """API endpoint สำหรับอัปเดตข้อมูลหวยจาก API กองสลากใหม่ (staff เท่านั้น)"""

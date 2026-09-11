@@ -1,8 +1,8 @@
 # แผนส่งต่อโครงการ LekdeDai
 
-สถานะเอกสาร: Draft สำหรับตรวจทานก่อนเริ่มพัฒนา  
-วันที่จัดทำ: 10 กันยายน 2026  
-เจ้าของผลิตภัณฑ์: ผู้ดูแลโครงการ LekdeDai  
+สถานะเอกสาร: แผนดำเนินงานต่อเนื่องหลังตรวจ UI, สูตรหวย, ข่าว และ production readiness
+วันที่ปรับปรุงล่าสุด: 11 กันยายน 2026
+เจ้าของผลิตภัณฑ์: ผู้ดูแลโครงการ LekdeDai
 ที่เก็บรายการงาน: `tasks/todo.md`
 
 ## 1. เป้าหมายของโครงการ
@@ -32,20 +32,20 @@
 - มีหน้าบ้านอีกสองชุด ได้แก่ Next.js ที่ root และ React/Webpack ใน `frontend/`
 - มี Docker Compose สำหรับ Django และ PostgreSQL
 
-### ปัญหาสำคัญที่พบจากการตรวจโค้ด
+### งานที่ยังเหลือจากการตรวจรอบล่าสุด
 
-1. หลายส่วน import `utils.lottery_dates` แต่ไม่พบไฟล์ `app/utils/lottery_dates.py` ใน checkout ปัจจุบัน จึงมีโอกาสที่ Django จะเริ่มทำงานไม่ได้
-2. API `/lottery_checker/api/lotto/clear/` สามารถเรียกฟังก์ชันลบ `LottoResult` ทั้งหมด โดยไม่พบการตรวจสิทธิ์ใน view
-3. ค่าที่สื่อถึงความแม่นยำหรือความนิยมบางส่วนไม่ใช่ผลวัดจริง เช่น fallback ความแม่นยำ 87%, จำนวนผู้เข้าชมบวก 150 และ confidence ข่าวตั้งไว้ 90
-4. ระบบทำนายบางส่วนใช้ค่าจากการสุ่ม ขณะที่ชื่อฟิลด์และหน้าจออาจทำให้เข้าใจว่าเป็นความน่าจะเป็นที่ผ่านการประเมินแล้ว
-5. External ingestion บางเส้นทางยังสร้างข่าวจำลองแทนการเรียก API จริง
-6. หน้าบ้าน Next.js มีสถิติและผลคำนวณตัวอย่างแบบ hard-code และยังไม่ได้ต่อกับระบบข้อมูลจริงครบ
-7. มีโมเดลผลหวยซ้ำแนวคิดกันระหว่าง `LottoResult` และ `LotteryDraw` แต่ยังไม่มีเอกสารกำหนดเจ้าของข้อมูลหลัก
-8. Docker ปัจจุบันใช้ development server, เปิด `DEBUG=True`, เปิด `ALLOWED_HOSTS=['*']` และมีรหัสผ่านฐานข้อมูลตัวอย่าง
-9. tests ของ `dreams` และ `ai_engine` ยังแทบไม่มีพฤติกรรมที่ตรวจสอบจริง
-10. ระบบบันทึกข้อความฝันและ IP address แต่ยังไม่เห็นเส้นทางจัดการความยินยอม การเก็บรักษา หรือลบข้อมูลส่วนบุคคลที่ชัดเจน
+1. หน้าแรกส่วนวิเคราะห์ฝันแบบด่วนยังแสดง Markdown ดิบ เพราะผลถูกใส่ด้วย `textContent`
+2. นิยามสถิติ “เลขท้าย 2 ตัว” ไม่ตรงกับวิธีนับในโค้ด ทำให้ตัวเลขอย่าง “ออก 3 ครั้ง จาก 2 งวด” ชวนให้เข้าใจผิด
+3. ระบบสูตรหวยมีอยู่แล้ว แต่ข้อมูล seed บางส่วนยังสุ่มผล/ความแม่นยำ และสคริปต์ติดตั้งเรียกชื่อ command เก่า
+4. ระบบข่าวมีทั้ง RSS และ scraper หน้า category อยู่แล้ว แต่ source registry ปัจจุบันว่าง ยังไม่มี scheduler และเส้นทาง draft-to-publish ที่พร้อมใช้งานจริง
+5. ผลวิเคราะห์ AI ล่าสุดยังขาดงวดเป้าหมายที่ชัด และพบข้อความ metadata ไม่สมบูรณ์ เช่น `วิเคราะห์โดย v`
+6. หน้าสูตรหวย ข่าวหวย และแหล่งข้อมูลยังเป็น empty state จนกว่าจะกู้ข้อมูลและต่อ ingestion สำเร็จ
+7. Docker ยังใช้ development server, `DEBUG=True`, wildcard host, secret/password ตัวอย่าง และเปิดฐานข้อมูลเกินความจำเป็น
+8. endpoint สาธารณะและงานดึงข้อมูลภายนอกยังต้องตรวจ authentication, authorization, CSRF, rate limit, timeout และ input validation ให้ครบ
+9. ยังต้องเพิ่ม quality gate, monitoring, backup/restore, freshness alert และ rollback rehearsal ก่อนเปิด public
+10. ต้องกำหนด privacy, retention, disclaimer และสิทธิ์การนำข่าว/ภาพ/ข้อความจากแหล่งภายนอกมาเผยแพร่
 
-ข้อจำกัดของการตรวจครั้งนี้: เป็น static review จากไฟล์ใน repository ยังไม่ได้ติดตั้ง Django/Node dependencies และยังไม่ได้รันระบบครบทั้งเส้นทาง
+ข้อจำกัดของการตรวจครั้งล่าสุด: ตรวจทั้งหน้าเว็บที่กำลังรันและ source code แล้ว แต่ยังรัน `manage.py check --deploy` และ test suite บนเครื่องนี้ไม่ได้ เพราะ environment ปัจจุบันไม่มี Django และ Docker พร้อมใช้งาน
 
 ## 3. การตัดสินใจเบื้องต้น
 
@@ -123,7 +123,7 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `docker-compose.yml`, `Dockerfile`, `app/lekdedai/urls.py`, `package.json`, `frontend/package.json`
 
-**ขนาดงาน:** M  
+**ขนาดงาน:** M
 **Dependencies:** ไม่มี
 
 #### Task 2: คืน dependency วันที่หวยและทำให้ระบบเริ่มได้
@@ -140,7 +140,7 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/utils/lottery_dates.py`, `app/home/views.py`, `app/lottery_checker/views.py`, `app/lotto_stats/lotto_sync_service.py`
 
-**ขนาดงาน:** M  
+**ขนาดงาน:** M
 **Dependencies:** Task 1
 
 #### Task 3: สร้าง baseline ที่รันซ้ำได้
@@ -157,7 +157,7 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `.env.example`, `README.md`, `docker-compose.yml`, setup scripts
 
-**ขนาดงาน:** M  
+**ขนาดงาน:** M
 **Dependencies:** Task 2
 
 ### Checkpoint A: ระบบพื้นฐาน
@@ -183,7 +183,7 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/lottery_checker/views.py`, `app/lottery_checker/urls.py`, `app/ai_engine/views.py`, tests ที่เกี่ยวข้อง
 
-**ขนาดงาน:** M  
+**ขนาดงาน:** M
 **Dependencies:** Task 3
 
 #### Task 5: ลบข้อมูลสาธิตออกจากเส้นทางจริง
@@ -200,7 +200,7 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/home/views.py`, `app/ai_engine/prediction_engine.py`, `app/ai_engine/data_ingestion.py`, templates/pages ที่แสดงคะแนน
 
-**ขนาดงาน:** M  
+**ขนาดงาน:** M
 **Dependencies:** Task 3
 
 #### Task 6: กำหนดเจ้าของข้อมูลผลหวย
@@ -217,7 +217,7 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** models/services/management commands ของ `lottery_checker` และ `lotto_stats`
 
-**ขนาดงาน:** M โดยต้องแบ่งย่อยหาก migration กระทบหลายส่วน  
+**ขนาดงาน:** M โดยต้องแบ่งย่อยหาก migration กระทบหลายส่วน
 **Dependencies:** Task 2
 
 #### Task 7: วางขอบเขตข้อมูลส่วนบุคคล
@@ -234,7 +234,7 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/dreams/views.py`, `app/dreams/models.py`, templates, settings
 
-**ขนาดงาน:** M  
+**ขนาดงาน:** M
 **Dependencies:** Task 3
 
 ### Checkpoint B: พร้อมให้ผู้ใช้กลุ่มเล็กทดสอบ
@@ -260,7 +260,7 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** Django home view/template และ shared navigation/styles ของ frontend ที่เลือก
 
-**ขนาดงาน:** M  
+**ขนาดงาน:** M
 **Dependencies:** Tasks 1, 5, 6
 
 #### Task 9: ทำสมุดเลขแบบไม่ล็อกอิน
@@ -277,7 +277,7 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** frontend หลัก, API/read-only draw endpoint หากจำเป็น
 
-**ขนาดงาน:** M  
+**ขนาดงาน:** M
 **Dependencies:** Tasks 6, 8
 
 #### Task 10: เชื่อมผลจากฝันเข้าสมุดเลข
@@ -294,7 +294,7 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/dreams/views.py`, dream template/component, notebook storage module
 
-**ขนาดงาน:** M  
+**ขนาดงาน:** M
 **Dependencies:** Task 9
 
 #### Task 11: ตรวจผลและสร้างประวัติงวด
@@ -311,78 +311,379 @@ Django มี model, migration, management command และหน้าที�
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** lottery checker service, notebook module, history UI
 
-**ขนาดงาน:** M  
+**ขนาดงาน:** M
 **Dependencies:** Tasks 6, 9
+
+#### Task 12: ปิดข้อบกพร่อง UX ที่ยังมองเห็นได้
+
+**รายละเอียด:** แก้ผลวิเคราะห์ฝันด่วนหน้าแรกที่ยังแสดง Markdown ดิบ ปรับลำดับหัวข้อหน้าแรก และกำหนดพฤติกรรมของเมนูที่ยังไม่มีข้อมูลให้ผู้ใช้เข้าใจตรงกัน
+
+**เกณฑ์รับงาน:**
+
+- ผลฝันด่วนและหน้าวิเคราะห์ฝันใช้ formatter ที่ปลอดภัยและแสดงผลเหมือนกัน
+- หน้าแรกมีลำดับ heading ที่ถูกต้อง และเมนูที่ยังไม่พร้อมถูกซ่อนหรือติดป้ายสถานะ
+- desktop และ viewport 390px ไม่มี overflow, raw marker หรือข้อความ placeholder
+
+**การตรวจสอบ:** browser test ทั้ง desktop/mobile, keyboard navigation และ console ไม่มี error/warning
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/home/templates/home/index.html`, `app/dreams/templates/dreams/dream_form.html`, `app/templates/base.html`, tests ที่เกี่ยวข้อง
+
+**ขนาดงาน:** M
+**Dependencies:** Task 10
+
+#### Task 13: กำหนดนิยามและแก้ความถูกต้องของสถิติ
+
+**รายละเอียด:** แยก “เลขท้าย 2 ตัว” ออกจาก “เลข 2 หลักทุกตำแหน่งในรางวัลที่ 1” ให้ชัดทั้งการคำนวณ ชื่อ metric และคำอธิบายบน UI โดยใช้ข้อมูลผลหวย canonical จาก Task 6
+
+**เกณฑ์รับงาน:**
+
+- metric ทุกตัวมีนิยาม ตำแหน่งรางวัล ช่วงเวลา และจำนวนตัวอย่างชัดเจน
+- ถ้าระบุว่าเลขท้าย 2 ตัว จำนวนครั้งต้องคำนวณจาก `two_digit` เท่านั้น
+- fixture หลายงวด รวมเลขซ้ำและเลขศูนย์นำหน้า ให้ผลตรงกับการคำนวณด้วยมือ
+
+**การตรวจสอบ:** focused unit tests ของ `StatsCalculator` และตรวจตัวเลขตัวอย่างบน `/lotto_stats/`
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/lotto_stats/stats_calculator.py`, `app/lotto_stats/templates/lotto_stats/statistics.html`, `app/lotto_stats/tests.py`
+
+**ขนาดงาน:** M
+**Dependencies:** Task 6
+
+#### Task 14: ทำ contract สูตรหวยและ seed ที่ใช้ production ได้
+
+**รายละเอียด:** รวบรวมสูตร Django ที่มีอยู่ กำหนด input/output/version ของแต่ละสูตร และเปลี่ยน seed จากข้อมูลสุ่มเป็นข้อมูลสูตรแบบ deterministic โดยไม่สร้างผลหวยหรือผลความแม่นยำปลอม
+
+**เกณฑ์รับงาน:**
+
+- มีรายชื่อสูตรที่อนุมัติ ชื่อไม่ผูกกับ branch logic แบบเปราะ และมี version
+- seed รันซ้ำได้โดยไม่สร้างซ้ำ และไม่สร้าง random result/prediction
+- script ติดตั้งเรียกชื่อ command ที่มีอยู่จริง และฐานข้อมูลใหม่เห็นสูตรหลัง setup
+
+**การตรวจสอบ:** เริ่มจากฐานข้อมูลว่าง รัน migration/seed สองครั้ง แล้วตรวจจำนวนและรายละเอียดสูตรเท่าเดิม
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/lotto_formula/models.py`, `app/lotto_formula/management/commands/populate_lottery_data.py`, setup scripts, migration/fixture ที่จำเป็น
+
+**ขนาดงาน:** M
+**Dependencies:** Tasks 3, 6
+
+#### Task 15: เชื่อมสูตรกับผลจริงและวัดผลย้อนหลังอย่างซื่อสัตย์
+
+**รายละเอียด:** ให้เครื่องคำนวณใช้ข้อมูลผลหวย canonical บันทึก prediction ก่อนวันออกผล และคำนวณผลย้อนหลังจากกติกาที่ประกาศ ไม่ใช้เปอร์เซ็นต์ hard-code จาก Next.js หรือ sample data
+
+**เกณฑ์รับงาน:**
+
+- สูตรคำนวณจาก input เดิมให้ output เดิม และระบุงวดเป้าหมาย
+- prediction หลังวันออกรางวัลถูกตรวจด้วยผลจริง พร้อม numerator, denominator และช่วงวันที่
+- UI ใช้คำว่า “คะแนน”, “ผลย้อนหลัง” และ “ความน่าจะเป็น” ตามนิยามในแผนเท่านั้น
+
+**การตรวจสอบ:** unit tests รายสูตร, historical fixture test และ browser flow เลือกสูตร → คำนวณ → บันทึก → ตรวจผล
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/lotto_formula/views.py`, model/service ของสูตร, formula templates, tests
+
+**ขนาดงาน:** M โดยแยกทีละสูตรหากเกิน 5 ไฟล์
+**Dependencies:** Tasks 11, 13, 14
+
+#### Task 16: คืนทะเบียนแหล่งข่าวและ provenance
+
+**รายละเอียด:** สร้างรายการแหล่ง RSS ที่อนุมัติจากหลักฐานเดิม กำหนดชนิดแหล่ง URL สถานะ active ช่วงดึง และนโยบายเก็บเนื้อหา โดยไม่พึ่ง database backup เป็น configuration หลัก
+
+**เกณฑ์รับงาน:**
+
+- source registry แบบ version-controlled สร้าง DataSource ได้แบบ idempotent
+- แต่ละแหล่งระบุ RSS/category/API, attribution, freshness และสถานะเปิดใช้
+- `/ai/data-sources/` แสดงแหล่งจริงและเวลาสำเร็จ/ล้มเหลวล่าสุด
+
+**การตรวจสอบ:** seed registry บนฐานข้อมูลว่างและตรวจ URL/จำนวน/สถานะตรงกับไฟล์กำหนด
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/ai_engine/management/commands/setup_ai_data_sources.py`, DataSource config/fixture, tests
+
+**ขนาดงาน:** M
+**Dependencies:** Task 3
+
+#### Task 17: ทำ RSS ingestion เป็นเส้นทางหลัก
+
+**รายละเอียด:** ปรับ `scrape_rss_feeds` ให้ดึง feed, normalize, deduplicate, บันทึก provenance และเข้าสถานะ draft/published ตาม policy โดยไม่บังคับว่า AI สองตัวต้องสำเร็จพร้อมกันจึงจะเก็บข่าว
+
+**เกณฑ์รับงาน:**
+
+- feed ปกติ, feed ผิดรูปแบบ, timeout และ duplicate มีผลลัพธ์ที่คาดเดาได้
+- เก็บ source URL, published time, fetched time, content hash และสถานะวิเคราะห์
+- AI ล้มเหลวไม่ทำให้ข้อมูลต้นฉบับหาย และไม่มีข้อความ exception ภายในรั่วสู่ผู้ใช้
+
+**การตรวจสอบ:** fixture RSS/XML แบบ offline, mocked network tests และ dry run บน staging
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/news/management/commands/scrape_rss_feeds.py`, news ingestion service, models/migration, tests
+
+**ขนาดงาน:** M
+**Dependencies:** Task 16
+
+#### Task 18: ทำ category scraper เป็น fallback พร้อม editorial gate
+
+**รายละเอียด:** รวม `scrape_thairath`, `scrape_thairath_local` และ scraper รุ่นเก่าให้เหลือ owner ชัดเจน ใช้เฉพาะเมื่อ RSS ไม่มีข้อมูล และส่งข่าวเข้า review queue ก่อนเผยแพร่ เว้นแต่ผ่านเกณฑ์ auto-publish ที่ตรวจสอบได้
+
+**เกณฑ์รับงาน:**
+
+- selector เปลี่ยนหรือหน้าเว็บตอบผิดปกติแล้วหยุดอย่างปลอดภัยและแจ้งเตือน
+- ข่าวซ้ำไม่ถูกสร้างแม้ URL เปลี่ยนเล็กน้อย
+- ผู้ดูแลเห็นข้อความต้นทาง สรุป AI ตัวเลข เหตุผล และอนุมัติ/ปฏิเสธก่อนเผยแพร่ได้
+
+**การตรวจสอบ:** HTML fixtures, duplicate tests, admin review flow และ staging scrape แบบจำกัดจำนวน
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** category scraper command/service, `app/news/admin.py`, `app/news/models.py`, tests
+
+**ขนาดงาน:** M โดยแยก source adapter ทีละเว็บ
+**Dependencies:** Tasks 16, 17
+
+#### Task 19: เชื่อมข่าวที่ผ่านการคัดเข้าสู่หน้าเว็บ
+
+**รายละเอียด:** ให้หน้าข่าวและหน้าแรกแสดงเฉพาะข่าว published ที่มีแหล่งที่มา เวลาข้อมูล และสรุปเลขที่ตรวจย้อนกลับได้ พร้อม empty/stale state ที่ตรงกับสถานะ ingestion
+
+**เกณฑ์รับงาน:**
+
+- ข่าวใหม่ที่อนุมัติปรากฏใน `/news/` และส่วนข่าวหน้าแรกเพียงครั้งเดียว
+- ทุกบทความมี source link, วันเผยแพร่, วันดึง และป้ายสถานะการวิเคราะห์
+- ข่าวเก่าหรือ ingestion ล้มเหลวไม่ถูกนำเสนอเป็น “ข่าวล่าสุด”
+
+**การตรวจสอบ:** end-to-end จาก RSS fixture → review/publish → news list/detail → homepage
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/news/views.py`, news templates, `app/home/views.py`, tests
+
+**ขนาดงาน:** M
+**Dependencies:** Tasks 17, 18
+
+#### Task 20: ทำ metadata และ readiness gate ของ AI prediction
+
+**รายละเอียด:** บังคับให้ prediction มีงวดเป้าหมาย model/version เวลาสร้าง ช่วงข้อมูล และสถานะ input ก่อนเผยแพร่ ป้องกันข้อความเช่น `วิเคราะห์โดย v` หรือ prediction ที่ไม่ทราบว่าเป็นงวดใด
+
+**เกณฑ์รับงาน:**
+
+- prediction ที่ขาด `for_draw_date`, model/version หรือ provenance ไม่ถูก featured
+- หน้า AI, history และหน้าแรกแสดง metadata ชุดเดียวกัน
+- stale/incomplete prediction มีสถานะชัดและไม่แสดง confidence เหมือนพร้อมใช้
+
+**การตรวจสอบ:** model validation tests, view tests และ browser comparison ทั้งสามหน้า
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `app/ai_engine/models.py`, prediction service/views, AI templates, tests
+
+**ขนาดงาน:** M
+**Dependencies:** Tasks 6, 17, 19
 
 ### Checkpoint C: MVP ใช้งานครบเส้นทาง
 
 - ผู้ใช้ทำเส้นทาง วิเคราะห์ → เลือก → บันทึก → ตรวจผล ได้ครบ
+- ผู้ใช้ทำเส้นทาง ข่าว/สถิติ/สูตร → เลือกเลข → บันทึก → ตรวจผล ได้ครบ
+- สูตร ข่าว สถิติ และ AI ไม่มีข้อมูลสุ่มหรือ metadata กำกวมใน production path
 - กรณีไม่มีข้อมูลและ upstream error ไม่แสดงข้อมูลผิด
 - critical browser flow และ focused backend tests ผ่าน
 - เจ้าของผลิตภัณฑ์ทดลองใช้บนมือถือจริง
 
-### ระยะที่ 3: เปิดกลุ่มเล็กและเก็บหลักฐาน
+### ระยะที่ 3: เตรียมระบบสำหรับ staging และ production
 
-#### Task 12: เพิ่ม analytics ขั้นต่ำ
+#### Task 21: สร้าง automated quality gate
 
-**รายละเอียด:** เก็บ event แบบไม่ใช้ข้อความฝันหรือเลขที่ผู้ใช้เลือกเป็น payload โดยวัดเฉพาะ funnel ที่ช่วยตัดสินใจผลิตภัณฑ์
-
-**Events ขั้นต่ำ:** `landing_view`, `dream_started`, `dream_completed`, `number_saved`, `result_checked`, `history_viewed`, `share_used`
+**รายละเอียด:** ทำคำสั่งทดสอบมาตรฐานและ CI สำหรับ Django checks, migrations, unit/integration tests, static assets และ smoke tests ของ route สำคัญ
 
 **เกณฑ์รับงาน:**
 
-- event มีนิยามและ schema ชัดเจน
-- ไม่ส่งข้อความฝัน เลข หรือ IP เข้า analytics โดยไม่จำเป็น
-- มีรายงาน funnel รายงวดและ retention ข้ามงวด
+- `manage.py check --deploy`, migrations check และ test suite รันได้ใน environment เดียวกับ deploy
+- build ล้มทันทีเมื่อ test, migration หรือ static collection ผิด
+- มี regression tests สำหรับสูตร ข่าว สถิติ AI และ flow สมุดเลข
 
-**การตรวจสอบ:** debug event stream และ privacy inspection
+**การตรวจสอบ:** CI run จาก clean checkout ผ่านทั้งหมด
 
-**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** frontend event client, backend event endpoint/config, analytics documentation
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** CI workflow, test configuration, `requirements.txt`, test documentation
 
-**ขนาดงาน:** M  
-**Dependencies:** Tasks 7, 11
+**ขนาดงาน:** M
+**Dependencies:** Checkpoint C
 
-#### Task 13: เตรียม production และ recovery
+#### Task 22: แยก production runtime และจัดการ secrets
 
-**รายละเอียด:** แยก production settings ใช้ application server ที่เหมาะสม ตั้ง HTTPS/security headers, health check, structured logs, backup และ restore drill
-
-**เกณฑ์รับงาน:**
-
-- production ไม่ใช้ Django `runserver` และไม่เปิด DEBUG
-- health check แยก app/database/upstream ที่จำเป็น
-- backup ถูกสร้างและ restore ทดสอบได้
-
-**การตรวจสอบ:** deploy staging, smoke tests, backup/restore drill และ dependency/security checks
-
-**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** Docker/Compose, Django settings, entrypoint, deployment documentation
-
-**ขนาดงาน:** M แบ่งเป็น security และ recovery slice หากเกิน 5 ไฟล์  
-**Dependencies:** Tasks 3, 4, 6
-
-#### Task 14: เปิด closed beta และทำรอบเรียนรู้
-
-**รายละเอียด:** เชิญผู้ใช้กลุ่มเล็ก ใช้งานอย่างน้อยสองงวด เก็บ feedback แบบสั้นและดู funnel โดยไม่เปลี่ยนทิศทุกครั้งที่ได้ความคิดเห็นรายคน
+**รายละเอียด:** สร้าง production settings/runtime ที่ใช้ application server จริง ปิด DEBUG จำกัด host ทำ static/media ให้ถูกต้อง และย้าย secret/password ออกจาก repository
 
 **เกณฑ์รับงาน:**
 
-- มีผู้ใช้จริงกลุ่มแรกและช่องทางแจ้งปัญหา
-- มีข้อมูลครบอย่างน้อยสองรอบงวด
-- สรุปว่า user segment ใดใช้ งานใดทำเสร็จ และกลับมาทำอะไร
+- production ไม่ใช้ `runserver`, ไม่มี hard-coded admin/database password และไม่เปิด PostgreSQL สู่ public
+- `DEBUG=False`, `ALLOWED_HOSTS` และ trusted origins ตรงกับ domain จริง
+- migration/collectstatic เป็น deploy step ที่ fail แล้วหยุด deploy
 
-**การตรวจสอบ:** beta report พร้อมตัวเลข event และคำสัมภาษณ์ที่ไม่ระบุตัวบุคคล
+**การตรวจสอบ:** build/deploy staging จาก clean image และ `manage.py check --deploy`
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `Dockerfile`, production compose/manifest, Django settings, entrypoint
+
+**ขนาดงาน:** M
+**Dependencies:** Task 21
+
+#### Task 23: ปิดช่องโหว่ endpoint และจำกัดการใช้งานเกินขอบเขต
+
+**รายละเอียด:** ทบทวน `csrf_exempt`, admin/mutation APIs, public AI/news analysis, input size, rate limit, timeout และ error response ก่อนเปิดให้บุคคลภายนอกเรียกใช้
+
+**เกณฑ์รับงาน:**
+
+- endpoint เปลี่ยนข้อมูลต้องมีสิทธิ์, CSRF/authorization และ audit trail ตามหน้าที่
+- public endpoint มี rate limit, payload limit และ timeout
+- response 4xx/5xx ไม่เผย stack trace, key หรือข้อความภายใน provider
+
+**การตรวจสอบ:** authorization/abuse tests, dependency scan และ staging security smoke test
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** views/URLs ของ news, AI และ lottery checker, middleware/config, tests
+
+**ขนาดงาน:** M โดยแยก endpoint family
+**Dependencies:** Tasks 4, 22
+
+#### Task 24: ตั้ง schedule และ freshness control
+
+**รายละเอียด:** ตั้งงาน sync ผลหวย, RSS, category fallback, AI generation, accuracy reconciliation และ cleanup ให้ idempotent มี lock และไม่รันทับกัน
+
+**เกณฑ์รับงาน:**
+
+- แต่ละ job มี schedule, owner, retry, timeout และ last-success timestamp
+- UI เปลี่ยนเป็น stale/degraded เมื่อเกิน freshness threshold
+- rerun job เดิมไม่สร้างข้อมูลซ้ำหรือเผยแพร่ prediction ซ้ำ
+
+**การตรวจสอบ:** staging scheduler run, forced failure/retry และ idempotency tests
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** management commands, scheduler config, locking/state model, runbook
+
+**ขนาดงาน:** M
+**Dependencies:** Tasks 17, 20, 22
+
+#### Task 25: เพิ่ม observability, backup และ rollback
+
+**รายละเอียด:** ทำ health checks, structured logs, error tracking, metrics, alerting, database backup/restore และขั้นตอนย้อนเวอร์ชัน
+
+**เกณฑ์รับงาน:**
+
+- monitor 5xx, latency, job failure, stale data, AI/provider failure และค่าใช้จ่ายภายนอกได้
+- backup อัตโนมัติและ restore drill ผ่านด้วยข้อมูล staging
+- deploy ใหม่ผิดปกติสามารถ rollback ได้ตาม runbook ที่ทดสอบแล้ว
+
+**การตรวจสอบ:** fault injection บน staging, alert test, restore drill และ rollback rehearsal
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** health endpoint, logging/monitor config, backup scripts/manifest, operations runbook
+
+**ขนาดงาน:** M โดยแยก observability กับ recovery
+**Dependencies:** Tasks 22, 24
+
+#### Task 26: จัดทำนโยบายผู้ใช้และสิทธิ์เนื้อหา
+
+**รายละเอียด:** จัดทำ Privacy Policy, Terms, disclaimer, contact/report flow และกติกาการใช้ข่าวจากภายนอก โดยเก็บเพียง title/excerpt/analysis/source link เว้นแต่มีสิทธิ์เผยแพร่เนื้อหาเต็ม
+
+**เกณฑ์รับงาน:**
+
+- ผู้ใช้เห็นคำเตือนเรื่องความบันเทิงและไม่รับประกันผลในจุดสำคัญ
+- นโยบายระบุข้อมูลฝัน, localStorage, retention, analytics และวิธีขอลบข้อมูล
+- ทุก source ผ่านการตรวจเงื่อนไข RSS/robots/ลิขสิทธิ์ก่อนเปิดใช้งาน
+
+**การตรวจสอบ:** content/legal checklist โดยเจ้าของผลิตภัณฑ์ และตรวจหน้าเว็บจริงทุกลิงก์
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** policy templates, footer/navigation, source registry, content runbook
+
+**ขนาดงาน:** M
+**Dependencies:** Tasks 7, 16, 19
+
+#### Task 27: ทำ performance, accessibility และ compatibility gate
+
+**รายละเอียด:** ตรวจ Core Web Vitals, query count, static caching, keyboard/focus, contrast, form labels และ browser/mobile หลักก่อน freeze release candidate
+
+**เกณฑ์รับงาน:**
+
+- ไม่มี critical accessibility violation และ flow หลักใช้งานด้วย keyboard ได้
+- ไม่มีหน้าใดเกิด horizontal overflow หรือ network request ที่ล้มเงียบ
+- กำหนด performance budget และ route สำคัญผ่านบน staging
+
+**การตรวจสอบ:** Lighthouse/axe, browser matrix, network throttling และ query profiling
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** templates/CSS, selected views/queries, static/deploy config, QA report
+
+**ขนาดงาน:** M โดยแก้ทีละ route
+**Dependencies:** Tasks 12, 19, 20, 22
+
+### Checkpoint D: พร้อมเป็น release candidate บน staging
+
+- CI, deploy checks และ browser smoke tests ผ่านจาก clean build
+- production secrets/config/security headers ผ่าน review
+- scheduler, freshness, alerts, backup, restore และ rollback ผ่าน rehearsal
+- สูตร ข่าว สถิติ AI และผลหวยมี provenance และไม่มีข้อมูลสาธิตปะปน
+- policy/contact/disclaimer พร้อม และไม่มี critical accessibility issue
+
+### ระยะที่ 4: Beta และเปิดสาธารณะ
+
+#### Task 28: เพิ่ม analytics ขั้นต่ำแบบรักษาความเป็นส่วนตัว
+
+**รายละเอียด:** เก็บ event เพื่อวัด funnel โดยไม่ส่งข้อความฝัน เลขที่ผู้ใช้บันทึก หรือ IP เป็น payload
+
+**Events ขั้นต่ำ:** `landing_view`, `dream_started`, `dream_completed`, `formula_used`, `news_opened`, `number_saved`, `result_checked`, `history_viewed`, `share_used`
+
+**เกณฑ์รับงาน:**
+
+- event/schema/retention ระบุชัดและเปิดตาม consent policy
+- ไม่มีข้อความฝัน เลข หรือ identifier เกินจำเป็น
+- มีรายงาน activation, result-check และ cross-draw retention รายงวด
+
+**การตรวจสอบ:** debug event stream, payload inspection และ consent test
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** event client/endpoint, analytics config, privacy documentation
+
+**ขนาดงาน:** M
+**Dependencies:** Tasks 7, 26, Checkpoint D
+
+#### Task 29: ทำ staging dress rehearsal
+
+**รายละเอียด:** จำลองหนึ่งรอบงวดตั้งแต่ก่อนออกรางวัล ดึงข่าว/สร้าง prediction ผู้ใช้บันทึกเลข จนผลจริงเข้าและตรวจประวัติ พร้อมทดสอบเหตุขัดข้อง
+
+**เกณฑ์รับงาน:**
+
+- happy path ครบทุกขั้นโดยไม่แก้ฐานข้อมูลด้วยมือ
+- upstream ล่ม, ข่าวว่าง, AI ล้ม และผลหวยช้าทำให้ระบบเข้า degraded state ถูกต้อง
+- launch checklist, rollback owner และช่องทาง support พร้อม
+
+**การตรวจสอบ:** signed staging rehearsal report พร้อมเวลา job, screenshot และ incident notes
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** staging fixtures/config, launch checklist, support/incident runbook
+
+**ขนาดงาน:** M
+**Dependencies:** Tasks 24, 25, 27, 28
+
+#### Task 30: เปิด closed beta อย่างน้อยสองงวด
+
+**รายละเอียด:** เชิญผู้ใช้กลุ่มเล็ก ใช้งานจริงอย่างน้อยสองงวด เก็บ feedback และ funnel โดยหยุด rollout หากพบข้อมูลหวยผิด การรั่วไหล หรือการใช้งานหลักล้มเหลว
+
+**เกณฑ์รับงาน:**
+
+- มีผู้ใช้กลุ่มแรก ช่องทางแจ้งปัญหา และผู้รับผิดชอบตอบสนอง
+- มีข้อมูล activation, completion, result-check และ retention ครบสองงวด
+- ปัญหา P0/P1 ถูกปิดหรือมี mitigation ที่เจ้าของผลิตภัณฑ์ยอมรับ
+
+**การตรวจสอบ:** beta report, incident review และ go/no-go meeting
 
 **ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** beta runbook, feedback form/config, metrics report
 
-**ขนาดงาน:** M  
-**Dependencies:** Tasks 12, 13
+**ขนาดงาน:** M
+**Dependencies:** Task 29
 
-### Checkpoint D: ตัดสินใจทิศทางรายได้
+#### Task 31: เปิด public แบบ staged rollout
+
+**รายละเอียด:** เปิด traffic เป็นช่วง เฝ้าดู error, latency, stale data, provider cost และ feedback ก่อนขยายเต็ม พร้อม rollback เมื่อเกินเกณฑ์ที่กำหนด
+
+**เกณฑ์รับงาน:**
+
+- domain/HTTPS/DNS และ production smoke tests ผ่าน
+- ไม่มี P0/P1 ค้าง และ alert/backup/rollback ทำงานจริง
+- มี post-launch review หลัง 24 ชั่วโมง, 7 วัน และหลังงวดแรก
+
+**การตรวจสอบ:** production smoke test, monitoring evidence และ post-launch reports
+
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** launch runbook, deployment config, status/support documentation
+
+**ขนาดงาน:** M
+**Dependencies:** Task 30
+
+### Checkpoint E: ตัดสินใจทิศทางรายได้
 
 - มีข้อมูล activation และ retention อย่างน้อยสองงวด
 - ระบุได้ว่าผู้ใช้กลับมาเพราะสมุดเลข วิเคราะห์ฝัน ตรวจผล หรือคอนเทนต์
 - มีปัญหาที่ผู้ใช้ยอมเสียเงินแก้อย่างน้อยหนึ่งข้อ หรือมีหลักฐานว่ายังไม่ควรสร้างระบบจ่ายเงิน
 
-### ระยะที่ 4: ทดลองรายได้ทีละสมมติฐาน
+### ระยะที่ 5: ทดลองรายได้ทีละสมมติฐาน
 
 #### Experiment A: สมุดเลขแบบสมาชิก
 
@@ -431,15 +732,22 @@ Django มี model, migration, management command และหน้าที�
 | ข้อความฝันมีข้อมูลส่วนบุคคล | สูง | data minimization, retention, delete flow และไม่ส่งเข้า analytics |
 | frontend หลายชุดทำให้แก้ซ้ำ | กลาง | เลือก production owner หนึ่งชุดก่อนเพิ่มฟีเจอร์ |
 | ข่าวจำลองปะปน production | สูง | environment boundary และ provenance label ที่บังคับใช้ |
+| สูตร seed แบบสุ่มถูกเข้าใจว่าเป็นสถิติจริง | สูง | เปลี่ยนเป็น deterministic fixture และห้ามเผย accuracy ที่ไม่มีผลย้อนหลังรองรับ |
+| scraper พังเมื่อหน้าเว็บต้นทางเปลี่ยน | กลาง | ใช้ RSS เป็นเส้นทางหลัก มี parser test, alert และปิด fallback อัตโนมัติเมื่อโครงสร้างเปลี่ยน |
+| นำข่าวหรือภาพมาใช้เกินสิทธิ์ | สูง | เก็บ provenance ตรวจข้อกำหนดแหล่งข่าว ใช้ข้อความสรุปและภาพที่มีสิทธิ์เท่านั้น |
+| scheduler หรือผู้ให้บริการ AI ใช้งบเกินคาด | กลาง | quota, timeout, cache, rate limit, cost alert และ fallback ที่ไม่สร้างข้อมูลเท็จ |
+| งวดเป้าหมายหรือเวอร์ชันโมเดลไม่ชัด | สูง | บังคับ metadata contract ก่อน publish และซ่อนผลที่ readiness gate ไม่ผ่าน |
 | ผู้ใช้เข้าเว็บเฉพาะวันหวยออก | กลาง | สมุดเลขและประวัติเป็นวงจรข้ามงวด วัด retention จริง |
 | ทำระบบจ่ายเงินก่อนรู้คุณค่า | กลาง | ทดลอง waitlist/manual concierge ก่อน billing |
 | เนื้อหาหวยกระทบนโยบายโฆษณา | กลาง | ตรวจนโยบายล่าสุดก่อนเปิดโฆษณาหรือ affiliate ทุกครั้ง |
 
 ## 9. คำถามที่ต้องตัดสินใจระหว่างทำ
 
-- โมดูล `utils.lottery_dates` เคยมีต้นฉบับอยู่ที่ใด หรือควรสร้าง contract ใหม่จากกติกางวด?
-- `LottoResult` หรือ `LotteryDraw` ควรเป็น canonical model และมีข้อมูล production เดิมต้อง migrate หรือไม่?
-- frontend React/Webpack ถูก template ใดใช้งานจริงอยู่หรือเป็นงานทดลอง?
+- สูตรใดได้รับอนุมัติให้แสดงต่อสาธารณะ และ contract input/output ของแต่ละสูตรคืออะไร?
+- จะใช้แหล่ง RSS ใดบ้าง แต่ละแหล่งอนุญาตให้นำหัวข้อ ภาพ และข้อความสรุปมาเผยแพร่ในรูปแบบใด?
+- ข่าวระดับใด auto-publish ได้ และข่าวระดับใดต้องผ่านผู้ดูแลก่อนเผยแพร่?
+- จะ deploy ที่ผู้ให้บริการใด ใช้ domain ใด และใครเป็นเจ้าของ DNS, secret และบัญชี production?
+- งบและ quota ของ AI/บริการภายนอกต่อวันเท่าใด และเมื่อ provider ใช้งานไม่ได้ต้องแสดงผลแบบใด?
 - ข้อมูลฝันควรเก็บแบบ anonymous, account-bound หรือไม่เก็บข้อความดิบหลังวิเคราะห์?
 - beta รุ่นแรกจะเชิญผู้ใช้จากช่องทางใด และใครเป็นผู้ตอบปัญหา?
 - หลังได้ baseline สองงวด จะทดลองรายได้ A, B หรือ C ก่อนตามพฤติกรรมที่พบ?
@@ -458,7 +766,7 @@ Django มี model, migration, management command และหน้าที�
 
 ## 11. วิธีส่งต่องาน
 
-ผู้รับช่วงควรเริ่มจาก Task 1 และอัปเดต `tasks/todo.md` หลังจบแต่ละ task ในแต่ละรอบส่งมอบให้ระบุ:
+ผู้รับช่วงควรเริ่มจาก Task 11 ตามลำดับใน `tasks/todo.md` และอัปเดต checklist หลังจบแต่ละ task ในแต่ละรอบส่งมอบให้ระบุ:
 
 1. สิ่งที่เปลี่ยนและเหตุผล
 2. ไฟล์หรือ migration ที่กระทบ
@@ -466,4 +774,4 @@ Django มี model, migration, management command และหน้าที�
 4. ข้อจำกัดหรือสิ่งที่ยังไม่ยืนยัน
 5. task ถัดไปที่พร้อมเริ่มและ dependency ที่ยังค้าง
 
-ห้ามเริ่มระยะสร้างรายได้ก่อนผ่าน Checkpoint D เว้นแต่เป็นการทดลองแบบ landing page, waitlist หรือ manual concierge ที่ยังไม่ต้องสร้างระบบชำระเงินจริง
+ห้ามเริ่มระยะสร้างรายได้ก่อนผ่าน Checkpoint E เว้นแต่เป็นการทดลองแบบ landing page, waitlist หรือ manual concierge ที่ยังไม่ต้องสร้างระบบชำระเงินจริง

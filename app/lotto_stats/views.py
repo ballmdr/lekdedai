@@ -3,13 +3,12 @@ from django.http import JsonResponse
 from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
-from collections import Counter
 import json
 import logging
 from django.views.decorators.http import require_POST
 from django.contrib.admin.views.decorators import staff_member_required
 
-from .models import LotteryDraw, NumberStatistics, HotColdNumber
+from .models import LotteryDraw
 from .stats_calculator import StatsCalculator
 from .lotto_sync_service import LottoSyncService
 
@@ -23,9 +22,11 @@ def statistics_page(request):
     # คำนวณสถิติ
     calculator = StatsCalculator()
     
-    # เลขฮอต/เย็น
+    # เลขฮอต/เย็น — แยก "เลขท้าย 2 ตัว" ออกจาก "เลขคู่ในรางวัลที่ 1" ชัดเจน
     hot_numbers = calculator.get_hot_numbers(limit=10, days=90)
     cold_numbers = calculator.get_cold_numbers(limit=10)
+    hot_pairs = calculator.get_hot_first_prize_pairs(limit=5, days=90)
+    cold_pairs = calculator.get_cold_first_prize_pairs(limit=5)
     
     # สถิติรายเดือน
     monthly_stats = calculator.get_monthly_statistics()
@@ -37,15 +38,15 @@ def statistics_page(request):
     cold_numbers_labels = json.dumps([item['number'] for item in cold_numbers])
     cold_numbers_data = json.dumps([item['days'] for item in cold_numbers])
     
-    # สถิติรายเดือน
+    # สถิติรายเดือน (เลขท้าย 2 ตัว)
     monthly_labels = json.dumps(list(monthly_stats.keys())[-12:])
-    monthly_data = json.dumps([data['most_common_2d']['count'] if data['most_common_2d'] else 0 
+    monthly_data = json.dumps([data['most_common_two_digit']['count'] if data['most_common_two_digit'] else 0
                               for data in list(monthly_stats.values())[-12:]])
     
     # ข้อมูลสำหรับ table และ heatmap แทน chart
     monthly_data_with_labels = []
     for month, data in list(monthly_stats.items())[-12:]:
-        count = data['most_common_2d']['count'] if data['most_common_2d'] else 0
+        count = data['most_common_two_digit']['count'] if data['most_common_two_digit'] else 0
         monthly_data_with_labels.append((month, count))
     
     # สถิติเพิ่มเติม
@@ -59,12 +60,20 @@ def statistics_page(request):
     # สถานะการซิงค์ข้อมูล
     sync_service = LottoSyncService()
     sync_status = sync_service.get_sync_status()
+
+    # จำนวนงวดในช่วง 90 วันที่ใช้คำนวณ hot/cold (สำหรับคำอธิบายนิยามบน UI)
+    window_cutoff = timezone.now().date() - timedelta(days=90)
+    window_draws = LotteryDraw.objects.filter(draw_date__gte=window_cutoff).count()
     
     context = {
         'has_data': LotteryDraw.objects.exists(),
         'recent_draws': recent_draws,
         'hot_numbers': hot_numbers[:5],
         'cold_numbers': cold_numbers[:5],
+        'hot_pairs': hot_pairs,
+        'cold_pairs': cold_pairs,
+        'stats_days': 90,
+        'window_draws': window_draws,
         'hot_numbers_labels': hot_numbers_labels,
         'hot_numbers_data': hot_numbers_data,
         'cold_numbers_labels': cold_numbers_labels,
@@ -91,8 +100,10 @@ def api_hot_cold_numbers(request):
     
     data = {
         'hot_2d': calculator.get_hot_numbers(limit=limit, days=days, number_type='2D'),
+        'hot_2d_pairs': calculator.get_hot_first_prize_pairs(limit=limit, days=days),
         'hot_3d': calculator.get_hot_numbers(limit=limit, days=days, number_type='3D'),
         'cold_2d': calculator.get_cold_numbers(limit=limit, number_type='2D'),
+        'cold_2d_pairs': calculator.get_cold_first_prize_pairs(limit=limit),
         'cold_3d': calculator.get_cold_numbers(limit=limit, number_type='3D'),
         'updated_at': timezone.now().isoformat()
     }
@@ -106,18 +117,26 @@ def api_number_detail(request, number):
         draws_with_number = []
         
         if len(number) == 2:
-            # เลข 2 ตัว
+            # เลข 2 ตัว — แยก "เลขท้าย 2 ตัว" ออกจาก "เลขคู่ในรางวัลที่ 1" ชัดเจน
             draws = LotteryDraw.objects.filter(
-                Q(two_digit=number) | 
+                Q(two_digit=number) |
                 Q(first_prize__contains=number)
             ).order_by('-draw_date')[:20]
             
             for draw in draws:
-                draws_with_number.append({
-                    'date': draw.draw_date.strftime('%d/%m/%Y'),
-                    'type': 'เลขท้าย 2 ตัว' if draw.two_digit == number else 'ในรางวัลที่ 1',
-                    'first_prize': draw.first_prize
-                })
+                if draw.two_digit == number:
+                    draws_with_number.append({
+                        'date': draw.draw_date.strftime('%d/%m/%Y'),
+                        'type': 'เลขท้าย 2 ตัว',
+                        'first_prize': draw.first_prize
+                    })
+                for i, window in enumerate(draw.get_all_two_digits()):
+                    if window == number:
+                        draws_with_number.append({
+                            'date': draw.draw_date.strftime('%d/%m/%Y'),
+                            'type': f'รางวัลที่ 1 (ตำแหน่ง {i+1}-{i+2})',
+                            'first_prize': draw.first_prize
+                        })
         
         # คำนวณสถิติ
         calculator = StatsCalculator()

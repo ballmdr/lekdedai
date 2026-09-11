@@ -102,6 +102,22 @@ class LotteryDates:
         return out
 
     @staticmethod
+    def get_upcoming_draw_dates(count=4, reference_date=None):
+        """งวดตั้งแต่วันอ้างอิง (รวมวันนั้นถ้าเป็นวันหวยออก) ไปข้างหน้า count งวด เรียงเก่า→ใหม่."""
+        ref = _coerce_date(reference_date)
+        if count <= 0:
+            return []
+        out = []
+        cur = ref
+        for _ in range(370 * 3):  # cap กัน loop อนันต์
+            if cur.day in DRAW_DAYS:
+                out.append(cur.isoformat())
+                if len(out) >= count:
+                    return out
+            cur = cur.fromordinal(cur.toordinal() + 1)
+        return out
+
+    @staticmethod
     def get_dropdown_options(limit=50, reference_date=None):
         """ตัวเลือก dropdown ใหม่→เก่า: {value, label, is_special}."""
         ref = _coerce_date(reference_date)

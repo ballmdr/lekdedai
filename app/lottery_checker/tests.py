@@ -219,3 +219,173 @@ class QuickCheckConsistencyTests(TestCase):
         body = self._check("000000")
         self.assertFalse(body["result"]["is_winner"])
         self.assertIn("ไม่ถูกรางวัล", body["result"]["message"])
+
+
+def _leading_zero_payload():
+    """fixture ครอบคลุมเลขศูนย์นำหน้า (first 012345, last2 มี 00)."""
+    def nums(*values):
+        return {"number": [{"value": v} for v in values]}
+
+    data = {
+        "first": nums("012345"),
+        "second": nums("111111"),
+        "third": nums("222222"),
+        "fourth": nums("333333"),
+        "fifth": nums("444444"),
+        "last3f": nums("012", "990"),
+        "last3b": nums("345", "007"),
+        "last2": nums("45", "00"),
+        "near1": nums("012344"),
+    }
+    return {"response": {"result": {"data": data}}}
+
+
+class CheckRulesLeadingZeroTests(TestCase):
+    """Task 11: กติกาตรวจต้องถูกกับเลขศูนย์นำหน้า และเลข 2/3/6 หลัก."""
+
+    def test_six_digit_first_with_derived(self):
+        from lottery_checker.lotto_service import check_numbers_against_result
+
+        self.assertEqual(
+            check_numbers_against_result(_leading_zero_payload(), "012345"),
+            [
+                "รางวัลที่ 1 (6,000,000 บาท)",
+                "เลขหน้า 3 ตัว (4,000 บาท)",
+                "เลขท้าย 3 ตัว (4,000 บาท)",
+                "เลขท้าย 2 ตัว (2,000 บาท)",
+            ],
+        )
+
+    def test_front_three_only(self):
+        from lottery_checker.lotto_service import check_numbers_against_result
+
+        self.assertEqual(
+            check_numbers_against_result(_leading_zero_payload(), "990012"),
+            ["เลขหน้า 3 ตัว (4,000 บาท)"],
+        )
+
+    def test_back_three_only(self):
+        from lottery_checker.lotto_service import check_numbers_against_result
+
+        self.assertEqual(
+            check_numbers_against_result(_leading_zero_payload(), "123007"),
+            ["เลขท้าย 3 ตัว (4,000 บาท)"],
+        )
+
+    def test_three_digit_matches_back(self):
+        from lottery_checker.lotto_service import check_numbers_against_result
+
+        self.assertEqual(
+            check_numbers_against_result(_leading_zero_payload(), "345"),
+            ["เลขท้าย 3 ตัว (4,000 บาท)"],
+        )
+
+    def test_two_digit_with_leading_zero(self):
+        from lottery_checker.lotto_service import check_numbers_against_result
+
+        self.assertEqual(
+            check_numbers_against_result(_leading_zero_payload(), "00"),
+            ["เลขท้าย 2 ตัว (2,000 บาท)"],
+        )
+        self.assertEqual(
+            check_numbers_against_result(_leading_zero_payload(), "09"), []
+        )
+
+    def test_non_winner(self):
+        from lottery_checker.lotto_service import check_numbers_against_result
+
+        self.assertEqual(
+            check_numbers_against_result(_leading_zero_payload(), "000001"), []
+        )
+
+    def test_malformed_returns_none(self):
+        from lottery_checker.lotto_service import check_numbers_against_result
+
+        self.assertIsNone(check_numbers_against_result("not-a-dict", "012345"))
+
+
+class CheckDrawApiTests(TestCase):
+    """Task 11: API ตรวจต่องวดแบบ read-only — won/lost/pending/stale/error."""
+
+    def setUp(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from lottery_checker.lotto_service import LottoService
+        from lottery_checker.models import LottoResult
+
+        self.today = timezone.localdate()
+        svc = LottoService()
+        self.won_day = self.today - timedelta(days=10)
+        self.assertTrue(svc.save_to_database(_leading_zero_payload(), self.won_day))
+        self.invalid_day = self.today - timedelta(days=11)
+        self.assertTrue(svc.save_to_database({"response": None}, self.invalid_day))
+        self.assertFalse(
+            LottoResult.objects.get(draw_date=self.invalid_day).is_valid
+        )
+        self.missing_recent_day = self.today - timedelta(days=1)
+        self.stale_day = self.today - timedelta(days=20)
+        self.future_day = self.today + timedelta(days=30)
+
+    def _check(self, draw_date, number):
+        return self.client.post(
+            "/lottery_checker/api/check-draw/",
+            data=json.dumps({"draw_date": draw_date, "number": number}),
+            content_type="application/json",
+        )
+
+    def test_won(self):
+        res = self._check(self.won_day.isoformat(), "012345")
+        self.assertEqual(res.status_code, 200)
+        body = res.json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["status"], "won")
+        self.assertTrue(body["is_winner"])
+        self.assertIn("รางวัลที่ 1", body["message"])
+
+    def test_lost_states_scope(self):
+        res = self._check(self.won_day.isoformat(), "000001")
+        body = res.json()
+        self.assertEqual(body["status"], "lost")
+        self.assertFalse(body["is_winner"])
+        self.assertIn("กติกา", body["message"])
+
+    def test_two_digit_won(self):
+        body = self._check(self.won_day.isoformat(), "00").json()
+        self.assertEqual(body["status"], "won")
+        self.assertIn("เลขท้าย 2 ตัว", body["message"])
+
+    def test_unsupported_length_rejected(self):
+        res = self._check(self.won_day.isoformat(), "1234")
+        self.assertEqual(res.status_code, 400)
+        self.assertFalse(res.json()["success"])
+
+    def test_bad_date_rejected(self):
+        res = self._check("2026-13-99", "012345")
+        self.assertEqual(res.status_code, 400)
+        self.assertFalse(res.json()["success"])
+
+    def test_pending_future(self):
+        body = self._check(self.future_day.isoformat(), "012345").json()
+        self.assertEqual(body["status"], "pending")
+        self.assertFalse(body["is_winner"])
+
+    def test_pending_recent_missing(self):
+        body = self._check(self.missing_recent_day.isoformat(), "012345").json()
+        self.assertEqual(body["status"], "pending")
+
+    def test_stale_when_missing_beyond_grace(self):
+        body = self._check(self.stale_day.isoformat(), "012345").json()
+        self.assertEqual(body["status"], "stale")
+
+    def test_error_when_stored_result_invalid(self):
+        body = self._check(self.invalid_day.isoformat(), "012345").json()
+        self.assertEqual(body["status"], "error")
+
+    def test_does_not_fetch_or_create_rows(self):
+        from lottery_checker.models import LottoResult
+
+        self.assertFalse(LottoResult.objects.filter(draw_date=self.stale_day).exists())
+        self._check(self.stale_day.isoformat(), "012345")
+        self.assertFalse(LottoResult.objects.filter(draw_date=self.stale_day).exists())

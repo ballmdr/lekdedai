@@ -1,7 +1,6 @@
-from django.db.models import Count, Q
 from datetime import datetime, timedelta
 from collections import Counter
-from .models import LotteryDraw, NumberStatistics
+from .models import LotteryDraw
 from lottery_checker.models import LottoResult
 
 class StatsCalculator:
@@ -27,27 +26,29 @@ class StatsCalculator:
         return self.get_hot_numbers(limit, days, number_type)
     
     def get_hot_numbers(self, limit=10, days=90, number_type='2D'):
-        """คำนวณเลขที่ออกบ่อย (เลขฮอต)"""
+        """เลขที่ออกบ่อย (เลขฮอต) — 2D นับเฉพาะรางวัลเลขท้าย 2 ตัว (`two_digit` งวดละ 1 ค่า).
+
+        นิยาม: ตำแหน่ง = รางวัลเลขท้าย 2 ตัวเท่านั้น (ไม่รวมเลข 2 หลักในรางวัลที่ 1),
+        ช่วงเวลา = days วันล่าสุด, ตัวอย่าง = จำนวนงวดในช่วงนั้น.
+        เลขคู่ในรางวัลที่ 1 ดูที่ get_hot_first_prize_pairs แยกต่างหาก.
+        """
         cutoff_date = datetime.now().date() - timedelta(days=days)
         recent_draws = self.all_draws.filter(draw_date__gte=cutoff_date)
 
         if not recent_draws:
             return []
-        
+
         number_counter = Counter()
-        
+
         for draw in recent_draws:
             if number_type == '2D':
-                # นับเลข 2 ตัวจากทุกตำแหน่ง
+                # นับเฉพาะเลขท้าย 2 ตัว งวดละ 1 ครั้ง
                 number_counter[draw.two_digit] += 1
-                # เลข 2 ตัวจากรางวัลที่ 1
-                for num in draw.get_all_two_digits():
-                    number_counter[num] += 1
             elif number_type == '3D':
-                # นับเลข 3 ตัว
+                # นับเลข 3 ตัว (รางวัลเลขหน้า/ท้าย 3 ตัว เป็นรางวัลจริงอยู่แล้ว)
                 for num in draw.get_all_three_digits():
                     number_counter[num] += 1
-        
+
         hot_numbers = []
         for number, count in number_counter.most_common(limit):
             hot_numbers.append({
@@ -55,11 +56,54 @@ class StatsCalculator:
                 'count': count,
                 'percentage': round((count / len(recent_draws)) * 100, 2)
             })
-        
+
         return hot_numbers
+
+    def get_hot_first_prize_pairs(self, limit=10, days=90):
+        """เลขคู่ 2 หลักที่พบบ่อยในรางวัลที่ 1 (นับทุกตำแหน่ง 5 ช่องต่องวด).
+
+        นิยาม: ตำแหน่ง = หน้าต่างเลื่อน 2 หลัก 5 ตำแหน่งในเลขรางวัลที่ 1
+        (ตำแหน่ง 1-2 ถึง 5-6), ช่วงเวลา = days วันล่าสุด.
+        count = จำนวนครั้งที่พบรวมทุกตำแหน่ง, draws = จำนวนงวดที่พบอย่างน้อย 1 ครั้ง,
+        percentage = draws / จำนวนงวดในช่วง (ไม่เกิน 100).
+        """
+        cutoff_date = datetime.now().date() - timedelta(days=days)
+        recent_draws = list(self.all_draws.filter(draw_date__gte=cutoff_date))
+
+        if not recent_draws:
+            return []
+
+        window_counter = Counter()
+        draw_counter = Counter()
+
+        for draw in recent_draws:
+            seen = set()
+            for num in draw.get_all_two_digits():
+                window_counter[num] += 1
+                seen.add(num)
+            for num in seen:
+                draw_counter[num] += 1
+
+        total_draws = len(recent_draws)
+        pairs = []
+        for number, count in window_counter.most_common(limit):
+            draws = draw_counter[number]
+            pairs.append({
+                'number': number,
+                'count': count,
+                'draws': draws,
+                'percentage': round((draws / total_draws) * 100, 2),
+            })
+
+        return pairs
     
     def get_cold_numbers(self, limit=10, number_type='2D'):
-        """คำนวณเลขที่ไม่ออกนาน (เลขเย็น)"""
+        """เลขที่ไม่ออกนาน (เลขเย็น) — 2D นับเฉพาะรางวัลเลขท้าย 2 ตัว (`two_digit`).
+
+        นิยาม: "ออก" = ปรากฏในรางวัลเลขท้าย 2 ตัวของงวดนั้น (ไม่รวมรางวัลที่ 1),
+        days = จำนวนวันนับจากงวดล่าสุดที่ออกถึงวันนี้.
+        เลขคู่ในรางวัลที่ 1 ดูที่ get_cold_first_prize_pairs แยกต่างหาก.
+        """
         # สร้าง set ของเลขทั้งหมด
         if number_type == '2D':
             all_numbers = set(str(i).zfill(2) for i in range(100))
@@ -73,7 +117,7 @@ class StatsCalculator:
                 found = False
                 
                 if number_type == '2D':
-                    if number == draw.two_digit or number in draw.get_all_two_digits():
+                    if number == draw.two_digit:
                         found = True
                 else:
                     if number in draw.get_all_three_digits():
@@ -99,9 +143,45 @@ class StatsCalculator:
         cold_numbers.sort(key=lambda x: x['days'], reverse=True)
         
         return cold_numbers[:limit]
+
+    def get_cold_first_prize_pairs(self, limit=10):
+        """เลขคู่ 2 หลักที่หายไปนานจากรางวัลที่ 1 (นับทุกตำแหน่ง 5 ช่องต่องวด).
+
+        นิยาม: "ออก" = ปรากฏในหน้าต่างเลื่อน 2 หลักตำแหน่งใดก็ได้ของรางวัลที่ 1,
+        days = จำนวนวันนับจากงวดล่าสุดที่พบถึงวันนี้.
+        """
+        all_numbers = set(str(i).zfill(2) for i in range(100))
+
+        last_appearance = {}
+
+        for number in all_numbers:
+            for draw in self.all_draws:
+                if number in draw.get_all_two_digits():
+                    last_appearance[number] = draw.draw_date
+                    break
+
+        today = datetime.now().date()
+        cold_numbers = []
+
+        for number, last_date in last_appearance.items():
+            days_since = (today - last_date).days
+            cold_numbers.append({
+                'number': number,
+                'days': days_since,
+                'last_date': last_date.strftime('%d/%m/%Y')
+            })
+
+        cold_numbers.sort(key=lambda x: x['days'], reverse=True)
+
+        return cold_numbers[:limit]
     
     def get_monthly_statistics(self):
-        """สถิติรายเดือน - จัดกลุ่มตามเดือน (ไม่แยกปี)"""
+        """สถิติรายเดือน - จัดกลุ่มตามเดือน (ไม่แยกปี).
+
+        นิยาม: `two_digit` = รางวัลเลขท้าย 2 ตัวของแต่ละงวด (งวดละ 1 ค่า),
+        `first_pairs` = เลขคู่ 2 หลักทุกตำแหน่งในรางวัลที่ 1 (งวดละ 5 ค่า).
+        แยกนับชัดเจน ไม่ปนกัน.
+        """
         # Thai month names
         thai_months = {
             1: 'มกราคม', 2: 'กุมภาพันธ์', 3: 'มีนาคม', 4: 'เมษายน',
@@ -118,7 +198,8 @@ class StatsCalculator:
             if month_name not in monthly_stats:
                 monthly_stats[month_name] = {
                     'draws': [],  # เก็บข้อมูลการจับสลากแต่ละงวด
-                    'numbers_2d': [],
+                    'two_digit': [],  # รางวัลเลขท้าย 2 ตัว (งวดละ 1 ค่า)
+                    'first_pairs': [],  # เลขคู่ 2 หลักในรางวัลที่ 1 (งวดละ 5 ค่า)
                     'numbers_3d': [],
                     'month_number': month_num  # เก็บหมายเลขเดือนสำหรับเรียงลำดับ
                 }
@@ -129,30 +210,36 @@ class StatsCalculator:
                 'date_str': draw.draw_date.strftime('%d/%m/%Y')
             })
             
-            # เก็บเลขที่ออก
-            monthly_stats[month_name]['numbers_2d'].append(draw.two_digit)
-            monthly_stats[month_name]['numbers_2d'].extend(draw.get_all_two_digits())
+            # เก็บเลขที่ออก (แยกตำแหน่งชัด)
+            monthly_stats[month_name]['two_digit'].append(draw.two_digit)
+            monthly_stats[month_name]['first_pairs'].extend(draw.get_all_two_digits())
             monthly_stats[month_name]['numbers_3d'].extend(draw.get_all_three_digits())
         
-        # หาเลขที่ออกบ่อยที่สุดในแต่ละเดือน
+        # หาเลขที่ออกบ่อยที่สุดในแต่ละเดือน (แยกตำแหน่ง)
         result = {}
         for month, data in monthly_stats.items():
-            counter_2d = Counter(data['numbers_2d'])
+            counter_two = Counter(data['two_digit'])
+            counter_pairs = Counter(data['first_pairs'])
             counter_3d = Counter(data['numbers_3d'])
-            
-            most_common_2d = counter_2d.most_common(1)
+
+            most_common_two = counter_two.most_common(1)
+            most_common_pairs = counter_pairs.most_common(1)
             most_common_3d = counter_3d.most_common(1)
-            
+
             # เรียงลำดับงวดตามวันที่ (ใหม่สุดก่อน)
             sorted_draws = sorted(data['draws'], key=lambda x: x['date'], reverse=True)
-            
+
             result[month] = {
                 'month_number': data['month_number'],  # สำหรับเรียงลำดับ
                 'total_draws': len(data['draws']),
                 'draw_dates': [d['date_str'] for d in sorted_draws[:5]],  # แสดง 5 งวดล่าสุด
-                'most_common_2d': {
-                    'number': most_common_2d[0][0] if most_common_2d else None,
-                    'count': most_common_2d[0][1] if most_common_2d else 0
+                'most_common_two_digit': {
+                    'number': most_common_two[0][0] if most_common_two else None,
+                    'count': most_common_two[0][1] if most_common_two else 0
+                },
+                'most_common_first_pair': {
+                    'number': most_common_pairs[0][0] if most_common_pairs else None,
+                    'count': most_common_pairs[0][1] if most_common_pairs else 0
                 },
                 'most_common_3d': {
                     'number': most_common_3d[0][0] if most_common_3d else None,
@@ -168,7 +255,13 @@ class StatsCalculator:
         return sorted_result
     
     def get_number_statistics(self, number):
-        """สถิติของเลขที่เจาะจง"""
+        """สถิติของเลขที่เจาะจง.
+
+        นิยามสำหรับเลข 2 หลัก: ค่าหลัก (total_appearances/last_appeared/days_since_last/
+        average_gap/...) นับเฉพาะรางวัลเลขท้าย 2 ตัว (`two_digit` งวดละ 1 ค่า) เท่านั้น.
+        การพบในรางวัลที่ 1 รายงานแยกในคีย์ `first_prize` (นับทุกตำแหน่ง 5 ช่องต่องวด)
+        เลข 3 หลักนับจากรางวัลเลขหน้า/ท้าย 3 ตัว (รางวัลจริง) พร้อมระบุ positions.
+        """
         stats = {
             'total_appearances': 0,
             'last_appeared': None,
@@ -176,62 +269,92 @@ class StatsCalculator:
             'appearance_dates': [],
             'average_gap': 0,
             'max_gap': 0,
-            'min_gap': 999
+            'min_gap': 999,
+            'positions': '',
         }
-        
+
         appearances = []
-        
+        first_prize_appearances = []
+
         for draw in self.all_draws:
-            found = False
-            
             if len(number) == 2:
-                if number == draw.two_digit or number in draw.get_all_two_digits():
-                    found = True
+                if number == draw.two_digit:
+                    appearances.append(draw.draw_date)
+                if number in draw.get_all_two_digits():
+                    first_prize_appearances.append(draw.draw_date)
             else:
                 if number in draw.get_all_three_digits():
-                    found = True
-            
-            if found:
-                appearances.append(draw.draw_date)
-        
-        if appearances:
-            stats['total_appearances'] = len(appearances)
-            stats['last_appeared'] = appearances[0]
-            stats['days_since_last'] = (datetime.now().date() - appearances[0]).days
-            stats['appearance_dates'] = [d.strftime('%d/%m/%Y') for d in appearances[:10]]
-            
-            # คำนวณระยะห่าง
-            if len(appearances) > 1:
-                gaps = []
-                for i in range(len(appearances) - 1):
-                    gap = (appearances[i] - appearances[i + 1]).days
-                    gaps.append(gap)
-                
-                stats['average_gap'] = round(sum(gaps) / len(gaps), 2)
-                stats['max_gap'] = max(gaps)
-                stats['min_gap'] = min(gaps)
-        
+                    appearances.append(draw.draw_date)
+
+        if len(number) == 2:
+            stats['positions'] = 'รางวัลเลขท้าย 2 ตัว (two_digit งวดละ 1 ค่า)'
+            stats['first_prize'] = self._summarize_appearances(first_prize_appearances)
+            stats['first_prize']['positions'] = 'เลขคู่ 2 หลักทุกตำแหน่งในรางวัลที่ 1 (งวดละ 5 ค่า)'
+        else:
+            stats['positions'] = 'รางวัลเลขหน้า/ท้าย 3 ตัว'
+
+        self._summarize_into(stats, appearances)
         return stats
+
+    @staticmethod
+    def _summarize_appearances(appearances):
+        """สรุป list วันออกรางวัล (ใหม่สุดก่อน) เป็น dict สถิติ."""
+        summary = {
+            'total_appearances': 0,
+            'last_appeared': None,
+            'days_since_last': 0,
+            'appearance_dates': [],
+            'average_gap': 0,
+            'max_gap': 0,
+            'min_gap': 999,
+        }
+        StatsCalculator._summarize_into(summary, appearances)
+        return summary
+
+    @staticmethod
+    def _summarize_into(stats, appearances):
+        if not appearances:
+            return
+        stats['total_appearances'] = len(appearances)
+        stats['last_appeared'] = appearances[0]
+        stats['days_since_last'] = (datetime.now().date() - appearances[0]).days
+        stats['appearance_dates'] = [d.strftime('%d/%m/%Y') for d in appearances[:10]]
+
+        if len(appearances) > 1:
+            gaps = []
+            for i in range(len(appearances) - 1):
+                gap = (appearances[i] - appearances[i + 1]).days
+                gaps.append(gap)
+
+            stats['average_gap'] = round(sum(gaps) / len(gaps), 2)
+            stats['max_gap'] = max(gaps)
+            stats['min_gap'] = min(gaps)
     
     def get_statistics_summary(self):
-        """สรุปสถิติทั้งหมด"""
+        """สรุปสถิติทั้งหมด.
+
+        นิยาม: `two_digit` นับเฉพาะรางวัลเลขท้าย 2 ตัว (งวดละ 1 ค่า),
+        `first_prize_pairs` นับเลขคู่ 2 หลักทุกตำแหน่งในรางวัลที่ 1 (งวดละ 5 ค่า).
+        """
         total_draws = self.all_draws.count()
         
         if total_draws == 0:
             return None
         
-        # หาเลขที่ออกบ่อยที่สุดตลอดกาล
-        all_2d_counter = Counter()
+        # หาเลขที่ออกบ่อยที่สุดตลอดกาล (แยกตำแหน่ง)
+        two_digit_counter = Counter()
+        pair_counter = Counter()
         all_3d_counter = Counter()
         
         for draw in self.all_draws:
-            all_2d_counter[draw.two_digit] += 1
+            two_digit_counter[draw.two_digit] += 1
             for num in draw.get_all_two_digits():
-                all_2d_counter[num] += 1
+                pair_counter[num] += 1
             for num in draw.get_all_three_digits():
                 all_3d_counter[num] += 1
         
-        most_common_2d = all_2d_counter.most_common(1)[0] if all_2d_counter else (None, 0)
+        most_common_two = two_digit_counter.most_common(1)[0] if two_digit_counter else (None, 0)
+        most_common_pair = pair_counter.most_common(1)[0] if pair_counter else (None, 0)
         most_common_3d = all_3d_counter.most_common(1)[0] if all_3d_counter else (None, 0)
         
         return {
@@ -241,7 +364,8 @@ class StatsCalculator:
                 'to': self.all_draws.first().draw_date.strftime('%d/%m/%Y') if self.all_draws.first() else None
             },
             'most_common_all_time': {
-                '2d': {'number': most_common_2d[0], 'count': most_common_2d[1]},
+                'two_digit': {'number': most_common_two[0], 'count': most_common_two[1]},
+                'first_prize_pair': {'number': most_common_pair[0], 'count': most_common_pair[1]},
                 '3d': {'number': most_common_3d[0], 'count': most_common_3d[1]}
             }
         }
@@ -303,6 +427,8 @@ class StatsCalculator:
             double_num = str(i) + str(i)
             double_stats['2d'][double_num] = {
                 'count': 0,
+                'count_two_digit': 0,  # พบในรางวัลเลขท้าย 2 ตัว
+                'count_first_prize': 0,  # พบในรางวัลที่ 1 (ทุกตำแหน่ง)
                 'last_appeared': None,
                 'appearances': []
             }
@@ -317,11 +443,13 @@ class StatsCalculator:
             }
         
         for draw in recent_draws:
-            # Check 2D doubles in two_digit and first_prize
+            # Check 2D doubles in two_digit
             if draw.two_digit in double_stats['2d']:
-                double_stats['2d'][draw.two_digit]['count'] += 1
-                double_stats['2d'][draw.two_digit]['last_appeared'] = draw.draw_date
-                double_stats['2d'][draw.two_digit]['appearances'].append({
+                entry = double_stats['2d'][draw.two_digit]
+                entry['count'] += 1
+                entry['count_two_digit'] += 1
+                entry['last_appeared'] = draw.draw_date
+                entry['appearances'].append({
                     'date': draw.draw_date.strftime('%d/%m/%Y'),
                     'type': 'เลขท้าย 2 ตัว'
                 })
@@ -330,9 +458,11 @@ class StatsCalculator:
             for i in range(len(draw.first_prize) - 1):
                 two_digit = draw.first_prize[i:i+2]
                 if two_digit in double_stats['2d']:
-                    double_stats['2d'][two_digit]['count'] += 1
-                    double_stats['2d'][two_digit]['last_appeared'] = draw.draw_date
-                    double_stats['2d'][two_digit]['appearances'].append({
+                    entry = double_stats['2d'][two_digit]
+                    entry['count'] += 1
+                    entry['count_first_prize'] += 1
+                    entry['last_appeared'] = draw.draw_date
+                    entry['appearances'].append({
                         'date': draw.draw_date.strftime('%d/%m/%Y'),
                         'type': f'รางวัลที่ 1 (ตำแหน่ง {i+1}-{i+2})'
                     })
@@ -395,6 +525,8 @@ class StatsCalculator:
                     if seq_num not in sequential_stats['2d']:
                         sequential_stats['2d'][seq_num] = {
                             'count': 0,
+                            'count_two_digit': 0,  # พบในรางวัลเลขท้าย 2 ตัว
+                            'count_first_prize': 0,  # พบในรางวัลที่ 1 (ทุกตำแหน่ง)
                             'last_appeared': None,
                             'appearances': [],
                             'type': 'เรียงขึ้น' if j == 1 else 'เรียงลง'
@@ -416,9 +548,11 @@ class StatsCalculator:
         for draw in recent_draws:
             # Check 2D sequences in two_digit
             if draw.two_digit in sequential_stats['2d']:
-                sequential_stats['2d'][draw.two_digit]['count'] += 1
-                sequential_stats['2d'][draw.two_digit]['last_appeared'] = draw.draw_date
-                sequential_stats['2d'][draw.two_digit]['appearances'].append({
+                entry = sequential_stats['2d'][draw.two_digit]
+                entry['count'] += 1
+                entry['count_two_digit'] += 1
+                entry['last_appeared'] = draw.draw_date
+                entry['appearances'].append({
                     'date': draw.draw_date.strftime('%d/%m/%Y'),
                     'type': 'เลขท้าย 2 ตัว'
                 })
@@ -427,9 +561,11 @@ class StatsCalculator:
             for i in range(len(draw.first_prize) - 1):
                 two_digit = draw.first_prize[i:i+2]
                 if two_digit in sequential_stats['2d']:
-                    sequential_stats['2d'][two_digit]['count'] += 1
-                    sequential_stats['2d'][two_digit]['last_appeared'] = draw.draw_date
-                    sequential_stats['2d'][two_digit]['appearances'].append({
+                    entry = sequential_stats['2d'][two_digit]
+                    entry['count'] += 1
+                    entry['count_first_prize'] += 1
+                    entry['last_appeared'] = draw.draw_date
+                    entry['appearances'].append({
                         'date': draw.draw_date.strftime('%d/%m/%Y'),
                         'type': f'รางวัลที่ 1 (ตำแหน่ง {i+1}-{i+2})'
                     })

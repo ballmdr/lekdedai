@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}ตีความฝัน - LekDedAI{% endblock %}
 
@@ -66,6 +67,7 @@
                                 <i aria-hidden="true" class="fas fa-moon mr-2"></i>
                                 วิเคราะห์ความฝัน
                             </button>
+                            <p id="dreamSubmitError" class="hidden text-sm text-red-600 mt-3" role="alert" aria-live="polite"></p>
                         </form>
                         
                         <!-- Loading -->
@@ -234,6 +236,7 @@
     </div>
 </div>
 
+<script src="{% static 'js/format.js' %}"></script>
 <script>
 document.getElementById('dreamForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -244,6 +247,7 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
     document.getElementById('loading').classList.remove('hidden');
     document.getElementById('submitBtn').disabled = true;
     document.getElementById('results').classList.add('hidden');
+    showSubmitError(null);
     
     try {
         const response = await fetch('/dreams/analyze/', {
@@ -370,10 +374,10 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
             
             document.getElementById('results').classList.remove('hidden');
         } else {
-            alert(data.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+            showSubmitError(data.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
         }
     } catch (error) {
-        alert('เกิดข้อผิดพลาด: ' + error.message);
+        showSubmitError('เกิดข้อผิดพลาด: ' + error.message);
     } finally {
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('submitBtn').disabled = false;
@@ -383,7 +387,8 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
 function resetForm() {
     document.getElementById('dreamForm').reset();
     document.getElementById('results').classList.add('hidden');
-    
+    showSubmitError(null);
+
     // Reset Expert AI elements
     document.getElementById('sentimentBadge').classList.add('hidden');
     document.getElementById('aiModelBadge').classList.add('hidden');
@@ -391,22 +396,18 @@ function resetForm() {
     document.getElementById('traditionalNumbers').classList.remove('hidden');
 }
 
+function showSubmitError(message) {
+    const el = document.getElementById('dreamSubmitError');
+    if (!message) { el.classList.add('hidden'); el.textContent = ''; return; }
+    el.textContent = message;
+    el.classList.remove('hidden');
+}
+
 function usePopularDream(text) {
     const input = document.getElementById('dream_text');
     input.value = text;
     input.focus();
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function formatInterpretation(text) {
-    const escaped = String(text || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    return escaped
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/^#{1,6}\s*(.+)$/gm, '<strong>$1</strong>');
 }
 
 function getCookie(name) {

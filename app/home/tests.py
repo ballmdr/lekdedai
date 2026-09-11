@@ -92,3 +92,42 @@ class ThaiDateTests(TestCase):
         from utils.thai_date import format_thai_date
 
         self.assertEqual(format_thai_date(date(2026, 9, 1)), "1 กันยายน 2569")
+
+
+class Task12UxTests(TestCase):
+    """Task 12: formatter ฝันตัวเดียว, heading ไม่ข้ามขั้น, ไม่มี alert บล็อกจอ."""
+
+    def test_shared_formatter_used_by_both_dream_uis(self):
+        import pathlib
+
+        self.assertTrue(pathlib.Path("app/static/js/format.js").exists())
+        home = self.client.get("/").content.decode()
+        dream = self.client.get("/dreams/").content.decode()
+        self.assertIn("js/format.js", home)
+        self.assertIn("js/format.js", dream)
+        self.assertNotIn("function formatInterpretation", home)
+        self.assertNotIn("function formatInterpretation", dream)
+
+    def test_homepage_heading_order(self):
+        import re
+
+        html = self.client.get("/").content.decode()
+        levels = [int(m) for m in re.findall(r"<h([1-6])[\s>]", html)]
+        self.assertGreaterEqual(len(levels), 2)
+        self.assertEqual(levels[0], 1)
+        self.assertEqual(levels.count(1), 1)
+        for prev, cur in zip(levels, levels[1:]):
+            self.assertLessEqual(cur, prev + 1, f"heading ข้ามขั้น: h{prev} -> h{cur}")
+
+    def test_no_blocking_alerts_in_home_and_dream(self):
+        home = self.client.get("/").content.decode()
+        dream = self.client.get("/dreams/").content.decode()
+        self.assertNotIn("alert(", home)
+        self.assertNotIn("alert(", dream)
+
+    def test_inline_error_elements_exist(self):
+        home = self.client.get("/").content.decode()
+        dream = self.client.get("/dreams/").content.decode()
+        self.assertIn('id="dreamError"', home)
+        self.assertIn('id="lotteryError"', home)
+        self.assertIn('id="dreamSubmitError"', dream)

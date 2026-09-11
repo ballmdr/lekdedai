@@ -1,12 +1,10 @@
 from django.shortcuts import render
-from django.db.models import Q, Sum, Avg
+from django.db.models import Sum
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
-from collections import Counter
-import random
 import json
 
 # Import models จาก apps ต่างๆ

@@ -22,8 +22,13 @@
 
         <div class="flex justify-between items-center mb-4">
             <div class="text-center">
+                {% if formula.verified_count > 0 %}
                 <div class="text-2xl font-bold text-primary">{{ formula.accuracy_rate }}%</div>
-                <div class="text-sm text-gray-500">ความแม่นยำ</div>
+                <div class="text-sm text-gray-500">ผลย้อนหลัง ({{ formula.verified_count }} งวดที่ตรวจแล้ว)</div>
+                {% else %}
+                <div class="text-2xl font-bold text-gray-400">—</div>
+                <div class="text-sm text-gray-500">ยังไม่มีข้อมูลการวัดผล</div>
+                {% endif %}
             </div>
             <div class="text-center">
                 <div class="text-2xl font-bold text-secondary">{{ formula.total_predictions }}</div>

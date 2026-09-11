@@ -17,3 +17,15 @@ class NotebookPageTests(TestCase):
         res = self.client.get("/notebook/")
         latest = LOTTERY_DATES.get_dropdown_options(limit=1)[0]["value"]
         self.assertContains(res, latest)
+
+
+class NotebookHistoryUiTests(TestCase):
+    """Task 11: หน้าประวัติต้องมีปุ่มตรวจ ที่มา/เหตุผล/งวด/ผลในแถวเดียว."""
+
+    def test_history_ui_present(self):
+        res = self.client.get("/notebook/")
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "nbCheckAll")
+        self.assertContains(res, "ตรวจผลทั้งหมด")
+        self.assertContains(res, "/lottery_checker/api/check-draw/")
+        self.assertContains(res, "csrfmiddlewaretoken")

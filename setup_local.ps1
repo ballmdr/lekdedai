@@ -21,6 +21,7 @@ $env:DJANGO_SUPERUSER_PASSWORD = "admin123"
 .\.venv\Scripts\python app/manage.py migrate --run-syncdb
 .\.venv\Scripts\python app/manage.py createsuperuser --noinput
 .\.venv\Scripts\python app/manage.py add_dream_data
+.\.venv\Scripts\python app/manage.py populate_lottery_data
 .\.venv\Scripts\python app/manage.py collectstatic --noinput
 .\.venv\Scripts\python app/manage.py check
 Write-Output "Done. Run: .\.venv\Scripts\python app/manage.py runserver"

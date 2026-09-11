@@ -45,15 +45,20 @@
         <button onclick="saveEntry()" class="btn btn-primary flex-1">บันทึกรายการ</button>
         <button onclick="resetForm()" class="btn btn-outline">ล้างฟอร์ม</button>
       </div>
+      {% csrf_token %}
       <p id="nbError" class="text-sm text-red-600 hidden"></p>
     </div>
   </div>
 
   <div class="card p-6">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-2">
       <h2 class="text-xl font-bold text-gray-800">รายการของฉัน (<span id="nbCount">0</span>)</h2>
-      <a href="/lottery_checker/" class="btn btn-outline text-sm">ไปตรวจผลหวย</a>
+      <div class="flex gap-2 flex-shrink-0">
+        <button id="nbCheckAll" onclick="checkAllEntries()" class="btn btn-primary text-sm">ตรวจผลทั้งหมด</button>
+        <a href="/lottery_checker/" class="btn btn-outline text-sm">ไปตรวจผลหวย</a>
+      </div>
     </div>
+    <p id="nbCheckStatus" class="text-xs text-gray-500 mb-3" role="status" aria-live="polite"></p>
     <div id="nbList" class="space-y-3"></div>
     <p id="nbEmpty" class="text-sm text-gray-500 text-center py-6">ยังไม่มีรายการ — บันทึกเลขแรกจากฟอร์มด้านบนได้เลย</p>
   </div>
@@ -152,6 +157,7 @@ function nbRender() {
         '<div class="text-2xl font-mono font-bold text-gray-800"></div>' +
         '<div class="text-xs text-gray-500 mt-1"></div>' +
         (it.reason ? '<div class="text-sm text-gray-600 mt-1"></div>' : '') +
+        '<div class="text-sm mt-2" data-result></div>' +
       '</div>' +
       '<div class="flex gap-2 flex-shrink-0">' +
         '<button class="btn btn-outline text-sm" data-act="edit">แก้</button>' +
@@ -159,12 +165,98 @@ function nbRender() {
       '</div>';
     div.querySelector('.text-2xl').textContent = it.number;
     div.querySelector('.text-xs').textContent =
-      (NB_SOURCES[it.source] || it.source) + ' • งวด ' + nbDrawLabel(it.draw) + ' • รอตรวจ';
+      (NB_SOURCES[it.source] || it.source) + ' • งวด ' + nbDrawLabel(it.draw);
     if (it.reason) div.querySelector('.text-sm').textContent = it.reason;
+    nbSetRowResult(div.querySelector('[data-result]'), it);
     div.querySelector('[data-act="edit"]').addEventListener('click', () => editEntry(it.id));
     div.querySelector('[data-act="del"]').addEventListener('click', () => deleteEntry(it.id));
     list.appendChild(div);
   });
+}
+function nbGetCookie(name) {
+  const cookies = document.cookie ? document.cookie.split(';') : [];
+  for (const c of cookies) {
+    const t = c.trim();
+    if (t.substring(0, name.length + 1) === name + '=') {
+      return decodeURIComponent(t.substring(name.length + 1));
+    }
+  }
+  return null;
+}
+function nbLostScope(number) {
+  if ((number || '').length === 3) return 'เลขหน้า/ท้าย 3 ตัว';
+  if ((number || '').length === 2) return 'เลขท้าย 2 ตัว';
+  return 'เต็มใบ 6 หลัก + เลขหน้า/ท้าย 3 ตัว + เลขท้าย 2 ตัว';
+}
+function nbSetRowResult(el, it) {
+  const r = (window.__nbCheckResults || {})[it.draw + '|' + it.number];
+  if (!r) {
+    el.textContent = 'ยังไม่ได้ตรวจในรอบนี้ — กด “ตรวจผลทั้งหมด”';
+    el.className = 'text-sm mt-2 text-gray-500';
+    return;
+  }
+  if (!r.success) {
+    el.textContent = 'ตรวจไม่ได้: ' + (r.error || 'เกิดข้อผิดพลาด');
+    el.className = 'text-sm mt-2 text-red-600';
+    return;
+  }
+  if (r.status === 'won') {
+    el.textContent = 'ถูก: ' + (r.prizes_won || []).join(', ');
+    el.className = 'text-sm mt-2 text-green-700 font-semibold';
+  } else if (r.status === 'lost') {
+    el.textContent = 'ไม่ถูกรางวัล (ตรวจตามกติกา' + nbLostScope(it.number) + ')';
+    el.className = 'text-sm mt-2 text-gray-600';
+  } else if (r.status === 'unsupported') {
+    el.textContent = r.message || 'เลขนี้ตรวจตามกติกาไม่ได้';
+    el.className = 'text-sm mt-2 text-orange-600';
+  } else if (r.status === 'pending') {
+    el.textContent = 'รอผล: ' + (r.message || '');
+    el.className = 'text-sm mt-2 text-orange-600';
+  } else if (r.status === 'stale') {
+    el.textContent = 'ข้อมูลค้าง: ' + (r.message || '');
+    el.className = 'text-sm mt-2 text-orange-600';
+  } else {
+    el.textContent = 'ตรวจไม่ได้: ' + (r.message || '');
+    el.className = 'text-sm mt-2 text-red-600';
+  }
+}
+async function checkAllEntries() {
+  const items = nbLoad();
+  const btn = document.getElementById('nbCheckAll');
+  const statusEl = document.getElementById('nbCheckStatus');
+  if (!items.length) { statusEl.textContent = 'ยังไม่มีรายการให้ตรวจ'; return; }
+  btn.disabled = true;
+  const groups = {};
+  items.forEach(it => {
+    const k = it.draw + '|' + it.number;
+    if (!groups[k]) groups[k] = {draw: it.draw, number: it.number};
+  });
+  const keys = Object.keys(groups);
+  const results = {};
+  let done = 0;
+  for (const k of keys) {
+    const g = groups[k];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(g.draw || '') || !/^\d+$/.test(g.number || '') || ![2, 3, 6].includes((g.number || '').length)) {
+      results[k] = {success: true, status: 'unsupported', message: 'เลขยาว ' + (g.number || '').length + ' หลักตรวจตามกติกาไม่ได้ (รองรับ 2, 3, 6 หลัก)'};
+    } else {
+      try {
+        const res = await fetch('/lottery_checker/api/check-draw/', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'X-CSRFToken': nbGetCookie('csrftoken')},
+          body: JSON.stringify({draw_date: g.draw, number: g.number})
+        });
+        results[k] = await res.json();
+      } catch (e) {
+        results[k] = {success: false, error: 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'};
+      }
+    }
+    done += 1;
+    statusEl.textContent = 'กำลังตรวจ ' + done + '/' + keys.length + ' รายการ...';
+  }
+  window.__nbCheckResults = results;
+  nbRender();
+  statusEl.textContent = 'ตรวจเสร็จ ' + keys.length + ' รายการ (' + new Date().toLocaleTimeString('th-TH') + ')';
+  btn.disabled = false;
 }
 document.addEventListener('DOMContentLoaded', () => {
   const q = new URLSearchParams(window.location.search);

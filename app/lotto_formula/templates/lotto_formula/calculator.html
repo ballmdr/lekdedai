@@ -29,7 +29,21 @@
 
     <div id="calcResult" class="hidden card p-6">
         <h2 class="text-xl font-bold text-foreground mb-4">ผลลัพธ์จากสูตร <span id="resultFormulaName"></span></h2>
-        <div id="resultNumbers" class="flex flex-wrap gap-3"></div>
+        <div id="resultNumbers" class="flex flex-wrap gap-3 mb-6"></div>
+
+        <div class="border-t border-border pt-4">
+            <label for="targetDraw" class="block text-sm font-medium text-foreground mb-1">บันทึกการทำนายสำหรับงวด</label>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <select id="targetDraw" class="input flex-1">
+                    {% for draw in upcoming_draws %}
+                    <option value="{{ draw.value }}">{{ draw.label }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" id="saveBtn" class="btn btn-outline">บันทึกการทำนาย</button>
+            </div>
+            <p class="text-xs text-muted-foreground mt-2">บันทึกได้เฉพาะงวดที่ยังไม่ออก เซิร์ฟเวอร์จะคำนวณซ้ำก่อนบันทึก และตรวจผลอัตโนมัติหลังวันหวยออกตามกติกาที่ประกาศในหน้ารายละเอียดสูตร</p>
+            <div id="saveMessage" class="hidden mt-3 text-sm" role="status" aria-live="polite"></div>
+        </div>
     </div>
 
     <script>
@@ -56,6 +70,7 @@
             btn.addEventListener('click', function () {
                 errorBox.classList.add('hidden');
                 resultBox.classList.add('hidden');
+                hideSaveMessage();
 
                 fetch('/lotto_formula/api/calculate/', {
                     method: 'POST',
@@ -88,6 +103,46 @@
                 .catch(function () {
                     errorBox.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ลองใหม่อีกครั้ง';
                     errorBox.classList.remove('hidden');
+                });
+            });
+
+            var saveBtn = document.getElementById('saveBtn');
+            var targetDraw = document.getElementById('targetDraw');
+            var saveMessage = document.getElementById('saveMessage');
+
+            function hideSaveMessage() {
+                saveMessage.classList.add('hidden');
+                saveMessage.textContent = '';
+            }
+
+            saveBtn.addEventListener('click', function () {
+                hideSaveMessage();
+                saveBtn.disabled = true;
+                fetch('/lotto_formula/api/save-prediction/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        formula_id: select.value,
+                        input_numbers: input.value.trim(),
+                        draw_date: targetDraw.value
+                    })
+                })
+                .then(function (res) { return res.json().then(function (data) { return {status: res.status, body: data}; }); })
+                .then(function (wrapped) {
+                    var data = wrapped.body;
+                    saveMessage.textContent = data.message || data.error || 'บันทึกไม่สำเร็จ';
+                    saveMessage.className = 'mt-3 text-sm ' + (data.success ? 'text-green-700' : 'text-red-600');
+                    saveMessage.classList.remove('hidden');
+                    saveBtn.disabled = false;
+                })
+                .catch(function () {
+                    saveMessage.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ลองใหม่อีกครั้ง';
+                    saveMessage.className = 'mt-3 text-sm text-red-600';
+                    saveMessage.classList.remove('hidden');
+                    saveBtn.disabled = false;
                 });
             });
         })();

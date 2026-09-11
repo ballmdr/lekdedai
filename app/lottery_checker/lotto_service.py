@@ -51,7 +51,13 @@ def _prize_values(data: Dict[str, Any], key: str) -> list:
 
 
 def check_numbers_against_result(lotto_data: Any, lottery_number: str) -> Optional[list]:
-    """ตรวจเลข 6 หลักกับข้อมูลรางวัลงวดเดียว (source of truth ใช้ร่วมหน้าแรก/หน้ารายละเอียด)
+    """ตรวจเลขต่องวดเดียว (source of truth ใช้ร่วมหน้าแรก/หน้ารายละเอียด/สมุดเลข)
+
+    รองรับเลข 2/3/6 หลัก:
+    - 6 หลัก: รางวัลเต็มใบ + เลขหน้า 3 ตัว + เลขท้าย 3 ตัว + เลขท้าย 2 ตัว
+    - 3 หลัก: เลขหน้า 3 ตัว + เลขท้าย 3 ตัว
+    - 2 หลัก: เลขท้าย 2 ตัว
+    เลขยาว 4-5 หลักไม่มีกติการองรับ ผู้เรียกต้องกรองออกก่อน (คืน [] ถ้าเรียกมา)
 
     คืน list ชื่อรางวัลพร้อมจำนวนเงิน หรือ None ถ้าโครงสร้างข้อมูลไม่ถูกต้อง
     """
@@ -62,18 +68,26 @@ def check_numbers_against_result(lotto_data: Any, lottery_number: str) -> Option
     number = str(lottery_number)
     prizes = []
 
-    # รางวัลที่จับเต็มเลข 6 หลัก
+    # รางวัลที่จับเต็มเลข (เทียบตรง; เลขสั้นจะไม่ตรงกับเลข 6 หลักอยู่แล้ว)
     for key, label, amount in FIXED_PRIZES:
         if number in _prize_values(data, key):
             prizes.append(f"{label} ({amount} บาท)")
 
-    # รางวัลเลขหน้า/ท้าย 3 ตัว และท้าย 2 ตัว (คำนวณจากเลข 6 หลักเท่านั้น)
+    # รางวัลเลขหน้า/ท้าย 3 ตัว และท้าย 2 ตัว
     if len(number) == 6:
         if number[:3] in _prize_values(data, "last3f"):
             prizes.append("เลขหน้า 3 ตัว (4,000 บาท)")
         if number[3:6] in _prize_values(data, "last3b"):
             prizes.append("เลขท้าย 3 ตัว (4,000 บาท)")
         if number[4:6] in _prize_values(data, "last2"):
+            prizes.append("เลขท้าย 2 ตัว (2,000 บาท)")
+    elif len(number) == 3:
+        if number in _prize_values(data, "last3f"):
+            prizes.append("เลขหน้า 3 ตัว (4,000 บาท)")
+        if number in _prize_values(data, "last3b"):
+            prizes.append("เลขท้าย 3 ตัว (4,000 บาท)")
+    elif len(number) == 2:
+        if number in _prize_values(data, "last2"):
             prizes.append("เลขท้าย 2 ตัว (2,000 บาท)")
 
     return prizes

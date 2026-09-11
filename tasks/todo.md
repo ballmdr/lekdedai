@@ -34,29 +34,59 @@
 - [x] Task 8 — ทำหน้าแรกตามงานหลักหนึ่งเส้นทาง (CTA ฝัน→ตรวจผล, nav จริง, ตัด default ปลอม, 24 tests เขียว)
 - [x] Task 9 — ทำสมุดเลขแบบไม่ล็อกอิน (localStorage + ผูกงวด + prefill, /notebook/ 200, 26 tests เขียว)
 - [x] Task 10 — เชื่อมผลจากฝันเข้าสมุดเลข (ปุ่มบันทึกทีละเลข 3 จุด + prefill, 30 tests เขียว)
-- [ ] Task 11 — ตรวจผลและสร้างประวัติงวด
+- [x] Task 11 — ตรวจผลและสร้างประวัติงวด (check-draw read-only: won/lost/pending/stale/error; กติกา 2/3/6 หลักรวมศูนย์นำหน้า; ปุ่มตรวจผลทั้งหมดใน notebook; 74 tests เขียว)
+- [x] Task 12 — ปิดข้อบกพร่อง UX ที่ยังมองเห็นได้ (formatter ฝันปลอดภัยไฟล์เดียวใช้ 2 หน้า, heading h1→h2→h3, ตัวอย่างเลขตรงคู่มือ, inline error แทน alert, 78 tests เขียว)
+- [x] Task 13 — กำหนดนิยามและแก้ความถูกต้องของสถิติ (แยกเลขท้าย 2 ตัวกับเลขคู่ในรางวัลที่ 1 ทั้งคำนวณ/ชื่อ/UI; fixture 5 งวดรวมเลขซ้ำ+ศูนย์นำหน้าตรงมือ; 92 tests เขียว)
+- [x] Task 14 — ทำ contract สูตรหวยและ seed ที่ใช้ production ได้ (code/version/specs/approved + migration; dispatch ตาม code; seed idempotent ไม่สร้างผล/วัดปลอม + ไม่ล้างผลวัดเดิม; ผูกเข้า setup; 100 tests เขียว)
+- [x] Task 15 — เชื่อมสูตรกับผลจริงและวัดผลย้อนหลังอย่างซื่อสัตย์ (บันทึกเฉพาะงวดหน้า + recompute กันปลอม, กติกาตรวจประกาศชัด, verify command พร้อม numerator/denominator/ช่วงวันที่, UI ผลย้อนหลัง/รอตรวจ, 111 tests เขียว)
+- [ ] Task 16 — คืนทะเบียนแหล่งข่าวและ provenance
+- [ ] Task 17 — ทำ RSS ingestion เป็นเส้นทางหลัก
+- [ ] Task 18 — ทำ category scraper เป็น fallback พร้อม editorial gate
+- [ ] Task 19 — เชื่อมข่าวที่ผ่านการคัดเข้าสู่หน้าเว็บ
+- [ ] Task 20 — ทำ metadata และ readiness gate ของ AI prediction
 
 ### Checkpoint C
 
 - [ ] เส้นทาง วิเคราะห์ → เลือก → บันทึก → ตรวจผล ผ่าน end-to-end
+- [ ] เส้นทาง ข่าว/สถิติ/สูตร → เลือกเลข → บันทึก → ตรวจผล ผ่าน end-to-end
 - [ ] empty/error/stale states ทำงานถูกต้อง
+- [ ] สูตร ข่าว สถิติ และ AI ไม่มีข้อมูลสุ่มหรือ metadata กำกวม
 - [ ] backend tests และ browser tests สำคัญผ่าน
 - [ ] เจ้าของผลิตภัณฑ์ทดลองบนมือถือจริง
 
-## ระยะที่ 3: เปิดกลุ่มเล็กและเก็บหลักฐาน
+## ระยะที่ 3: เตรียม staging และ production
 
-- [ ] Task 12 — เพิ่ม analytics ขั้นต่ำ
-- [ ] Task 13 — เตรียม production และ recovery
-- [ ] Task 14 — เปิด closed beta และทำรอบเรียนรู้สองงวด
+- [ ] Task 21 — สร้าง automated quality gate
+- [ ] Task 22 — แยก production runtime และจัดการ secrets
+- [ ] Task 23 — ปิดช่องโหว่ endpoint และจำกัดการใช้งานเกินขอบเขต
+- [ ] Task 24 — ตั้ง schedule และ freshness control
+- [ ] Task 25 — เพิ่ม observability, backup และ rollback
+- [ ] Task 26 — จัดทำนโยบายผู้ใช้และสิทธิ์เนื้อหา
+- [ ] Task 27 — ทำ performance, accessibility และ compatibility gate
 
 ### Checkpoint D
+
+- [ ] CI/deploy/browser smoke tests ผ่านจาก clean build
+- [ ] production secrets/config/security ผ่าน review
+- [ ] scheduler, freshness, alerts, backup, restore และ rollback ผ่าน rehearsal
+- [ ] provenance ของสูตร ข่าว สถิติ AI และผลหวยครบ
+- [ ] policy/contact/disclaimer และ accessibility gate ผ่าน
+
+## ระยะที่ 4: Beta และเปิดสาธารณะ
+
+- [ ] Task 28 — เพิ่ม analytics ขั้นต่ำแบบรักษาความเป็นส่วนตัว
+- [ ] Task 29 — ทำ staging dress rehearsal ครบหนึ่งรอบงวด
+- [ ] Task 30 — เปิด closed beta อย่างน้อยสองงวด
+- [ ] Task 31 — เปิด public แบบ staged rollout
+
+### Checkpoint E
 
 - [ ] มี activation baseline
 - [ ] มี cross-draw retention อย่างน้อยสองงวด
 - [ ] ระบุฟีเจอร์ที่ทำให้ผู้ใช้กลับมาได้
 - [ ] มีหลักฐานความตั้งใจจ่าย หรือข้อสรุปว่ายังไม่ควรสร้าง billing
 
-## ระยะที่ 4: ทดลองรายได้
+## ระยะที่ 5: ทดลองรายได้
 
 - [ ] เลือกทดลอง A — สมุดเลขแบบสมาชิก ตามหลักฐานการใช้ซ้ำ
 - [ ] เลือกทดลอง B — เครื่องมือทำคอนเทนต์ ตามหลักฐานการแชร์/เจ้าของเพจ

@@ -8,17 +8,31 @@
 
         <div class="grid md:grid-cols-3 gap-4 mb-6">
             <div class="text-center p-4 bg-blue-50 rounded-lg">
+                {% if verified_stats.verified > 0 %}
                 <div class="text-2xl font-bold text-blue-600">{{ formula.accuracy_rate }}%</div>
-                <div class="text-sm text-gray-600">ความแม่นยำ</div>
+                <div class="text-sm text-gray-600">ผลย้อนหลัง (ถูก {{ verified_stats.correct }} จาก {{ verified_stats.verified }} งวดที่ตรวจแล้ว)</div>
+                {% else %}
+                <div class="text-2xl font-bold text-gray-400">—</div>
+                <div class="text-sm text-gray-600">ยังไม่มีข้อมูลการวัดผล</div>
+                {% endif %}
             </div>
             <div class="text-center p-4 bg-green-50 rounded-lg">
-                <div class="text-2xl font-bold text-green-600">{{ formula.correct_predictions }}</div>
-                <div class="text-sm text-gray-600">ทำนายถูก</div>
+                <div class="text-2xl font-bold text-green-600">{{ verified_stats.correct }}</div>
+                <div class="text-sm text-gray-600">ทำนายถูก (ที่ตรวจแล้ว)</div>
             </div>
             <div class="text-center p-4 bg-orange-50 rounded-lg">
                 <div class="text-2xl font-bold text-orange-600">{{ formula.total_predictions }}</div>
-                <div class="text-sm text-gray-600">ทำนายทั้งหมด</div>
+                <div class="text-sm text-gray-600">บันทึกการทำนายทั้งหมด</div>
             </div>
+        </div>
+
+        <div class="bg-muted/30 rounded-lg p-4 mb-6 text-sm text-muted-foreground">
+            <p class="font-semibold text-foreground mb-1">กติกาตรวจผลย้อนหลัง</p>
+            <p>{{ verified_stats.rule }}</p>
+            {% if verified_stats.verified > 0 %}
+            <p class="mt-1">ช่วงที่วัด: {{ verified_stats.date_from|date:"j M Y" }} – {{ verified_stats.date_to|date:"j M Y" }} ({{ verified_stats.verified }} งวด)</p>
+            {% endif %}
+            <p class="mt-1">บันทึกได้เฉพาะงวดที่ยังไม่ออก แถวรอตรวจไม่นับเป็นแพ้หรือชนะ</p>
         </div>
 
         <div class="mb-6">
@@ -35,9 +49,13 @@
                 {% for prediction in predictions %}
                 <div class="flex items-center justify-between border-b border-border pb-2 text-sm">
                     <span>งวด {{ prediction.draw_date|date:"j M Y" }}: {{ prediction.predicted_numbers }}</span>
-                    <span class="badge {% if prediction.is_correct %}bg-primary{% else %}badge-outline{% endif %}">
-                        {% if prediction.is_correct %}ถูก{% else %}ไม่ถูก{% endif %}
-                    </span>
+                    {% if prediction.is_correct is None %}
+                    <span class="badge badge-outline">รอตรวจ</span>
+                    {% elif prediction.is_correct %}
+                    <span class="badge bg-primary">ถูก</span>
+                    {% else %}
+                    <span class="badge badge-outline">ไม่ถูก</span>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
