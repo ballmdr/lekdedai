@@ -54,3 +54,30 @@ Chrome/Edge/Safari/Firefox เวอร์ชันปัจจุบัน 2 �
 - ไม่มีการวัด Core Web Vitals (LCP/CLS/INP) อัตโนมัติ — ต้องใช้ Lighthouse/PSI บน staging
 - metrics scheduler ยังเป็น in-memory ต่อ process (ดู Task 25) ไม่ได้แทน APM
 - query budget อิงข้อมูลว่าง/น้อย — ต้องวัดซ้ำบน staging ที่มีข้อมูลจริงก่อน freeze
+
+## Closed beta QA round (11 Sep 2026, หลัง deploy production)
+
+ผู้รีวิวทดสอบบนเว็บจริง (มือถือ + desktop) แล้วแจ้งปัญหา — แก้รอบนี้:
+
+**P0**
+- ผลหวยสองหน้าไม่ตรงกัน → `sync_lotto_data` ใช้ `LottoSyncService` เป็นตัวแปลงเดียว
+  (อ่าน `last3f`/`last3b`) และ re-sync production; เพิ่ม `SyncConsistencyTests`
+- ข่าว "รอวิเคราะห์" ถูกใช้สร้างเลข → auto-publish เฉพาะ `analysis_status=analyzed`;
+  หน้าแรก/ข่าวซ่อนเลขถ้ายังไม่วิเคราะห์; `demote_unanalyzed_news` (demote 19 รายการ)
+- หน้าแรกกับ `/ai/` ขัดแย้ง → AI card แสดงเลขเฉพาะ `readiness=ready`
+- สัญญาสูตร `even_odd`/`reverse` → คำอธิบายตรงกับผลลัพธ์ 3 หลัก + กติกาตรวจ
+- สมุดเลข default งวดเก่า → ตั้งงวดถัดไปเป็นค่าเริ่มต้น + เพิ่มงวดล่วงหน้าในตัวเลือก
+- `theme.js` duplicate declaration → ห่อ IIFE; ลบ `console.log` ใน production templates
+
+**P1 ที่แก้แล้ว**
+- ตรวจหวยแจ้งรายการที่ไม่ถูกต้อง (ไม่ตัดทิ้งเงียบ)
+- สถิติ `average_gap` = null เมื่อออกครั้งเดียว + แบนเนอร์ตัวอย่างน้อย + เลิกคำว่า "ในรอบปี"
+- หน้าข่าวไม่งอก intro ซ้ำกับ content; comment form มี label; mobile nav เพิ่มข่าว/AI/สูตร
+- ฝัน: single-asterisk markdown แปลงปลอดภัย
+
+**Backlog (ยังไม่แก้ / ต้องออกแบบเพิ่ม)**
+- กรองความเกี่ยวข้องข่าว + แยกเลขวันที่/ปี/จำนวนทั่วไป ก่อนตั้ง auto-publish criteria
+- รวมผลสัญลักษณ์ฝันซ้ำ (เช่น "งู" + "พญานาค") ให้เป็นชุดเดียว
+- จัดรูปแบบวันที่ให้สม่ำเสมอ (พ.ศ./ค.ศ./ISO) ทั้งเว็บ
+- วัด a11y/Core Web Vitals จริงด้วย Lighthouse/axe บน staging
+
