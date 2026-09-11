@@ -19,6 +19,7 @@ TEST_APPS = [
     "notebook",
     "lotto_stats",
     "home",
+    "qa",
 ]
 
 SMOKE_GET_ROUTES = [

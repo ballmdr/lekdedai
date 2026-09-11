@@ -11,6 +11,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from .models import LotteryDraw
 from .stats_calculator import StatsCalculator
 from .lotto_sync_service import LottoSyncService
+from qa.jobs import get_job_freshness
 from utils.api import api_server_error, audit
 from utils.rate_limit import ratelimit
 
@@ -76,6 +77,7 @@ def statistics_page(request):
         'cold_pairs': cold_pairs,
         'stats_days': 90,
         'window_draws': window_draws,
+        'sync_job': get_job_freshness().get('lotto_sync'),
         'hot_numbers_labels': hot_numbers_labels,
         'hot_numbers_data': hot_numbers_data,
         'cold_numbers_labels': cold_numbers_labels,

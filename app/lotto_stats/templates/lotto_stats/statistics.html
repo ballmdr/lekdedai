@@ -83,6 +83,12 @@
                 <i aria-hidden="true" class="fas fa-clock mr-1"></i>
                 <span id="lastUpdated">อัปเดตล่าสุด: {{ stats_summary.date_range.to }}</span>
             </div>
+            {% if sync_job.last_success_at %}
+            <p class="text-center text-xs text-muted-foreground mt-2">
+                ซิงค์อัตโนมัติล่าสุด {{ sync_job.last_success_at|date:"j M Y H:i" }}
+                {% if sync_job.is_stale %}<span class="text-orange-600 font-semibold">· ล่าช้าเกินกำหนด</span>{% endif %}
+            </p>
+            {% endif %}
         </div>
         {% endif %}
 
