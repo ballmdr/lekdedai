@@ -59,6 +59,7 @@ def _make_source(**kwargs):
         "category": "rss",
         "url": "https://example.com/feed",
         "attribution": "Test",
+        "license_status": "approved",
         "is_active": True,
         "scraping_interval": 6,
     }
@@ -269,6 +270,7 @@ def _make_category_source(**kwargs):
         "category": "category_page",
         "url": "https://example.com/cat",
         "attribution": "Test",
+        "license_status": "approved",
         "is_active": True,
         "scraping_interval": 12,
     }
@@ -671,3 +673,106 @@ class CuratedNewsDisplayTests(TestCase):
             html = self.client.get(url).content.decode()
             self.assertEqual(html.count(article.get_absolute_url()), 1, url)
         self.assertContains(self.client.get(article.get_absolute_url()), "อ่านต้นฉบับ")
+
+
+class LicenseGateTests(TestCase):
+    """Task 26: ดึงได้เฉพาะแหล่งที่ผ่านสิทธิ์."""
+
+    def test_pending_source_skipped(self):
+        from unittest.mock import patch
+
+        from news.ingestion import ingest_source
+        from news.models import NewsArticle
+
+        source = _make_source(key="pending-rss", license_status="pending")
+        with patch("news.ingestion.fetch_feed_content", return_value=FEED_FIXTURE):
+            summary = ingest_source(source, limit=10)
+        self.assertFalse(summary["ok"])
+        self.assertIn("สิทธิ์", summary["error"])
+        self.assertEqual(NewsArticle.objects.count(), 0)
+
+    def test_category_pending_skipped(self):
+        from news.category_scraper import scrape_category_source
+        from news.models import NewsArticle
+
+        source = _make_category_source(key="pending-cat", license_status="pending")
+        summary = scrape_category_source(source, limit=2, dry_run=True)
+        self.assertFalse(summary["ok"])
+        self.assertIn("สิทธิ์", summary["error"])
+        self.assertEqual(NewsArticle.objects.count(), 0)
+
+    def test_robots_allows_cases(self):
+        from unittest.mock import patch
+
+        from news.ingestion import robots_allows
+
+        class Resp:
+            def __init__(self, status, text=""):
+                self.status_code = status
+                self.text = text
+
+        with patch("news.ingestion.requests.get",
+                   return_value=Resp(200, "User-agent: *\nDisallow: /news/")):
+            self.assertFalse(robots_allows("https://example.com/news/1"))
+        with patch("news.ingestion.requests.get",
+                   return_value=Resp(200, "User-agent: *\nDisallow:")):
+            self.assertTrue(robots_allows("https://example.com/news/1"))
+        with patch("news.ingestion.requests.get", return_value=Resp(404)):
+            self.assertTrue(robots_allows("https://example.com/news/1"))
+        with patch("news.ingestion.requests.get",
+                   side_effect=Exception("down")):
+            self.assertIsNone(robots_allows("https://example.com/news/1"))
+        self.assertIsNone(robots_allows("/relative/path"))
+        self.assertIsNone(robots_allows(""))
+
+    def test_compliance_approves_good_source(self):
+        from unittest.mock import patch
+
+        from django.core.management import call_command
+
+        from ai_engine.models import DataSource
+
+        source = _make_source(key="comp-rss", license_status="pending")
+        robots_txt = "User-agent: *\nDisallow:\n"
+
+        class Resp:
+            def __init__(self, status, text="", content=b""):
+                self.status_code = status
+                self.text = text
+                self.content = content
+
+            def raise_for_status(self):
+                if self.status_code >= 400:
+                    raise Exception(f"HTTP {self.status_code}")
+
+        def fake_get(url, timeout=10, headers=None):
+            if url.endswith("/robots.txt"):
+                return Resp(200, robots_txt)
+            return Resp(200, content=FEED_FIXTURE)
+
+        with patch("news.ingestion.requests.get", side_effect=fake_get):
+            call_command("check_source_compliance", source="comp-rss", approve=True)
+        source.refresh_from_db()
+        self.assertEqual(source.license_status, "approved")
+        self.assertIn("ตรวจผ่าน", source.license_note)
+        self.assertEqual(
+            DataSource.objects.get(key="comp-rss").license_status, "approved"
+        )
+
+    def test_compliance_rejects_disallowed(self):
+        from unittest.mock import patch
+
+        from django.core.management import call_command
+
+        source = _make_source(key="comp-bad", license_status="pending")
+
+        class Resp:
+            def __init__(self, status, text=""):
+                self.status_code = status
+                self.text = text
+
+        with patch("news.ingestion.requests.get",
+                   return_value=Resp(200, "User-agent: *\nDisallow: /")):
+            call_command("check_source_compliance", source="comp-bad", approve=True)
+        source.refresh_from_db()
+        self.assertEqual(source.license_status, "pending")

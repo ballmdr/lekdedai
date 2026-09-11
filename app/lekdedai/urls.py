@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('qa.urls')),                                # /health/ + /metrics/ (Task 25)
+    path('', include('analytics.urls')),                         # /analytics/event/ (Task 28)
     path('', include('home.urls')),                              # Main homepage with lottery predictions
     path('dreams/', include('dreams.urls')),                     # Dream interpretation feature
     path('lotto_stats/', include('lotto_stats.urls')),           # Historical lottery statistics

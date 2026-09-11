@@ -68,6 +68,8 @@ class Command(BaseCommand):
                     "url": entry["url"],
                     "attribution": entry["attribution"],
                     "fetch_policy": entry["fetch_policy"],
+                    "license_status": entry["license_status"],
+                    "license_note": entry["license_note"],
                     "is_active": entry["is_active"],
                     "scraping_interval": entry["scraping_interval"],
                 },

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title|default:"นโยบายความเป็นส่วนตัว - LekdeDai" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold text-foreground mb-2">นโยบายความเป็นส่วนตัว</h1>
+    <p class="text-sm text-muted-foreground mb-8">อัปเดตล่าสุด: กันยายน 2569</p>
+
+    <div class="space-y-6 text-foreground">
+        <section class="card p-6">
+            <h2 class="text-xl font-bold mb-3">1. เราเก็บข้อมูลอะไรบ้าง</h2>
+            <ul class="list-disc list-inside space-y-2 text-sm">
+                <li><strong>ข้อความความฝัน:</strong> เก็บข้อความที่คุณกรอกเพื่อวิเคราะห์และปรับปรุงระบบ
+                    ไม่เก็บ IP ไม่เก็บชื่อหรือข้อมูลระบุตัวตน และลบอัตโนมัติเมื่อเกิน 90 วัน</li>
+                <li><strong>สมุดเลข:</strong> เก็บใน browser บนอุปกรณ์ของคุณเท่านั้น
+                    ไม่ส่งมาที่เซิร์ฟเวอร์ ล้างข้อมูล browser หรือเปลี่ยนเครื่องแล้วหาย</li>
+                <li><strong>บัญชีผู้ใช้:</strong> ไม่มีระบบสมัครสมาชิก ผู้ใช้ทั่วไปไม่ต้องให้ข้อมูลใด ๆ</li>
+                <li><strong>ความคิดเห็น/ติดต่อ:</strong> เก็บเฉพาะข้อความและช่องทางติดต่อที่คุณกรอกเอง</li>
+                <li><strong>สถิติการใช้งาน (analytics):</strong> เก็บเฉพาะชื่อเหตุการณ์ (เช่น เปิดหน้าแรก,
+                    วิเคราะห์ฝันสำเร็จ) กับรหัสเซสชันแบบสุ่มที่เก็บใน browser ของคุณ
+                    <strong>ไม่เก็บข้อความฝัน เลขที่บันทึก หรือ IP</strong> ไม่ใช้ cookie และปิดได้ด้วย
+                    การตั้งค่า Do Not Track ของ browser</li>
+            </ul>
+        </section>
+
+        <section class="card p-6">
+            <h2 class="text-xl font-bold mb-3">2. ใช้ข้อมูลเพื่ออะไร</h2>
+            <p class="text-sm">เพื่อแสดงผลวิเคราะห์ ตอบคำถาม ปรับปรุงความแม่นยำของระบบ
+                และดูแลความปลอดภัยเท่านั้น ไม่ขายหรือเปิดเผยข้อมูลต่อบุคคลที่สามเพื่อการตลาด</p>
+        </section>
+
+        <section class="card p-6">
+            <h2 class="text-xl font-bold mb-3">3. สิทธิ์ของคุณและการขอลบข้อมูล</h2>
+            <ul class="list-disc list-inside space-y-2 text-sm">
+                <li>สมุดเลข: ลบได้เองในหน้า<a href="/notebook/" class="text-primary hover:underline">สมุดเลข</a>
+                    หรือล้างข้อมูล browser</li>
+                <li>ข้อความฝัน/ความคิดเห็น/ข้อความติดต่อ: เนื่องจากไม่ผูกกับตัวตน
+                    กรุณา<a href="/contact/" class="text-primary hover:underline">ติดต่อเรา</a>
+                    พร้อมรายละเอียด (เช่น วันที่และข้อความโดยประมาณ) ทีมงานจะค้นหาและลบให้</li>
+                <li>สถิติการใช้งาน: ไม่ผูกกับตัวตนและไม่ระบุตัวคุณ ผู้ใช้ปิดการเก็บได้เองด้วย Do Not Track</li>
+            </ul>
+        </section>
+
+        <section class="card p-6">
+            <h2 class="text-xl font-bold mb-3">4. ข่าวจากภายนอก</h2>
+            <p class="text-sm">ข่าวที่แสดงเก็บเฉพาะพาดหัว สรุป เลขที่สกัดได้ และลิงก์กลับต้นฉบับ
+                พร้อมระบุที่มาสำนักข่าวเสมอ ไม่เก็บเนื้อหาเต็มโดยไม่มีสิทธิ์</p>
+        </section>
+    </div>
+</div>
+{% endblock %}

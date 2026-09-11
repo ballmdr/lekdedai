@@ -15,7 +15,7 @@
     <meta property="og:type" content="website">
     <meta name="robots" content="index, follow">
 </head>
-<body class="bg-gradient-to-br from-orange-50 to-yellow-50 min-h-screen">
+<body class="bg-gradient-to-br from-orange-50 to-yellow-50 min-h-screen" {% block body_attr %}{% endblock %}>
     <nav class="bg-white shadow-lg border-b-4 border-primary">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center py-4">
@@ -59,6 +59,12 @@
 
     <footer class="bg-gray-800 text-white py-8 mt-16">
         <div class="container mx-auto px-4 text-center">
+            <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-4 text-sm">
+                <a href="/" class="text-gray-300 hover:text-white">หน้าแรก</a>
+                <a href="/privacy/" class="text-gray-300 hover:text-white">นโยบายความเป็นส่วนตัว</a>
+                <a href="/terms/" class="text-gray-300 hover:text-white">เงื่อนไขการใช้</a>
+                <a href="/contact/" class="text-gray-300 hover:text-white">ติดต่อเรา</a>
+            </div>
             <p>&copy; {% now "Y" %} LekdeDai — วิเคราะห์ฝัน ตรวจผลหวย และบันทึกเลขเด็ด</p>
             <p class="text-sm text-gray-400 mt-2">ตัวเลขทั้งหมดเป็นความเห็นส่วนตัว ไม่ใช่การรับประกันผลรางวัล</p>
         </div>
@@ -76,5 +82,7 @@
             });
         })();
     </script>
+    <script src="{% static 'js/analytics.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

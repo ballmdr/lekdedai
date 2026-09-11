@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def news_list(request):
     """หน้ารวมข่าวทั้งหมด"""
     # ดึงเฉพาะข่าวที่เผยแพร่แล้ว
-    articles = NewsArticle.objects.filter(status='published').select_related('category', 'author')
+    articles = NewsArticle.objects.filter(status='published').select_related('category', 'author', 'data_source')
     
     # Filter by category (slug ที่ไม่มีอยู่จริงให้แสดงว่างแทน 404)
     category_slug = request.GET.get('category')
@@ -68,7 +68,7 @@ def news_list(request):
 def article_detail(request, slug):
     """หน้ารายละเอียดข่าว"""
     article = get_object_or_404(
-        NewsArticle.objects.select_related('category', 'author'),
+        NewsArticle.objects.select_related('category', 'author', 'data_source'),
         slug=slug,
         status='published'
     )

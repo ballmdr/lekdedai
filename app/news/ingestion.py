@@ -169,6 +169,69 @@ def get_or_create_rss_category():
     return category
 
 
+def robots_allows(url, timeout=10):
+    """ตรวจ robots.txt ว่าดึง URL นี้ได้ไหม.
+
+    คืน True/False, None = ตรวจไม่ได้ (ไม่มี robots = อนุญาตตามธรรมเนียม).
+    ใช้ก่อนเปิดใช้งานแหล่งใหม่เท่านั้น ไม่ได้เรียกทุกครั้งที่ดึง.
+    """
+    import urllib.robotparser
+    from urllib.parse import urlparse as _urlparse
+
+    parts = _urlparse(url or "")
+    if parts.scheme not in ("http", "https") or not parts.netloc:
+        return None
+    robots_url = f"{parts.scheme}://{parts.netloc}/robots.txt"
+    try:
+        response = requests.get(
+            robots_url, timeout=timeout, headers={"User-Agent": FETCH_USER_AGENT}
+        )
+    except Exception:
+        return None
+    if response.status_code in (404, 410):
+        return True
+    if response.status_code != 200:
+        return None
+    try:
+        parser = urllib.robotparser.RobotFileParser()
+        parser.parse(response.text.splitlines())
+        return parser.can_fetch("*", url)
+    except Exception:
+        return None
+
+
+def check_source_compliance(source, timeout=10):
+    """ตรวจเงื่อนไขก่อนเปิดใช้งานแหล่ง: robots + ดึงตัวอย่างได้จริง.
+
+    คืน dict {ok, robots, reachable, detail} ไม่เขียน DB (ให้ command ตัดสินใจ).
+    """
+    if source.category == "internal":
+        return {"ok": True, "robots": True, "reachable": True,
+                "detail": "ข้อมูลของระบบเอง ไม่ต้องตรวจภายนอก"}
+
+    robots = robots_allows(source.url, timeout=timeout)
+    if robots is False:
+        return {"ok": False, "robots": False, "reachable": None,
+                "detail": "robots.txt ห้ามดึง URL นี้"}
+    try:
+        if source.category == "rss":
+            raw = fetch_feed_content(source.url, timeout=timeout)
+            entries = list(getattr(feedparser.parse(raw), "entries", []) or [])
+            reachable = len(entries) > 0
+        else:
+            from news.category_scraper import extract_list_urls, fetch_html
+
+            html = fetch_html(source.url, timeout=timeout)
+            reachable = len(extract_list_urls(html, source.url, limit=3)) > 0
+    except Exception:
+        reachable = False
+    if not reachable:
+        return {"ok": False, "robots": robots, "reachable": False,
+                "detail": "ดึงตัวอย่างไม่สำเร็จหรือว่างเปล่า"}
+    return {"ok": True, "robots": robots, "reachable": True,
+            "detail": "ผ่าน: robots + ดึงตัวอย่างได้"}
+
+
 def build_article_kwargs(normalized, numbers, source, category, analysis_status="pending"):
     """kwargs สร้าง NewsArticle ตาม policy (ยังไม่ save)."""
     text = normalized["text"]
@@ -213,6 +276,11 @@ def ingest_source(source, limit=20, analyzer=None, dry_run=False):
         "skipped_short": 0,
         "analysis_failed": 0,
     }
+
+    # Task 26: ดึงได้เฉพาะแหล่งที่ผ่านการตรวจสิทธิ์เนื้อหาแล้ว
+    if (getattr(source, "license_status", None) or "pending") != "approved":
+        summary["error"] = "แหล่งนี้ยังไม่ผ่านการตรวจสิทธิ์เนื้อหา"
+        return summary
 
     try:
         raw = fetch_feed_content(source.url)

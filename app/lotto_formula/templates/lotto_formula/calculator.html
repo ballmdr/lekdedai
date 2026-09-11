@@ -30,6 +30,7 @@
     <div id="calcResult" class="hidden card p-6">
         <h2 class="text-xl font-bold text-foreground mb-4">ผลลัพธ์จากสูตร <span id="resultFormulaName"></span></h2>
         <div id="resultNumbers" class="flex flex-wrap gap-3 mb-6"></div>
+        {% include "_disclaimer.html" %}
 
         <div class="border-t border-border pt-4">
             <label for="targetDraw" class="block text-sm font-medium text-foreground mb-1">บันทึกการทำนายสำหรับงวด</label>
@@ -99,6 +100,7 @@
                     });
                     resultName.textContent = data.formula_name;
                     resultBox.classList.remove('hidden');
+                    if (window.LekAnalytics) LekAnalytics.track('formula_used');
                 })
                 .catch(function () {
                     errorBox.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ลองใหม่อีกครั้ง';

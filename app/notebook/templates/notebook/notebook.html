@@ -55,6 +55,7 @@
       <h2 class="text-xl font-bold text-gray-800">รายการของฉัน (<span id="nbCount">0</span>)</h2>
       <div class="flex gap-2 flex-shrink-0">
         <button id="nbCheckAll" onclick="checkAllEntries()" class="btn btn-primary text-sm">ตรวจผลทั้งหมด</button>
+        <button id="nbShare" onclick="shareNotebook()" class="btn btn-outline text-sm">แชร์/คัดลอก</button>
         <a href="/lottery_checker/" class="btn btn-outline text-sm">ไปตรวจผลหวย</a>
       </div>
     </div>
@@ -116,6 +117,7 @@ function saveEntry() {
     items.unshift({id: 'n' + Date.now().toString(36), number, source, reason, draw, created_at: new Date().toISOString()});
   }
   nbSaveAll(items);
+  if (window.LekAnalytics) LekAnalytics.track('number_saved');
   resetForm();
   nbRender();
 }
@@ -258,7 +260,20 @@ async function checkAllEntries() {
   statusEl.textContent = 'ตรวจเสร็จ ' + keys.length + ' รายการ (' + new Date().toLocaleTimeString('th-TH') + ')';
   btn.disabled = false;
 }
+function shareNotebook() {
+  const items = nbLoad();
+  if (!items.length) { nbShowError('ยังไม่มีรายการให้แชร์'); return; }
+  const text = items.map(it => it.number + ' (' + (NB_SOURCES[it.source] || it.source) + ')').join(', ');
+  const done = () => { if (window.LekAnalytics) LekAnalytics.track('share_used'); };
+  if (navigator.share) {
+    navigator.share({ title: 'สมุดเลขของฉัน', text: text }).then(done).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(done).catch(() => {});
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.LekAnalytics) LekAnalytics.track('history_viewed');
   const q = new URLSearchParams(window.location.search);
   nbInitDraws(q.get('draw'));
   const qn = (q.get('number') || '').replace(/\D/g, '').slice(0, 6);

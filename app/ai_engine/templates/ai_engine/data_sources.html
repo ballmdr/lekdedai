@@ -45,7 +45,7 @@
       <!-- Filters -->
       <div class="flex flex-wrap gap-4 items-center">
         <div class="flex items-center gap-2">
-          <label class="text-sm font-medium text-foreground">ประเภท:</label>
+          <label for="sourceTypeFilter" class="text-sm font-medium text-foreground">ประเภท:</label>
           <select id="sourceTypeFilter" class="select">
             <option value="">ทั้งหมด</option>
             <option value="news" {% if source_type_filter == 'news' %}selected{% endif %}>ข่าวสาร</option>
@@ -56,7 +56,7 @@
           </select>
         </div>
         <div class="flex items-center gap-2">
-          <label class="text-sm font-medium text-foreground">สถานะ:</label>
+          <label for="statusFilter" class="text-sm font-medium text-foreground">สถานะ:</label>
           <select id="statusFilter" class="select">
             <option value="">ทั้งหมด</option>
             <option value="active" {% if status_filter == 'active' %}selected{% endif %}>เปิดใช้งาน</option>
@@ -138,11 +138,11 @@
         <!-- Source Statistics -->
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
           <div class="text-center p-3 bg-muted/30 rounded-lg">
-            <div class="text-lg font-bold text-foreground">{{ source.get_total_records }}</div>
+            <div class="text-lg font-bold text-foreground">{{ source.total_records }}</div>
             <div class="text-xs text-muted-foreground">ข้อมูลทั้งหมด</div>
           </div>
           <div class="text-center p-3 bg-muted/30 rounded-lg">
-            <div class="text-lg font-bold text-foreground">{{ source.get_today_records }}</div>
+            <div class="text-lg font-bold text-foreground">{{ source.today_records }}</div>
             <div class="text-xs text-muted-foreground">ข้อมูลวันนี้</div>
           </div>
           <div class="text-center p-3 bg-muted/30 rounded-lg">

@@ -1,8 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.db.models import Sum
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.contrib import messages
 from datetime import datetime, timedelta
 import json
 
@@ -10,6 +11,7 @@ import json
 from news.models import NewsArticle
 from news.ingestion import get_news_freshness
 from utils.api import api_server_error
+from utils.rate_limit import ratelimit
 from ai_engine.models import (
     LuckyNumberPrediction, EnsemblePrediction, 
     PredictionAccuracyTracking, DataIngestionRecord
@@ -133,19 +135,59 @@ def get_next_draw_prediction():
         'cold_numbers': cold_numbers[:3],
     }
 
+from .models import ContactMessage
+
+
+def privacy_policy(request):
+    """นโยบายความเป็นส่วนตัว (Task 26)."""
+    return render(request, "home/privacy.html", {
+        "page_title": "นโยบายความเป็นส่วนตัว - LekdeDai",
+    })
+
+
+def terms_of_use(request):
+    """เงื่อนไขการใช้บริการ (Task 26)."""
+    return render(request, "home/terms.html", {
+        "page_title": "เงื่อนไขการใช้ - LekdeDai",
+    })
+
+
+@ratelimit("30/m", redirect_back=True)
+def contact(request):
+    """ติดต่อ/แจ้งเนื้อหา/ขอลบข้อมูล (Task 26)."""
+    if request.method == "POST":
+        message_type = request.POST.get("message_type", "contact")
+        if message_type not in ("contact", "report", "removal"):
+            message_type = "contact"
+        message = request.POST.get("message", "").strip()[:2000]
+        if not message:
+            messages.error(request, "กรุณากรอกข้อความ")
+            return redirect("contact")
+        ContactMessage.objects.create(
+            message_type=message_type,
+            name=request.POST.get("name", "").strip()[:100],
+            contact=request.POST.get("contact", "").strip()[:254],
+            message=message,
+        )
+        messages.success(request, "ได้รับข้อความแล้ว ทีมงานจะตรวจสอบโดยเร็ว")
+        return redirect("contact")
+    return render(request, "home/contact.html", {
+        "page_title": "ติดต่อเรา - LekdeDai",
+    })
+
+
 def home(request):
     """หน้าแรก - แสดงข้อมูลจริงจาก database"""
-    
     # ดึงข่าวล่าสุดที่มีเลข
     latest_news = NewsArticle.objects.filter(
         status='published'
-    ).exclude(numbers_with_reasons=[]).select_related('category').order_by('-published_date')[:3]
+    ).exclude(numbers_with_reasons=[]).select_related('category', 'data_source').order_by('-published_date')[:3]
     
     # ถ้าไม่มีข่าวที่มีเลข ให้ใช้ข่าวล่าสุดธรรมดา
     if not latest_news.exists():
         latest_news = NewsArticle.objects.filter(
             status='published'
-        ).select_related('category').order_by('-published_date')[:3]
+        ).select_related('category', 'data_source').order_by('-published_date')[:3]
     
     # Daily numbers functionality removed for simplified version
     morning_numbers = []  # Removed daily numbers feature

@@ -3,6 +3,8 @@
 
 {% block title %}เลขเด็ด AI - เลขหวยงวดถัดไป{% endblock %}
 
+{% block body_attr %}data-analytics-view="landing_view"{% endblock %}
+
 {% block extra_css %}{% endblock %}
 
 {% block content %}
@@ -139,6 +141,7 @@
               </div>
               {% endfor %}
             </div>
+            {% include "_disclaimer.html" %}
           </div>
         </div>
 
@@ -337,6 +340,7 @@
                       <h3 class="font-semibold text-foreground mb-3">เลขมงคลจากความฝัน:</h3>
                       <div id="dreamNumbers" class="grid grid-cols-3 gap-3"></div>
                     </div>
+                    {% include "_disclaimer.html" %}
                     
                     <button onclick="resetDreamForm()" class="btn btn-outline w-full">
                       ตีความใหม่
@@ -907,6 +911,7 @@ async function interpretDream() {
     dreamLoading.classList.remove('hidden');
     dreamBtn.disabled = true;
     dreamResults.classList.add('hidden');
+    if (window.LekAnalytics) LekAnalytics.track('dream_started');
     
     try {
         const response = await fetch('/dreams/analyze/', {
@@ -923,6 +928,7 @@ async function interpretDream() {
         const data = await response.json();
         
         if (data.success) {
+            if (window.LekAnalytics) LekAnalytics.track('dream_completed');
             // Show results (same safe formatter as /dreams/)
             document.getElementById('dreamInterpretation').innerHTML = formatInterpretation(data.result.interpretation);
             
@@ -1024,6 +1030,7 @@ async function checkLottery() {
         const data = await response.json();
 
         if (data.success) {
+            if (window.LekAnalytics) LekAnalytics.track('result_checked');
             // Show results with color coding
             const resultDiv = document.createElement('div');
             if (data.result.is_winner) {

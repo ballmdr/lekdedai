@@ -19,7 +19,7 @@
         <!-- Main Form Section -->
         <div class="max-w-2xl mx-auto card p-8 mb-8">
             <div class="mb-6">
-                <label class="block text-lg font-semibold text-foreground mb-3">
+                <label for="lottoInput" class="block text-lg font-semibold text-foreground mb-3">
                     <i aria-hidden="true" class="fas fa-edit text-primary mr-2"></i>
                     กรอกเลขสลาก (สูงสุด 10 หมายเลข, คั่นด้วยคอมมา)
                 </label>
@@ -33,7 +33,7 @@
             </div>
 
             <div class="mb-6">
-                <label class="block text-lg font-semibold text-foreground mb-3">
+                <label for="lottoDate" class="block text-lg font-semibold text-foreground mb-3">
                     <i aria-hidden="true" class="fas fa-calendar text-primary mr-2"></i>
                     เลือกวันที่ออกรางวัล
                 </label>
@@ -535,6 +535,7 @@ async function checkLotto(selectedDate) {
         
         html += `</div>`;
         resultDiv.innerHTML = html;
+        if (window.LekAnalytics) LekAnalytics.track('result_checked');
 
     } catch (err) {
         console.error("Error during API call:", err);

@@ -61,8 +61,8 @@
 - [x] Task 23 — ปิดช่องโหว่ endpoint และจำกัดการใช้งานเกินขอบเขต (เลิก csrf_exempt + CSRF ทุกฟอร์ม, api_predict staff-only, rate limit + body cap + timeout, error ไม่รั่ว, audit log, bump deps ตาม pip-audit เหลือแค่ Django 4.2 EOL, เจอบั๊ก add_feedback ฟิลด์ผิด, 172 tests เขียว)
 - [x] Task 24 — ตั้ง schedule และ freshness control (JobRun lock/retry/timeout + registry 6 jobs + tick รันจริง 5/6 สำเร็จ + UI stale หน้า stats + runbook; ai_generate ล้มเพราะไม่มี keys ตามคาด)
 - [x] Task 25 — เพิ่ม observability, backup และ rollback (/health/+metrics+middleware, structured logs, check_alerts, backup/restore drill ผ่าน, rollback script+runbook; smoke จริงจับ ai_generate ล้มได้)
-- [ ] Task 26 — จัดทำนโยบายผู้ใช้และสิทธิ์เนื้อหา
-- [ ] Task 27 — ทำ performance, accessibility และ compatibility gate
+- [x] Task 26 — จัดทำนโยบายผู้ใช้และสิทธิ์เนื้อหา (Privacy/Terms/Contact+admin, disclaimer กลางทุกจุด, license gate + compliance check + กัน ingest, footer ครบทุกลิงก์)
+- [x] Task 27 — ทำ performance, accessibility และ compatibility gate (query budget ต่อ route + ลด N+1 จริง: /lotto_stats 22→11, /news 18→6; a11y gate จับ+แก้ label 5 จุด; security headers; QA_REPORT + ข้อจำกัด)
 
 ### Checkpoint D
 
@@ -74,8 +74,8 @@
 
 ## ระยะที่ 4: Beta และเปิดสาธารณะ
 
-- [ ] Task 28 — เพิ่ม analytics ขั้นต่ำแบบรักษาความเป็นส่วนตัว
-- [ ] Task 29 — ทำ staging dress rehearsal ครบหนึ่งรอบงวด
+- [x] Task 28 — เพิ่ม analytics ขั้นต่ำแบบรักษาความเป็นส่วนตัว (app analytics: event 9 ตัว ไม่เก็บฝัน/เลข/IP, opt-out/Do-Not-Track, endpoint validate whitelist+rate limit, รายงาน activation/result-check/cross-draw รายงวด, อัปเดต privacy)
+- [x] Task 29 — ทำ staging dress rehearsal (`rehearsal_check` รันจริง 13 ขั้น: happy path ครบวงจร + fault injection upstream/AI/ผลช้า → degraded + backup/restore + cleanup + รายงาน sha256/git rev; LAUNCH_CHECKLIST + INCIDENT_RUNBOOK; 240 tests เขียว) ครบหนึ่งรอบงวด
 - [ ] Task 30 — เปิด closed beta อย่างน้อยสองงวด
 - [ ] Task 31 — เปิด public แบบ staged rollout
 

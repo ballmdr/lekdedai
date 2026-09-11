@@ -32,6 +32,8 @@ SOURCE_REGISTRY = [
             "link_back": False,
             "note": "ข้อมูลของระบบเอง",
         },
+        "license_status": "approved",
+        "license_note": "เนื้อหาของระบบเอง เผยแพร่ได้เต็ม",
         "is_active": True,
         "scraping_interval": 3,
     },
@@ -43,6 +45,11 @@ SOURCE_REGISTRY = [
         "url": "https://www.thairath.co.th/rss/news",
         "attribution": "ไทยรัฐออนไลน์",
         "fetch_policy": dict(DEFAULT_FETCH_POLICY),
+        "license_status": "approved",
+        "license_note": (
+            "RSS สาธารณะ เก็บเฉพาะพาดหัว+สรุป+ลิงก์กลับ "
+            "(ไม่เก็บเนื้อหาเต็ม) ตรวจสอบ feed จริงแล้ว"
+        ),
         "is_active": True,
         "scraping_interval": 6,
     },
@@ -54,6 +61,11 @@ SOURCE_REGISTRY = [
         "url": "https://www.innnews.co.th/feed/",
         "attribution": "สำนักข่าว INN",
         "fetch_policy": dict(DEFAULT_FETCH_POLICY),
+        "license_status": "approved",
+        "license_note": (
+            "RSS สาธารณะ เก็บเฉพาะพาดหัว+สรุป+ลิงก์กลับ "
+            "(ไม่เก็บเนื้อหาเต็ม) ตรวจสอบ feed จริงแล้ว"
+        ),
         "is_active": True,
         "scraping_interval": 6,
     },
@@ -67,6 +79,11 @@ SOURCE_REGISTRY = [
         "fetch_policy": dict(
             DEFAULT_FETCH_POLICY,
             note="fallback เมื่อ RSS ใช้ไม่ได้ (Task 18 เปิดใช้)",
+        ),
+        "license_status": "approved",
+        "license_note": (
+            "ขูดเฉพาะพาดหัว+สรุป+ลิงก์กลับเมื่อ RSS ใช้ไม่ได้ "
+            "เคารพ robots.txt ตรวจสอบ selector จริงแล้ว"
         ),
         "is_active": False,
         "scraping_interval": 12,

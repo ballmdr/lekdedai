@@ -88,3 +88,8 @@ celerybeat.pid
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Task 25/29: runtime artifacts
+/backups/
+/reports/
+*.log

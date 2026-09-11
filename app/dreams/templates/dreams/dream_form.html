@@ -117,7 +117,9 @@
                                     </h4>
                                     <div id="numbersList" class="grid grid-cols-3 md:grid-cols-5 gap-3"></div>
                                 </div>
-                                
+
+                                {% include "_disclaimer.html" %}
+
                                 <div class="text-center">
                                     <button
                                         onclick="resetForm()"
@@ -248,6 +250,7 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
     document.getElementById('submitBtn').disabled = true;
     document.getElementById('results').classList.add('hidden');
     showSubmitError(null);
+    if (window.LekAnalytics) LekAnalytics.track('dream_started');
     
     try {
         const response = await fetch('/dreams/analyze/', {
@@ -373,6 +376,7 @@ document.getElementById('dreamForm').addEventListener('submit', async function(e
             }
             
             document.getElementById('results').classList.remove('hidden');
+            if (window.LekAnalytics) LekAnalytics.track('dream_completed');
         } else {
             showSubmitError(data.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
         }

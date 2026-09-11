@@ -5,7 +5,9 @@ from lottery_checker.models import LottoResult
 
 class StatsCalculator:
     def __init__(self):
-        self.all_draws = LotteryDraw.objects.all().order_by('-draw_date')
+        # Task 27: โหลดครั้งเดียวเป็น list — ทุก method กรองใน memory
+        # (เลี่ยงสแกนตารางซ้ำหลายรอบต่อ request เดียว)
+        self.all_draws = list(LotteryDraw.objects.all().order_by('-draw_date'))
         self.lotto_results = LottoResult.objects.all().order_by('-draw_date')
     
     def get_hot_numbers_from_lotto_result(self, limit=10, days=90, number_type='2D'):
@@ -33,7 +35,7 @@ class StatsCalculator:
         เลขคู่ในรางวัลที่ 1 ดูที่ get_hot_first_prize_pairs แยกต่างหาก.
         """
         cutoff_date = datetime.now().date() - timedelta(days=days)
-        recent_draws = self.all_draws.filter(draw_date__gte=cutoff_date)
+        recent_draws = [d for d in self.all_draws if d.draw_date >= cutoff_date]
 
         if not recent_draws:
             return []
@@ -68,7 +70,7 @@ class StatsCalculator:
         percentage = draws / จำนวนงวดในช่วง (ไม่เกิน 100).
         """
         cutoff_date = datetime.now().date() - timedelta(days=days)
-        recent_draws = list(self.all_draws.filter(draw_date__gte=cutoff_date))
+        recent_draws = [d for d in self.all_draws if d.draw_date >= cutoff_date]
 
         if not recent_draws:
             return []
@@ -336,7 +338,7 @@ class StatsCalculator:
         นิยาม: `two_digit` นับเฉพาะรางวัลเลขท้าย 2 ตัว (งวดละ 1 ค่า),
         `first_prize_pairs` นับเลขคู่ 2 หลักทุกตำแหน่งในรางวัลที่ 1 (งวดละ 5 ค่า).
         """
-        total_draws = self.all_draws.count()
+        total_draws = len(self.all_draws)
         
         if total_draws == 0:
             return None
@@ -360,8 +362,8 @@ class StatsCalculator:
         return {
             'total_draws': total_draws,
             'date_range': {
-                'from': self.all_draws.last().draw_date.strftime('%d/%m/%Y') if self.all_draws.last() else None,
-                'to': self.all_draws.first().draw_date.strftime('%d/%m/%Y') if self.all_draws.first() else None
+                'from': self.all_draws[-1].draw_date.strftime('%d/%m/%Y') if self.all_draws else None,
+                'to': self.all_draws[0].draw_date.strftime('%d/%m/%Y') if self.all_draws else None
             },
             'most_common_all_time': {
                 'two_digit': {'number': most_common_two[0], 'count': most_common_two[1]},
@@ -415,7 +417,7 @@ class StatsCalculator:
     def get_double_number_stats(self, days_back=365):
         """สถิติเลขเบิ้ล/เลขหาม (เลขซ้ำ เช่น 22, 99, 111)"""
         cutoff_date = datetime.now().date() - timedelta(days=days_back)
-        recent_draws = self.all_draws.filter(draw_date__gte=cutoff_date)
+        recent_draws = [d for d in self.all_draws if d.draw_date >= cutoff_date]
         
         double_stats = {
             '2d': {},  # เลขเบิ้ล 2 ตัว (00, 11, 22, ..., 99)
@@ -496,7 +498,7 @@ class StatsCalculator:
     def get_sequential_number_stats(self, days_back=365):
         """สถิติเลขเรียง (เลขต่อเนื่อง เช่น 123, 234, 456, 789)"""
         cutoff_date = datetime.now().date() - timedelta(days=days_back)
-        recent_draws = self.all_draws.filter(draw_date__gte=cutoff_date)
+        recent_draws = [d for d in self.all_draws if d.draw_date >= cutoff_date]
         
         def is_sequential(number_str):
             """ตรวจสอบว่าเป็นเลขเรียงหรือไม่"""

@@ -267,6 +267,15 @@ class DataSource(models.Model):
     is_active = models.BooleanField("ใช้งานอยู่", default=True)
     scraping_interval = models.IntegerField("ความถี่เก็บข้อมูล (ชั่วโมง)", default=6)
 
+    # Task 26: สิทธิ์เนื้อหา — เปิดใช้งานได้ต้องผ่านการตรวจก่อน
+    license_status = models.CharField(
+        "สถานะสิทธิ์เนื้อหา",
+        max_length=10,
+        choices=[("pending", "รอตรวจ"), ("approved", "อนุมัติแล้ว"), ("rejected", "ไม่อนุมัติ")],
+        default="pending",
+    )
+    license_note = models.TextField("บันทึกสิทธิ์", blank=True, default="")
+
     last_scraped = models.DateTimeField("เก็บข้อมูลล่าสุด", null=True, blank=True)
     last_success_at = models.DateTimeField("สำเร็จล่าสุด", null=True, blank=True)
     last_failure_at = models.DateTimeField("ล้มเหลวล่าสุด", null=True, blank=True)

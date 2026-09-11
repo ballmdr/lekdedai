@@ -44,7 +44,8 @@ class Command(BaseCommand):
                 )
         else:
             sources = DataSource.objects.filter(
-                source_type="news", category="rss", is_active=True
+                source_type="news", category="rss", is_active=True,
+                license_status="approved",
             )
 
         if not sources.exists():

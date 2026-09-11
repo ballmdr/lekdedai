@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title|default:"เงื่อนไขการใช้ - LekdeDai" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold text-foreground mb-8">เงื่อนไขการใช้บริการ</h1>
+
+    <div class="space-y-6 text-foreground">
+        <section class="card p-6 border-primary/30">
+            <h2 class="text-xl font-bold mb-3">1. เพื่อความบันเทิงเท่านั้น</h2>
+            <p class="text-sm">ตัวเลข การทำนาย และสถิติทั้งหมดบนเว็บนี้เป็นความเห็นเชิงสถิติ
+                <strong>ไม่รับประกันผลรางวัลใด ๆ</strong> โปรดใช้วิจารณญาณและเล่นอย่างมีความรับผิดชอบ
+                หากมีปัญหาการพนันควรขอความช่วยเหลือจากผู้เชี่ยวชาญ</p>
+        </section>
+
+        <section class="card p-6">
+            <h2 class="text-xl font-bold mb-3">2. ความถูกต้องของข้อมูล</h2>
+            <p class="text-sm">ผลหวยอ้างอิงจากแหล่งทางการเท่าที่ระบบดึงได้
+                กรุณาตรวจสอบกับสำนักงานสลากกินแบ่งรัฐบาลก่อนอ้างอิงผลรางวัลจริง
+                ตัวเลขทุกตัวแสดงที่มาและวิธีคำนวณกำกับไว้เสมอ</p>
+        </section>
+
+        <section class="card p-6">
+            <h2 class="text-xl font-bold mb-3">3. การใช้งานที่ยอมรับ</h2>
+            <ul class="list-disc list-inside space-y-2 text-sm">
+                <li>ห้ามส่งคำขอถี่ผิดปกติ ดูดข้อมูลอัตโนมัติ หรือโจมตีระบบ</li>
+                <li>ห้ามกรอกข้อมูลส่วนตัวของผู้อื่น หรือเนื้อหาผิดกฎหมายในทุกฟอร์ม</li>
+                <li>ความคิดเห็นต้องผ่านการอนุมัติก่อนแสดงสาธารณะ</li>
+            </ul>
+        </section>
+
+        <section class="card p-6">
+            <h2 class="text-xl font-bold mb-3">4. ลิขสิทธิ์ข่าว</h2>
+            <p class="text-sm">พาดหัว สรุป และลิงก์ข่าวแสดงพร้อมที่มาสำนักข่าวและลิงก์กลับต้นฉบับเสมอ
+                หากเจ้าของสิทธิ์ต้องการให้นำออก
+                <a href="/contact/" class="text-primary hover:underline">แจ้งเราได้ที่นี่</a></p>
+        </section>
+    </div>
+</div>
+{% endblock %}

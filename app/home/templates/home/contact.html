@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title|default:"ติดต่อเรา - LekdeDai" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold text-foreground mb-2">ติดต่อเรา</h1>
+    <p class="text-muted-foreground mb-8">แจ้งเนื้อหาไม่เหมาะสม ขอลบข้อมูล หรือติดต่อทั่วไป — โปรดอย่าใส่รหัสผ่านหรือข้อมูลอ่อนไหว</p>
+
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="card p-4 text-sm {% if message.tags == 'error' %}text-red-600{% else %}text-green-700{% endif %}" role="status">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" class="card p-6">
+        {% csrf_token %}
+        <div class="mb-4">
+            <label for="contactType" class="block text-sm font-medium text-foreground mb-1">ประเภท</label>
+            <select id="contactType" name="message_type" class="input">
+                <option value="contact">ติดต่อทั่วไป</option>
+                <option value="report">แจ้งเนื้อหาไม่เหมาะสม</option>
+                <option value="removal">ขอลบข้อมูล</option>
+            </select>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label for="contactName" class="block text-sm font-medium text-foreground mb-1">ชื่อ (ไม่บังคับ)</label>
+                <input id="contactName" name="name" type="text" maxlength="100" class="input" placeholder="ชื่อของคุณ">
+            </div>
+            <div>
+                <label for="contactChannel" class="block text-sm font-medium text-foreground mb-1">ช่องทางติดต่อกลับ (ไม่บังคับ)</label>
+                <input id="contactChannel" name="contact" type="text" maxlength="254" class="input" placeholder="อีเมลหรือเบอร์โทร">
+            </div>
+        </div>
+        <div class="mb-4">
+            <label for="contactMessage" class="block text-sm font-medium text-foreground mb-1">ข้อความ</label>
+            <textarea id="contactMessage" name="message" rows="5" maxlength="2000" required class="textarea" placeholder="เล่าเรื่องที่ต้องการติดต่อ..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary w-full">ส่งข้อความ</button>
+    </form>
+</div>
+{% endblock %}

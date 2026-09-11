@@ -20,6 +20,7 @@ TEST_APPS = [
     "lotto_stats",
     "home",
     "qa",
+    "analytics",
 ]
 
 SMOKE_GET_ROUTES = [
@@ -104,6 +105,19 @@ class Command(BaseCommand):
             body = response.json()
             if not (response.status_code == 200 and body.get("success")):
                 failures.append(f"POST check-draw -> {response.status_code}")
+
+        # Task 28: analytics endpoint ต้องรับ event และเก็บแบบ minimal
+        response = client.post(
+            "/analytics/event/",
+            data=json.dumps({"name": "landing_view", "session_id": "gate-smoke"}),
+            content_type="application/json",
+            HTTP_HOST="localhost",
+        )
+        if not (response.status_code == 200 and response.json().get("stored")):
+            failures.append(f"POST analytics -> {response.status_code}")
+
         if failures:
             raise CommandError("smoke failures:\n" + "\n".join(failures))
-        self.stdout.write(f"smoked {len(SMOKE_GET_ROUTES)} routes + check-draw API")
+        self.stdout.write(
+            f"smoked {len(SMOKE_GET_ROUTES)} routes + check-draw + analytics APIs"
+        )

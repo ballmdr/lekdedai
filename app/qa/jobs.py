@@ -137,12 +137,14 @@ def acquire_lock(job, now=None):
 
 
 def get_job_freshness():
-    """{key: {title, last_success_at, is_stale}} สำหรับ UI/admin."""
+    """{key: {title, last_success_at, is_stale}} สำหรับ UI/admin (query เดียว)."""
+    rows = JobRun.objects.filter(
+        key__in=[job["key"] for job in JOB_REGISTRY]
+    ).in_bulk(field_name="key")
     out = {}
     for job in JOB_REGISTRY:
-        try:
-            row = JobRun.objects.get(key=job["key"])
-        except JobRun.DoesNotExist:
+        row = rows.get(job["key"])
+        if row is None:
             out[job["key"]] = {
                 "title": job["title"],
                 "last_success_at": None,

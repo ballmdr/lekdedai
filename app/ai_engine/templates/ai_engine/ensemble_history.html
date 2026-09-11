@@ -25,12 +25,12 @@
     <div class="p-6">
       <form method="get" class="flex flex-wrap gap-4 items-end">
         <div class="flex-1 min-w-48">
-          <label class="text-sm font-medium text-foreground mb-1 block">วันที่เริ่มต้น</label>
-          <input type="date" name="from" value="{{ date_from }}" class="input w-full">
+          <label for="ensFrom" class="text-sm font-medium text-foreground mb-1 block">วันที่เริ่มต้น</label>
+          <input type="date" id="ensFrom" name="from" value="{{ date_from }}" class="input w-full">
         </div>
         <div class="flex-1 min-w-48">
-          <label class="text-sm font-medium text-foreground mb-1 block">วันที่สิ้นสุด</label>
-          <input type="date" name="to" value="{{ date_to }}" class="input w-full">
+          <label for="ensTo" class="text-sm font-medium text-foreground mb-1 block">วันที่สิ้นสุด</label>
+          <input type="date" id="ensTo" name="to" value="{{ date_to }}" class="input w-full">
         </div>
         <div class="flex gap-2">
           <button type="submit" class="btn btn-primary">

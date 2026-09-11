@@ -35,6 +35,15 @@ SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0'))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False') == 'True'
 SECURE_HSTS_PRELOAD = os.environ.get('SECURE_HSTS_PRELOAD', 'False') == 'True'
 
+# Task 27: security/performance headers ใน production
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+X_FRAME_OPTIONS = 'DENY'
+
+# Task 27: static caching — WhiteNoise เสิร์ฟ static พร้อม cache นาน
+# (production เท่านั้น; DEV ปล่อยให้ Django เสิร์ฟเพื่อ autoreload)
+WHITENOISE_MAX_AGE = 0 if DEBUG else 31536000
+
 # Application definition - เริ่มต้นด้วย apps พื้นฐานก่อน
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -54,6 +63,7 @@ INSTALLED_APPS = [
     'lottery_checker', # Online lottery result checker
     'notebook',       # สมุดเลข browser-only (Task 9)
     'qa',             # Quality gate command (Task 21, no models/URLs)
+    'analytics',      # Task 28: analytics ขั้นต่ำแบบรักษาความเป็นส่วนตัว
 ]
 # เพิ่มการตั้งค่า Media files
 MEDIA_URL = '/media/'

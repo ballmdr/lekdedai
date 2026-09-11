@@ -162,6 +162,11 @@ def scrape_category_source(source, limit=5, dry_run=False):
         "skipped": 0,
     }
 
+    # Task 26: ดึงได้เฉพาะแหล่งที่ผ่านการตรวจสิทธิ์เนื้อหาแล้ว
+    if (getattr(source, "license_status", None) or "pending") != "approved":
+        summary["error"] = "แหล่งนี้ยังไม่ผ่านการตรวจสิทธิ์เนื้อหา"
+        return summary
+
     try:
         list_html = fetch_html(source.url)
     except Exception as exc:

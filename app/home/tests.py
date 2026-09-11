@@ -152,3 +152,83 @@ class Task12UxTests(TestCase):
         self.assertIn('id="dreamError"', home)
         self.assertIn('id="lotteryError"', home)
         self.assertIn('id="dreamSubmitError"', dream)
+
+
+class PolicyPageTests(TestCase):
+    """Task 26: หน้า privacy/terms/contact + footer + disclaimer."""
+
+    def test_policy_pages_render(self):
+        for url in ("/privacy/", "/terms/", "/contact/"):
+            res = self.client.get(url)
+            self.assertEqual(res.status_code, 200, url)
+
+    def test_privacy_covers_data_points(self):
+        html = self.client.get("/privacy/").content.decode()
+        for text in ("90 วัน", "ไม่เก็บ IP", "browser", "สมุดเลข", "/contact/"):
+            self.assertIn(text, html)
+
+    def test_terms_entertainment_warning(self):
+        html = self.client.get("/terms/").content.decode()
+        self.assertIn("เพื่อความบันเทิง", html)
+        self.assertIn("ไม่รับประกัน", html)
+
+    def test_footer_links_everywhere(self):
+        for url in ("/", "/privacy/", "/news/"):
+            html = self.client.get(url).content.decode()
+            for link in ('href="/privacy/"', 'href="/terms/"', 'href="/contact/"'):
+                self.assertIn(link, html, url)
+
+    def test_disclaimer_on_prediction_spots(self):
+        home = self.client.get("/").content.decode()
+        self.assertIn("เพื่อความบันเทิง", home)
+        dream = self.client.get("/dreams/").content.decode()
+        self.assertIn("/terms/", dream)
+        calc = self.client.get("/lotto_formula/calculator/").content.decode()
+        self.assertIn("ไม่รับประกันผลรางวัล", calc)
+
+
+class ContactFlowTests(TestCase):
+    """Task 26: ฟอร์มติดต่อ/แจ้ง/ขอลบ."""
+
+    def test_valid_message_saved(self):
+        from home.models import ContactMessage
+
+        res = self.client.post("/contact/", data={
+            "message_type": "report",
+            "name": " tester ",
+            "contact": "a@b.c",
+            "message": "ข่าวนี้ผิด",
+        })
+        self.assertEqual(res.status_code, 302)
+        row = ContactMessage.objects.get()
+        self.assertEqual((row.message_type, row.status), ("report", "new"))
+        self.assertEqual(row.name, "tester")
+
+    def test_empty_message_rejected(self):
+        from home.models import ContactMessage
+
+        res = self.client.post("/contact/", data={"message": "   "})
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(ContactMessage.objects.count(), 0)
+
+    def test_bad_type_falls_back_to_contact(self):
+        from home.models import ContactMessage
+
+        self.client.post("/contact/", data={
+            "message_type": "hacker", "message": "x",
+        })
+        self.assertEqual(ContactMessage.objects.get().message_type, "contact")
+
+    def test_rate_redirect(self):
+        from django.core.cache import cache
+        from django.test import override_settings
+
+        from home.models import ContactMessage
+
+        cache.clear()
+        with override_settings(RATELIMIT_OVERRIDES={"home.views.contact": "1/m"}):
+            self.client.post("/contact/", data={"message": "หนึ่ง"})
+            before = ContactMessage.objects.count()
+            res = self.client.post("/contact/", data={"message": "สอง"})
+            self.assertEqual(res.status_code, 302)
+            self.assertEqual(ContactMessage.objects.count(), before)

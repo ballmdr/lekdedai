@@ -70,6 +70,8 @@ class SourceRegistryTests(TestCase):
             self.assertEqual(row.is_active, entry["is_active"])
             self.assertEqual(row.attribution, entry["attribution"])
             self.assertEqual(row.scraping_interval, entry["scraping_interval"])
+            self.assertEqual(row.license_status, entry["license_status"])
+            self.assertTrue(row.license_note)
 
     def test_seed_idempotent_and_preserves_timestamps(self):
         from datetime import timedelta

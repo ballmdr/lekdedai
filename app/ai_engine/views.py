@@ -413,7 +413,14 @@ def ensemble_history(request):
 
 def data_sources(request):
     """หน้าแสดงแหล่งข้อมูลทั้งหมด"""
-    sources = DataSource.objects.all().order_by('source_type', 'name')
+    today = timezone.now().date()
+    sources = DataSource.objects.annotate(
+        total_records=Count("ingestion_records"),
+        today_records=Count(
+            "ingestion_records",
+            filter=Q(ingestion_records__ingested_at__date=today),
+        ),
+    ).order_by('source_type', 'name')
     
     # Filter by source type
     source_type_filter = request.GET.get('source_type')
@@ -442,10 +449,6 @@ def data_sources(request):
     
     # Add methods to calculate recent data for each source
     for source in sources:
-        source.get_total_records = lambda s=source: DataIngestionRecord.objects.filter(data_source=s).count()
-        source.get_today_records = lambda s=source: DataIngestionRecord.objects.filter(
-            data_source=s, ingested_at__date=today
-        ).count()
         source.get_recent_data = lambda s=source: DataIngestionRecord.objects.filter(
             data_source=s
         ).order_by('-ingested_at')[:5]
