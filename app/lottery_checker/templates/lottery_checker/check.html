@@ -211,14 +211,14 @@ async function loadDrawByDate() {
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     <!-- รางวัลที่ 1 -->
-                    <div class="bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-lg p-4 text-center">
+                    <div class="pastel-butter text-white rounded-lg p-4 text-center">
                         <h4 class="font-bold text-lg mb-2">รางวัลที่ 1</h4>
                         <div class="text-3xl font-bold">${draw.first_prize}</div>
                         <p class="text-sm mt-1">6,000,000 บาท</p>
                     </div>
                     
                     <!-- รางวัลที่ 2 -->
-                    <div class="bg-gradient-to-br from-blue-400 to-purple-500 text-white rounded-lg p-4 text-center">
+                    <div class="pastel-sky text-white rounded-lg p-4 text-center">
                         <h4 class="font-bold text-lg mb-2">รางวัลที่ 2</h4>
                         <div class="space-y-1">
                             ${draw.second_prizes.map(prize => `<div class="text-xl font-bold">${prize}</div>`).join('')}
@@ -227,7 +227,7 @@ async function loadDrawByDate() {
                     </div>
                     
                     <!-- รางวัลที่ 3 -->
-                    <div class="bg-gradient-to-br from-green-400 to-teal-500 text-white rounded-lg p-4 text-center">
+                    <div class="pastel-mint text-white rounded-lg p-4 text-center">
                         <h4 class="font-bold text-lg mb-2">รางวัลที่ 3</h4>
                         <div class="grid grid-cols-2 gap-1">
                             ${draw.third_prizes.map(prize => `<div class="text-lg font-bold">${prize}</div>`).join('')}

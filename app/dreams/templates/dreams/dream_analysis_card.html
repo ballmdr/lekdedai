@@ -1,6 +1,6 @@
 <!-- Dream Analysis Card Template -->
 {% if available and has_content %}
-<div class="dream-analysis-card bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20 rounded-lg p-4 mb-4">
+<div class="dream-analysis-card pastel-cloud border border-primary/20 rounded-lg p-4 mb-4">
     <div class="flex items-start gap-3">
         <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
             <i aria-hidden="true" class="fas fa-brain text-white text-sm"></i>
@@ -15,7 +15,7 @@
             <div class="mb-3">
                 <div class="flex flex-wrap gap-1 mb-2">
                     {% for number in numbers %}
-                    <span class="bg-primary text-white px-2 py-1 rounded text-xs font-bold">{{ number }}</span>
+                    <span class="pastel-butter px-2 py-1 rounded text-xs font-bold">{{ number }}</span>
                     {% endfor %}
                 </div>
             </div>
