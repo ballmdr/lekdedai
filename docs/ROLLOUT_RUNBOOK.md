@@ -18,6 +18,10 @@ ROLLOUT_PERCENT=10    # ปรับเปอร์เซ็นต์ตอน p
 - `BETA_MODE=True` ยังบังคับให้ต้องมีรหัสเสมอ (ใช้คู่กับ `ROLLOUT_STAGE=beta`)
 - **Kill switch**: `ROLLOUT_KILL_SWITCH=True` → ผู้ใช้ทั่วไปเห็น `/beta/closed/`
   ทันที (staff ยังเข้าได้) ใช้เมื่อเกิด P0 โดยไม่ต้อง rollback โค้ด
+- **ข่าว (สำคัญ)**: ค่าเริ่มต้น `NEWS_AUTO_PUBLISH=False` = ข่าวทุกชิ้นเป็น draft
+  staff ต้องอนุมัติใน admin (`ข่าว` → action publish) ก่อนเผยแพร่ → เปิด Public ได้
+  อย่างปลอดภัยโดยไม่มีข่าว auto หลุด. จะเปิด `NEWS_AUTO_PUBLISH=True` เฉพาะหลัง
+  ทดสอบตัวกรองความเกี่ยวข้อง/แยกวันที่-ปี-จำนวน กับข่าวจริง และกำหนด precision gate แล้ว
 
 ## 2. เปิด public ทีละขั้น
 

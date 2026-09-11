@@ -175,6 +175,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Mock ingestion ใช้ได้เฉพาะ dev/test ที่เปิด flag ชัดเจน ห้ามเปิดใน production
 ALLOW_MOCK_INGESTION = os.environ.get('ALLOW_MOCK_INGESTION', 'False') == 'True'
 
+# Task 31: ข่าวต้องผ่านการอนุมัติจาก staff ก่อนเผยแพร่ (ค่าเริ่มต้น = manual approval)
+# เปิด auto-publish เฉพาะหลังทดสอบตัวกรองความเกี่ยวข้องกับข่าวจริงและตั้ง precision gate แล้ว
+NEWS_AUTO_PUBLISH = os.environ.get('NEWS_AUTO_PUBLISH', 'False') == 'True'
+
 # Task 25: structured logs — console เสมอ + ไฟล์ถ้าตั้ง LOG_FILE;
 # production (DEBUG=False) ออก JSON บรรทัดละรายการ
 LOG_FILE = os.environ.get('LOG_FILE', '')

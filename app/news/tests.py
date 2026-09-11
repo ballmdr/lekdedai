@@ -103,7 +103,8 @@ class RssIngestionTests(TestCase):
         self.assertIsNotNone(source.last_success_at)
         self.assertEqual(source.last_error, "")
 
-    def test_ingest_publishes_only_when_analyzed(self):
+    def test_analyzed_news_stays_draft_by_default(self):
+        """ค่าเริ่มต้น NEWS_AUTO_PUBLISH=False → ต้องรอ staff อนุมัติเสมอ."""
         from unittest.mock import patch
 
         from news.ingestion import ingest_source
@@ -117,7 +118,29 @@ class RssIngestionTests(TestCase):
         with patch("news.ingestion.fetch_feed_content", return_value=FEED_FIXTURE):
             summary = ingest_source(source, limit=10, analyzer=GoodAnalyzer())
 
-        # ทั้ง 2 รายการมีเลข (regex + AI) และวิเคราะห์สำเร็จ → published ทั้งคู่
+        self.assertEqual(summary["published"], 0)
+        self.assertEqual(summary["drafts"], 2)
+        article = NewsArticle.objects.get(source_url="https://example.com/news/1")
+        self.assertEqual(article.status, "draft")
+        self.assertEqual(article.analysis_status, "analyzed")
+
+    def test_auto_publish_when_enabled(self):
+        from unittest.mock import patch
+
+        from django.test import override_settings
+
+        from news.ingestion import ingest_source
+        from news.models import NewsArticle
+
+        class GoodAnalyzer:
+            def analyze_article(self, article):
+                return {"numbers": ["45"]}
+
+        source = _make_source()
+        with override_settings(NEWS_AUTO_PUBLISH=True):
+            with patch("news.ingestion.fetch_feed_content", return_value=FEED_FIXTURE):
+                summary = ingest_source(source, limit=10, analyzer=GoodAnalyzer())
+
         self.assertEqual(summary["published"], 2)
         self.assertEqual(summary["drafts"], 0)
         article = NewsArticle.objects.get(source_url="https://example.com/news/1")
@@ -687,13 +710,16 @@ class CuratedNewsDisplayTests(TestCase):
         from news.ingestion import ingest_source
         from news.models import NewsArticle
 
+        from django.test import override_settings
+
         class GoodAnalyzer:
             def analyze_article(self, article):
                 return {"numbers": ["45"]}
 
         source = _make_source(key="e2e-rss", name="E2E RSS")
-        with patch("news.ingestion.fetch_feed_content", return_value=FEED_FIXTURE):
-            ingest_source(source, limit=10, analyzer=GoodAnalyzer())
+        with override_settings(NEWS_AUTO_PUBLISH=True):
+            with patch("news.ingestion.fetch_feed_content", return_value=FEED_FIXTURE):
+                ingest_source(source, limit=10, analyzer=GoodAnalyzer())
         article = NewsArticle.objects.get(
             source_url="https://example.com/news/1", status="published"
         )

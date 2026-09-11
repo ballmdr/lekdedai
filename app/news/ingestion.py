@@ -2,9 +2,10 @@
 
 นโยบาย (policy):
 - เก็บทุกข่าวที่ดึงได้ (draft) ไม่ทิ้งข้อมูลต้นฉบับ แม้ AI วิเคราะห์ล้มเหลว
-- เก็บทุกข่าวเป็น draft ก่อน; จะ published อัตโนมัติเฉพาะที่วิเคราะห์สำเร็จแล้ว
-  (analysis_status=analyzed) เท่านั้น — ข่าว "รอวิเคราะห์"/"ล้มเหลว" ต้องผ่าน
-  การอนุมัติใน admin ก่อน จึงไม่เอาเลขที่ยังไม่ตรวจไปใช้
+- ค่าเริ่มต้น (settings.NEWS_AUTO_PUBLISH=False): เก็บทุกข่าวเป็น draft เสมอ
+  ต้องให้ staff อนุมัติใน admin ก่อนเผยแพร่ (manual approval)
+- ถ้าเปิด NEWS_AUTO_PUBLISH=True: published อัตโนมัติเฉพาะที่วิเคราะห์สำเร็จ
+  (analysis_status=analyzed) เท่านั้น — เปิดหลังทดสอบตัวกรองความเกี่ยวข้อง + precision gate
 - ไม่พบเลข -> สถานะ draft (เก็บไว้ ไม่โชว์สาธารณะ)
 - AI ภายนอกเป็น best-effort เท่านั้น: ล้มเหลวได้ แต่ข้อมูลต้นฉบับต้องอยู่
 - dedupe ด้วย content_hash (link+title) กันข่าวซ้ำข้ามรอบ
@@ -18,6 +19,7 @@ from urllib.parse import urlparse, urlunparse
 import feedparser
 import requests
 from bs4 import BeautifulSoup
+from django.conf import settings
 from django.utils import timezone
 
 from qa import metrics as qa_metrics
@@ -240,6 +242,8 @@ def build_article_kwargs(normalized, numbers, source, category, analysis_status=
     numbered = [
         {"number": num, "reason": NUMBER_REASON} for num in numbers
     ]
+    # ค่าเริ่มต้น = manual approval (staff ต้องอนุมัติ) เพื่อความปลอดภัยช่วงเปิด public
+    auto_publish = getattr(settings, "NEWS_AUTO_PUBLISH", False)
     return {
         "title": normalized["title"][:200],
         "intro": text[:500],
@@ -250,8 +254,11 @@ def build_article_kwargs(normalized, numbers, source, category, analysis_status=
         "content_hash": content_hash(normalized["title"], normalized["link"]),
         "published_date": normalized["published"],
         "numbers_with_reasons": numbered,
-        # เผยแพร่อัตโนมัติเฉพาะข่าวที่วิเคราะห์สำเร็จแล้วเท่านั้น
-        "status": "published" if (numbered and analysis_status == "analyzed") else "draft",
+        "status": (
+            "published"
+            if (numbered and analysis_status == "analyzed" and auto_publish)
+            else "draft"
+        ),
         "analysis_status": analysis_status,
     }
 
