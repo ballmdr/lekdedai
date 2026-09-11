@@ -265,6 +265,29 @@ class AnalyticsReportOutputTests(TestCase):
             self.assertIn("funnel", json.loads(js.read_text(encoding="utf-8")))
 
 
+class CsrfCookieTests(TestCase):
+    """Task 30: analytics ต้องมี csrftoken cookie ทุกหน้า ไม่งั้น POST โดน 403."""
+
+    def test_get_page_sets_csrf_cookie(self):
+        res = self.client.get("/")
+        self.assertIn("csrftoken", res.cookies)
+
+    def test_analytics_post_with_csrf_cookie(self):
+        from django.test import Client
+
+        client = Client(enforce_csrf_checks=True)
+        page = client.get("/")
+        token = page.cookies["csrftoken"].value
+        res = client.post(
+            "/analytics/event/",
+            data=json.dumps({"name": "landing_view", "session_id": "abc"}),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.json()["stored"])
+
+
 class ProductionSmokeTests(TestCase):
     def test_db_issue_when_no_result(self):
         from qa.management.commands.production_smoke import collect_db_issues

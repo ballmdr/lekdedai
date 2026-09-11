@@ -57,9 +57,14 @@ def collect_http_issues(base_url, routes=None, timeout=10):
     return issues
 
 
-def collect_db_issues(max_stale_days=5, now=None):
-    """ตรวจว่ามีผลหวยล่าสุดและไม่เก่าเกินกำหนด (รันบนเครื่องที่ต่อ DB)."""
+def collect_db_issues(max_stale_days=40, now=None):
+    """ตรวจว่ามีผลหวยล่าสุดและไม่เก่าเกินกำหนด (รันบนเครื่องที่ต่อ DB).
+
+    เช็คสองชั้น: (1) ผลงวดล่าสุดตามตาราง 1/16 ต้องมี เว้นแต่วันนี้เพิ่งเป็นวันออกผล
+    (2) กันเหนียวถ้าข้อมูลเก่ากว่า max_stale_days (ค่าเริ่มต้น 40 วัน)
+    """
     from lottery_checker.models import LottoResult
+    from utils.lottery_dates import LotteryDates
 
     now = now or timezone.now()
     issues = []
@@ -67,6 +72,18 @@ def collect_db_issues(max_stale_days=5, now=None):
     if latest is None:
         issues.append("ไม่มีผลหวยในฐานข้อมูล (LottoResult ว่าง)")
         return issues
+
+    expected = LotteryDates.get_recent_draw_dates(400, reference_date=now.date())
+    expected_latest = expected[0] if expected else None
+    if (
+        expected_latest
+        and expected_latest != now.date().isoformat()
+        and latest.draw_date.isoformat() < expected_latest
+    ):
+        issues.append(
+            f"ยังไม่มีผลงวดล่าสุด {expected_latest} (ล่าสุดในระบบ {latest.draw_date})"
+        )
+
     age_days = (now.date() - latest.draw_date).days
     if age_days > max_stale_days:
         issues.append(
@@ -86,7 +103,10 @@ class Command(BaseCommand):
             help="เช่น https://lekdedai.com (ว่าง = ข้าม HTTP ตรวจเฉพาะ DB)",
         )
         parser.add_argument("--timeout", type=int, default=10)
-        parser.add_argument("--max-stale-days", type=int, default=5)
+        parser.add_argument(
+            "--max-stale-days", type=int, default=40,
+            help="กันเหนียวเมื่อข้อมูลเก่ากว่านี้ (ตารางงวด 1/16 ถูกเช็คแยกอยู่แล้ว)",
+        )
 
     def handle(self, *args, **options):
         issues = []

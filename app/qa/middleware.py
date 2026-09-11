@@ -1,6 +1,7 @@
 """Task 25: เก็บสถิติ request (จำนวน/latency/5xx) ลง metrics ภายใน."""
 import time
 
+from django.middleware.csrf import get_token
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -40,6 +41,25 @@ class RequestMetricsMiddleware:
         except Exception:
             pass
         return response
+
+
+class EnsureCsrfCookieMiddleware:
+    """Task 30: ตั้ง csrftoken cookie บนทุกหน้า GET
+
+    analytics.js ส่ง X-CSRFToken จาก cookie นี้ ถ้าไม่มีจะโดน 403 เงียบ ๆ.
+    """
+
+    SKIP_PREFIXES = ("/static/", "/media/")
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.method in ("GET", "HEAD") and not request.path.startswith(
+            self.SKIP_PREFIXES
+        ):
+            get_token(request)
+        return self.get_response(request)
 
 
 class BetaAccessMiddleware:

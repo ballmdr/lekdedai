@@ -10,6 +10,14 @@ cd "$APP_DIR"
 echo "==> git pull"
 git pull --ff-only
 
+# โหลด env จาก .env ให้คำสั่ง manage ใช้ secret (systemd มี EnvironmentFile แยกอยู่แล้ว)
+if [ -f .env ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . ./.env
+  set +a
+fi
+
 echo "==> migrate (ล้มแล้วหยุด)"
 .venv/bin/python app/manage.py migrate --noinput
 
