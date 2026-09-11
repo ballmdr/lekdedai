@@ -840,3 +840,24 @@ class DemoteUnanalyzedNewsTests(TestCase):
         self.assertEqual(pending.status, "draft")
         self.assertEqual(analyzed.status, "published")
         self.assertEqual(NewsArticle.objects.filter(status="published").count(), 1)
+
+
+class NewsCategoryCountTests(TestCase):
+    """QA: จำนวนในหมวดต้องนับเฉพาะ published ให้ตรงกับรายการที่แสดง."""
+
+    def test_category_counts_published_only(self):
+        from news.models import NewsArticle, NewsCategory
+
+        cat = NewsCategory.objects.create(name="ข่าวทั่วไป", slug="general")
+        NewsArticle.objects.create(
+            title="published", intro="x", content="y" * 100,
+            category=cat, status="published", analysis_status="analyzed",
+        )
+        NewsArticle.objects.create(
+            title="draft", intro="x", content="y" * 100,
+            category=cat, status="draft",
+        )
+        res = self.client.get("/news/")
+        self.assertEqual(res.status_code, 200)
+        category = res.context["categories"].get(slug="general")
+        self.assertEqual(category.article_count, 1)

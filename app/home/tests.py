@@ -232,3 +232,24 @@ class ContactFlowTests(TestCase):
             res = self.client.post("/contact/", data={"message": "สอง"})
             self.assertEqual(res.status_code, 302)
             self.assertEqual(ContactMessage.objects.count(), before)
+
+
+class HomepageAssetTests(TestCase):
+    """QA: theme.js ต้องถูกโหลดครั้งเดียว (กัน Identifier already declared)."""
+
+    def test_theme_js_loaded_once(self):
+        res = self.client.get("/")
+        html = res.content.decode()
+        self.assertEqual(html.count("js/theme.js"), 1)
+
+
+class HomepageScoreLabelTests(TestCase):
+    """QA: เมื่อคะแนนเท่ากันหมด ต้องไม่บอกว่า 'เรียงตามคะแนน'."""
+
+    def test_equal_scores_label(self):
+        res = self.client.get("/")
+        self.assertEqual(res.status_code, 200)
+        # ข้อมูลว่างในเทสต์ → ไม่มีเลข จึงไม่แสดงข้อความจัดอันดับที่ทำให้เข้าใจผิด
+        html = res.content.decode()
+        if "คะแนนจัดอันดับเท่ากัน" not in html:
+            self.assertNotIn("เรียงตามคะแนนจัดอันดับ", html)

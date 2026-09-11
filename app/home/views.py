@@ -135,9 +135,11 @@ def get_next_draw_prediction():
     else:
         data_source_summary = 'ยังไม่มีข้อมูลสถิติหรือข่าวที่วิเคราะห์ได้ จึงยังไม่แสดงเลขแนะนำ'
 
+    scores = [item['score'] for item in unique_numbers]
     return {
         'prediction_numbers': unique_numbers,
         'has_data': has_data,
+        'scores_all_equal': len(set(scores)) <= 1,
         'data_source_summary': data_source_summary,
         'last_draw_date': last_draw_date,
         'total_news_analyzed': analyzed_articles,

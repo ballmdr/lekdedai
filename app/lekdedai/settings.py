@@ -158,6 +158,17 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static'] if os.path.exists(BASE_DIR / 'static') else []
 
+# Task 31: production ใช้ hashed static filenames กัน CDN/browser cache เก่าหลัง deploy
+# (เปิดผ่าน env STATIC_HASHED=True; dev/test ไม่เปิดเพื่อไม่ให้ต้องมี manifest)
+STATIC_HASHED = os.environ.get('STATIC_HASHED', 'False') == 'True'
+if STATIC_HASHED:
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        },
+    }
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

@@ -249,10 +249,24 @@ def generate_enhanced_interpretation(keywords, keywords_info, numbers, dream_tex
     
     if keywords_info:
         interpretation += "**สัญลักษณ์ที่พบในความฝัน:**\n"
-        
+
+        # รวมสัญลักษณ์ที่ให้เลขชุดเดียวกัน (เช่น งู/พญานาค) ไม่ให้แสดงซ้ำ
+        merged = {}
+        order = []
+        for info in keywords_info:
+            key = (str(info.get('main_number', '')), str(info.get('secondary_number', '')))
+            if key not in merged:
+                merged[key] = dict(info)
+                order.append(key)
+            else:
+                existing = merged[key]
+                if info['keyword'] not in existing['keyword'].split('/'):
+                    existing['keyword'] = f"{existing['keyword']}/{info['keyword']}"
+        merged_info = [merged[k] for k in order]
+
         # จัดกลุ่มตาม category
         categories = {}
-        for info in keywords_info[:5]:  # แสดงไม่เกิน 5 สัญลักษณ์
+        for info in merged_info[:5]:  # แสดงไม่เกิน 5 สัญลักษณ์
             cat = info['category']
             if cat not in categories:
                 categories[cat] = []
@@ -305,6 +319,6 @@ def generate_enhanced_interpretation(keywords, keywords_info, numbers, dream_tex
         interpretation += "• สังเกตเลขที่ปรากฏซ้ำในความฝัน\n"
         interpretation += "• เชื่อมโยงกับเหตุการณ์ที่เกิดขึ้นในชีวิตจริง\n"
     
-    interpretation += "\n⚠️ *ความฝันเป็นเพียงแนวทางเท่านั้น ขอให้ใช้วิจารณญาณในการตัดสินใจ*"
+    interpretation += "\n⚠️ **ความฝันเป็นเพียงแนวทางเท่านั้น ขอให้ใช้วิจารณญาณในการตัดสินใจ**"
 
     return interpretation

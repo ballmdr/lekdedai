@@ -48,9 +48,11 @@ def news_list(request):
     # ดึงเลขเด็ดล่าสุด
     latest_hints = LuckyNumberHint.objects.all()[:5]
     
-    # หมวดหมู่ทั้งหมด
+    # หมวดหมู่ทั้งหมด — นับเฉพาะที่ผู้ใช้มองเห็น (published) ให้ตรงกับรายการ
     categories = NewsCategory.objects.annotate(
-        article_count=Count('articles')
+        article_count=Count(
+            'articles', filter=Q(articles__status='published')
+        )
     )
     
     context = {

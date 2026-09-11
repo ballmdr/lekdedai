@@ -7,6 +7,11 @@
 
 {% block extra_css %}{% endblock %}
 
+{# ต้องอยู่นอก block content — ถ้าใส่ใน content จะถูกเรนเดอร์ซ้ำสองที่ #}
+{% block extra_js %}
+<script src="{% static 'js/theme.js' %}"></script>
+{% endblock %}
+
 {% block content %}
 
 
@@ -127,7 +132,13 @@
         <div class="card bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border-2 border-indigo-300/50 mb-8">
           <div class="p-8 text-center">
             <h2 class="text-2xl font-bold text-foreground mb-4">🏆 เลขเด็ดแนะนำสูงสุด (เลข 2 ตัว)</h2>
-            <p class="text-muted-foreground mb-6">รวมทั้งสถิติและข่าว เรียงตามคะแนนจัดอันดับ (ไม่ใช่โอกาสถูก)</p>
+            <p class="text-muted-foreground mb-6">
+              {% if next_draw_prediction.scores_all_equal %}
+                รวมทั้งสถิติและข่าว — ช่วงนี้คะแนนจัดอันดับเท่ากัน จึงยังไม่ถือเป็นอันดับที่ชัดเจน (ไม่ใช่โอกาสถูก)
+              {% else %}
+                รวมทั้งสถิติและข่าว เรียงตามคะแนนจัดอันดับ (ไม่ใช่โอกาสถูก)
+              {% endif %}
+            </p>
             <div class="flex justify-center gap-4 flex-wrap">
               {% for number in next_draw_numbers|slice:":6" %}
               <div class="w-20 h-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-xl hover:scale-110 transition-all duration-300">
@@ -1135,7 +1146,4 @@ function scrollToInstantSection() {
 }
 </script>
 
-{% block extra_js %}
-<script src="{% static 'js/theme.js' %}"></script>
-{% endblock %}
 {% endblock %}

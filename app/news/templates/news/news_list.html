@@ -163,8 +163,8 @@
                 <p class="text-muted-foreground mb-4">ลองใช้คำค้นสั้นลงหรือล้างคำค้น</p>
                 <a href="{% url 'news:news_list' %}" class="btn btn-primary">ล้างคำค้น</a>
                 {% else %}
-                <p class="text-lg font-semibold text-foreground mb-2">ยังไม่มีข่าวในระบบ</p>
-                <p class="text-muted-foreground">เมื่อมีบทความใหม่ ระบบจะแสดงที่นี่</p>
+                <p class="text-lg font-semibold text-foreground mb-2">ยังไม่มีข่าวที่ผ่านการวิเคราะห์</p>
+                <p class="text-muted-foreground">ข่าวจะแสดงหลังผ่านการตรวจสอบและอนุมัติแล้วเท่านั้น</p>
                 {% endif %}
             </div>
             {% endfor %}

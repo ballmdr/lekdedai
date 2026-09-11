@@ -25,8 +25,8 @@ class HomeView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['latest_results'] = LotteryResult.objects.all()[:5]
-        context['page_title'] = 'เว็บสูตรคำนวณหวย - ทำนายเลขเด็ดแม่นยำ'
-        context['meta_description'] = 'เว็บสูตรคำนวณหวยไทย มีสูตรหลากหลาย ทำนายเลขเด็ดแม่นยำ ดูผลย้อนหลัง และสถิติความแม่นยำ'
+        context['page_title'] = 'เว็บสูตรคำนวณหวย - ทดลองคำนวณเลข'
+        context['meta_description'] = 'เว็บสูตรคำนวณหวยไทย ทดลองคำนวณเลขจากสูตร พร้อมผลย้อนหลังและสถิติที่ตรวจสอบได้ (ไม่รับประกันผลรางวัล)'
         return context
 
 class FormulaDetailView(DetailView):
