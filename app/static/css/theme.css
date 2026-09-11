@@ -809,3 +809,11 @@ body.app-bg,
 .dark .bg-gray-500, .dark .bg-gray-600 { background-color: #334155; color: #e2e8f0; }
 .dark .bg-red-500 { background-color: #9f1239; color: #ffe4e6; }
 .dark .bg-yellow-500 { background-color: #854d0e; color: #fef9c3; }
+
+/* Task 31: main navigation ลอยติดบนเสมอ (คลาส .sticky/.z-40 ไม่มีใน tailwind ที่คอมไพล์) */
+.main-nav {
+  position: sticky;
+  position: -webkit-sticky;
+  top: 0;
+  z-index: 50;
+}
