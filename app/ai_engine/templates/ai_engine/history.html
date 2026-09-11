@@ -33,7 +33,13 @@
                     ทำนายเมื่อ {{ prediction.prediction_date|date:"j M Y" }}
                     {% if prediction.for_draw_date %} · งวด {{ prediction.for_draw_date|date:"j M Y" }}{% endif %}
                 </div>
+                {% if prediction.readiness_status == "ready" %}
                 <span class="badge badge-outline">ความมั่นใจ {{ prediction.overall_confidence|floatformat:0 }}%</span>
+                {% elif prediction.readiness_status == "stale" %}
+                <span class="badge badge-outline">งวดออกผลแล้ว</span>
+                {% else %}
+                <span class="badge badge-outline">รอข้อมูล</span>
+                {% endif %}
             </div>
             <div class="flex flex-wrap gap-2">
                 {% for num in prediction.get_two_digit_list %}

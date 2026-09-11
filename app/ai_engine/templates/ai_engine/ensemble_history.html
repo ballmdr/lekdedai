@@ -78,11 +78,19 @@
           </div>
           
           <div class="text-right">
-            <div class="text-2xl font-bold text-primary mb-1">
-              {{ prediction.overall_confidence|floatformat:1 }}%
-            </div>
+            {% if prediction.readiness_status == "ready" %}
+            <div class="text-2xl font-bold text-primary mb-1">{% widthratio prediction.overall_confidence 1 100 %}%</div>
             <div class="text-sm text-muted-foreground">ความมั่นใจ</div>
+            {% elif prediction.readiness_status == "stale" %}
+            <div class="badge badge-outline">งวดออกผลแล้ว</div>
+            {% else %}
+            <div class="badge badge-outline">รอข้อมูล</div>
+            {% endif %}
           </div>
+        </div>
+
+        <div class="mb-4">
+          {% include "ai_engine/_prediction_meta.html" with meta=prediction.readiness_meta %}
         </div>
 
         <!-- Prediction Numbers -->
@@ -98,7 +106,7 @@
               {% for item in prediction.get_top_two_digit_numbers|slice:":5" %}
               <div class="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg">
                 <span class="font-bold text-primary font-mono">{{ item.number }}</span>
-                <span class="text-xs text-muted-foreground">({{ item.confidence|floatformat:0 }}%)</span>
+                <span class="text-xs text-muted-foreground">({% widthratio item.confidence 1 100 %}%)</span>
               </div>
               {% endfor %}
             </div>
@@ -116,7 +124,7 @@
               {% for item in prediction.get_top_three_digit_numbers|slice:":5" %}
               <div class="flex items-center gap-2 px-3 py-2 bg-secondary/10 rounded-lg">
                 <span class="font-bold text-secondary font-mono">{{ item.number }}</span>
-                <span class="text-xs text-muted-foreground">({{ item.confidence|floatformat:0 }}%)</span>
+                <span class="text-xs text-muted-foreground">({% widthratio item.confidence 1 100 %}%)</span>
               </div>
               {% endfor %}
             </div>

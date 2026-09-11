@@ -56,7 +56,7 @@ class PredictionFactor(models.Model):
         return self.name
 
 class LuckyNumberPrediction(models.Model):
-    """ผลการทำนายเลขเด็ด"""
+    """ผลการทำนายเลขเด็ด (ระบบเก่า) — แสดงผลได้ต้องผ่าน readiness gate (Task 20)."""
     prediction_date = models.DateField("วันที่ทำนาย", default=timezone.now)
     for_draw_date = models.DateField("สำหรับงวดวันที่", null=True, blank=True)
     
@@ -114,6 +114,50 @@ class LuckyNumberPrediction(models.Model):
     def get_three_digit_list(self):
         """แปลงเลข 3 ตัวเป็น list"""
         return [num.strip() for num in self.three_digit_numbers.split(',') if num.strip()]
+
+    # ---- Task 20: readiness gate (metadata ครบจึงพร้อมแสดง) ----
+    def is_ready(self):
+        """พร้อมแสดงเมื่อมีงวดเป้าหมาย + โมเดล/เวอร์ชัน + เลขที่ทำนาย."""
+        return bool(
+            self.for_draw_date
+            and self.ai_model_id
+            and self.get_two_digit_list()
+            and self.get_three_digit_list()
+        )
+
+    def is_stale(self):
+        """งวดเป้าหมายผ่านไปแล้ว."""
+        return bool(self.for_draw_date and self.for_draw_date < timezone.localdate())
+
+    def readiness_status(self):
+        """ready | stale | incomplete (stale สำคัญกว่า: งวดออกแล้ว)."""
+        if self.is_stale():
+            return "stale"
+        return "ready" if self.is_ready() else "incomplete"
+
+    def readiness_meta(self):
+        """metadata ชุดเดียวกับระบบ ensemble สำหรับ partial ร่วม."""
+        factors = self.factors_used or {}
+        return {
+            "draw_date": self.for_draw_date,
+            "created": self.created_at,
+            "data_window": None,
+            "model_label": (
+                f"{self.ai_model.name} v{self.ai_model.version}"
+                if self.ai_model_id
+                else ""
+            ),
+            "input_summary": (
+                f"ปัจจัย {len(factors)} อย่าง" if factors else "ไม่ระบุปัจจัย"
+            ),
+            "status": self.readiness_status(),
+            # ระบบเก่าเก็บ 0-100 อยู่แล้ว
+            "confidence_percent": (
+                round(self.overall_confidence)
+                if self.readiness_status() == "ready"
+                else None
+            ),
+        }
 
 class PredictionAccuracy(models.Model):
     """บันทึกความแม่นยำของการทำนาย"""
@@ -426,6 +470,90 @@ class EnsemblePrediction(models.Model):
     def get_top_three_digit_numbers(self, limit=2):
         """ดึงเลข 3 ตัวอันดับต้น"""
         return sorted(self.final_three_digit, key=lambda x: x['confidence'], reverse=True)[:limit]
+
+    # ---- Task 20: readiness gate (metadata ครบจึงพร้อมแสดง) ----
+    READY_SESSION_STATUSES = ('completed', 'locked')
+
+    def _safe_session(self):
+        try:
+            return self.session
+        except Exception:
+            return None
+
+    def _safe_top_numbers(self):
+        try:
+            two = self.get_top_two_digit_numbers()
+        except Exception:
+            two = []
+        try:
+            three = self.get_top_three_digit_numbers()
+        except Exception:
+            three = []
+        return two, three
+
+    def is_ready(self):
+        """พร้อมแสดงเมื่อเซสชันสำเร็จ + มีงวดเป้าหมาย + มีเลข + มีข้อมูลนำเข้า."""
+        session = self._safe_session()
+        two, three = self._safe_top_numbers()
+        return bool(
+            session
+            and session.status in self.READY_SESSION_STATUSES
+            and session.for_draw_date
+            and two
+            and three
+            and (self.total_data_points or 0) > 0
+        )
+
+    def is_stale(self):
+        """งวดเป้าหมายผ่านไปแล้ว."""
+        session = self._safe_session()
+        return bool(
+            session
+            and session.for_draw_date
+            and session.for_draw_date < timezone.localdate()
+        )
+
+    def readiness_status(self):
+        """ready | stale | incomplete (stale สำคัญกว่า: งวดออกแล้ว)."""
+        if self.is_stale():
+            return "stale"
+        return "ready" if self.is_ready() else "incomplete"
+
+    def readiness_meta(self):
+        """metadata ชุดเดียวกับระบบเก่า สำหรับ partial ร่วม."""
+        session = self._safe_session()
+        window = None
+        if session and session.data_collection_period_start and session.data_collection_period_end:
+            window = (session.data_collection_period_start, session.data_collection_period_end)
+        contributions = self.model_contributions or {}
+        if isinstance(contributions, dict) and contributions:
+            model_label = "AI Ensemble (" + ", ".join(sorted(contributions)) + ")"
+        else:
+            model_label = "AI Ensemble"
+        status = self.readiness_status()
+        confidence = None
+        if status == "ready" and self.overall_confidence is not None:
+            # ระบบ ensemble เก็บสเกล 0-1 -> แสดงเป็นเปอร์เซ็นต์
+            confidence = round(self.overall_confidence * 100)
+        return {
+            "draw_date": session.for_draw_date if session else None,
+            "created": self.prediction_timestamp,
+            "data_window": window,
+            "model_label": model_label,
+            "input_summary": (
+                f"ข้อมูล {self.total_data_points} รายการ"
+                if (self.total_data_points or 0) > 0
+                else "ไม่มีข้อมูลนำเข้า"
+            ),
+            "status": status,
+            "confidence_percent": confidence,
+        }
+
+    def save(self, *args, **kwargs):
+        # ขาด metadata ห้าม featured (Task 20)
+        if self.is_featured and not self.is_ready():
+            self.is_featured = False
+        super().save(*args, **kwargs)
 
 class PredictionAccuracyTracking(models.Model):
     """ติดตามความแม่นยำของการทำนาย"""

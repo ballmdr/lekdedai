@@ -43,7 +43,7 @@
 - [x] Task 17 — ทำ RSS ingestion เป็นเส้นทางหลัก (service แยก testable + normalize/dedupe/hash/provenance + draft/published ตามนโยบาย + AI best-effort + dry-run; fixture offline + mocked network; dry-run + จริงกับ feed ไทยรัฐ/INN ได้ 18 ข่าว; 125 tests เขียว)
 - [x] Task 18 — ทำ category scraper เป็น fallback พร้อม editorial gate (รวม scraper พัง 2 ตัวเป็น owner เดียว + ลบของเก่า; รันเฉพาะเมื่อ RSS เงียบ; draft เสมอ + admin อนุมัติ/ปฏิเสธ; กันซ้ำแม้ URL เปลี่ยน; staging ได้ร่างจริง 3 ข่าว; 138 tests เขียว)
 - [x] Task 19 — เชื่อมข่าวที่ผ่านการคัดเข้าสู่หน้าเว็บ (partial ที่มาชุดเดียวทุกหน้า: source link/วันเผยแพร่/วันดึง/ป้ายวิเคราะห์; banner ตรง ingestion failure/stale; draft ไม่โผล่; 145 tests เขียว)
-- [ ] Task 20 — ทำ metadata และ readiness gate ของ AI prediction
+- [x] Task 20 — ทำ metadata และ readiness gate ของ AI prediction (is_ready/meta/stale ทั้ง 2 ระบบ + featured gate; เลิกสร้างอัตโนมัติเมื่อเปิดหน้า; partial ชุดเดียว 3 หน้า; แก้สเกล ensemble + วิเคราะห์โดย v; stale/incomplete ไม่โชว์ confidence; 160 tests เขียว)
 
 ### Checkpoint C
 

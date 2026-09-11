@@ -22,6 +22,7 @@
 </section>
 
 <div class="container mx-auto px-4 py-8">
+    {% if prediction %}
     <!-- Today's Prediction -->
     <div class="card border-primary/20 bg-primary/5 mb-8">
         <div class="p-8">
@@ -33,10 +34,9 @@
                     การทำนายล่าสุด
                     {% endif %}
                 </h2>
-                <p class="text-sm text-muted-foreground">
-                    สร้างเมื่อ {{ prediction.prediction_date|date:"j F Y" }}
-                    {% if prediction.created_at %}เวลา {{ prediction.created_at|date:"H:i" }} น.{% endif %}
-                </p>
+                <div class="max-w-xl mx-auto text-left card p-4 mb-2">
+                    {% include "ai_engine/_prediction_meta.html" with meta=meta %}
+                </div>
             </div>
             
             <div class="bg-card rounded-lg p-6 border border-border mb-6">
@@ -66,18 +66,15 @@
             </div>
             
             <div class="text-center">
+                {% if meta.confidence_percent is not None %}
                 <div class="flex items-center justify-center mb-4 gap-4">
                     <span class="text-lg font-medium text-foreground">ความมั่นใจ AI:</span>
                     <div class="flex-1 max-w-48 bg-muted rounded-full h-3">
-                        <div class="bg-primary h-3 rounded-full" style="width: {{ prediction.overall_confidence }}%"></div>
+                        <div class="bg-primary h-3 rounded-full" style="width: {{ meta.confidence_percent }}%"></div>
                     </div>
-                    <span class="text-xl font-bold text-primary">{{ prediction.overall_confidence }}%</span>
+                    <span class="text-xl font-bold text-primary">{{ meta.confidence_percent }}%</span>
                 </div>
-                
-                <p class="text-sm text-muted-foreground">
-                    <i aria-hidden="true" class="fas fa-robot mr-1"></i>
-                    วิเคราะห์โดย {{ prediction.ai_model.name }} v{{ prediction.ai_model.version }}
-                </p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -221,7 +218,7 @@
         <div class="p-6">
             <div class="space-y-3">
                 {% for past in past_predictions %}
-                <a href="{% url 'ai_engine:prediction_detail' past.id %}" 
+                <a href="{% url 'ai_engine:prediction_detail' past.id %}"
                    class="block p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                     <div class="flex items-center justify-between">
                         <div>
@@ -231,8 +228,14 @@
                             </p>
                         </div>
                         <div class="text-right">
+                            {% if past.readiness_status == "ready" %}
                             <p class="text-sm text-muted-foreground">ความมั่นใจ</p>
                             <p class="text-lg font-bold text-primary">{{ past.overall_confidence }}%</p>
+                            {% elif past.readiness_status == "stale" %}
+                            <p class="badge badge-outline">งวดออกผลแล้ว</p>
+                            {% else %}
+                            <p class="badge badge-outline">รอข้อมูล</p>
+                            {% endif %}
                         </div>
                     </div>
                 </a>
@@ -242,7 +245,7 @@
             </div>
             
             <div class="text-center mt-6">
-                <a href="{% url 'ai_engine:history' %}" 
+                <a href="{% url 'ai_engine:history' %}"
                    class="btn btn-outline">
                     <i aria-hidden="true" class="fas fa-history mr-2"></i>
                     ดูประวัติทั้งหมด
@@ -251,6 +254,17 @@
         </div>
     </div>
 </div>
+
+{% else %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto card p-10 text-center">
+        <i aria-hidden="true" class="fas fa-robot text-4xl text-muted-foreground mb-4"></i>
+        <p class="text-lg font-semibold text-foreground mb-2">ยังไม่มีการทำนายที่พร้อมแสดง</p>
+        <p class="text-muted-foreground mb-6">การทำนายจะแสดงเมื่อมีงวดเป้าหมาย โมเดล และเลขครบถ้วน ระบบไม่สร้างการทำนายอัตโนมัติเมื่อเปิดหน้านี้</p>
+        <a href="{% url 'ai_engine:history' %}" class="btn btn-outline">ดูประวัติการทำนาย</a>
+    </div>
+</div>
+{% endif %}
 
 <script>
 let selectedRating = 0;

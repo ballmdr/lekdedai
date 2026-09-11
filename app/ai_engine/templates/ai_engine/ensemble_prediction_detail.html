@@ -23,10 +23,19 @@
   <!-- Prediction Summary -->
   <div class="card border-primary/20 bg-primary/5 mb-8">
     <div class="p-6">
+      <div class="max-w-xl mx-auto text-left card p-4 mb-6">
+        {% include "ai_engine/_prediction_meta.html" with meta=prediction.readiness_meta %}
+      </div>
       <div class="grid md:grid-cols-3 gap-6">
         <div class="text-center">
           <h3 class="text-lg font-semibold text-foreground mb-2">ความมั่นใจรวม</h3>
-          <div class="text-3xl font-bold text-primary">{{ prediction.overall_confidence|floatformat:1 }}%</div>
+          {% if prediction.readiness_status == "ready" %}
+          <div class="text-3xl font-bold text-primary">{% widthratio prediction.overall_confidence 1 100 %}%</div>
+          {% elif prediction.readiness_status == "stale" %}
+          <div class="badge badge-outline">งวดออกผลแล้ว</div>
+          {% else %}
+          <div class="badge badge-outline">รอข้อมูล</div>
+          {% endif %}
         </div>
         <div class="text-center">
           <h3 class="text-lg font-semibold text-foreground mb-2">ข้อมูลที่ใช้</h3>
@@ -66,7 +75,7 @@
                   {{ item.number }}
                 </div>
                 <div>
-                  <div class="font-semibold text-foreground">ความมั่นใจ {{ item.confidence|floatformat:1 }}%</div>
+                  <div class="font-semibold text-foreground">ความมั่นใจ {% widthratio item.confidence 1 100 %}%</div>
                   <div class="text-sm text-muted-foreground">{{ item.reasoning|truncatechars:60 }}</div>
                 </div>
               </div>
@@ -91,7 +100,7 @@
                   {{ item.number }}
                 </div>
                 <div>
-                  <div class="font-semibold text-foreground">ความมั่นใจ {{ item.confidence|floatformat:1 }}%</div>
+                  <div class="font-semibold text-foreground">ความมั่นใจ {% widthratio item.confidence 1 100 %}%</div>
                   <div class="text-sm text-muted-foreground">{{ item.reasoning|truncatechars:60 }}</div>
                 </div>
               </div>

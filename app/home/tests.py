@@ -84,6 +84,27 @@ class AiCardConsistencyTests(TestCase):
         self.assertEqual(card["number"], "110")
         self.assertEqual(card["confidence"], 68)
 
+    def test_home_ai_card_stale(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from ai_engine.models import AIModel, LuckyNumberPrediction
+
+        model = AIModel.objects.create(
+            name="M", version="1.0", algorithm="statistical"
+        )
+        LuckyNumberPrediction.objects.create(
+            two_digit_numbers="10",
+            three_digit_numbers="110",
+            overall_confidence=68.0,
+            for_draw_date=timezone.localdate() - timedelta(days=2),
+            ai_model=model,
+        )
+        res = self.client.get("/")
+        self.assertEqual(res.context["ai_card"]["status"], "stale")
+        self.assertContains(res, "งวดนี้ออกผลแล้ว")
+
 
 class ThaiDateTests(TestCase):
     def test_thai_date_formats_buddhist_year(self):

@@ -173,12 +173,14 @@ def home(request):
     ).select_related('session').order_by('-prediction_timestamp').first()
     
     # ถ้าไม่มีการทำนายใหม่ ใช้ระบบเก่าชั่วคราว
+    ai_source_row = latest_prediction
     if not latest_prediction:
         old_prediction = LuckyNumberPrediction.objects.filter(
             prediction_date__lte=timezone.localdate()
         ).select_related('ai_model').order_by('-prediction_date', '-created_at').first()
         # แปลงให้เข้ากับ template
         if old_prediction:
+            ai_source_row = old_prediction
             latest_prediction = {
                 'is_old_system': True,
                 'get_top_three_digit_numbers': [{'number': num} for num in old_prediction.get_three_digit_list()],
@@ -187,9 +189,10 @@ def home(request):
                 'overall_confidence': old_prediction.overall_confidence,
                 'session': {'for_draw_date': old_prediction.for_draw_date}
             }
-    
+
     # การ์ด AI หน้าแรก: ต้องมีเลขจริงจึงโชว์เลข+คะแนน (normalize ทั้งระบบเก่า/ใหม่)
-    ai_card = {'has_number': False, 'number': '', 'confidence': None}
+    ai_card = {'has_number': False, 'number': '', 'confidence': None,
+               'status': 'incomplete', 'draw_date': None}
     if latest_prediction:
         if isinstance(latest_prediction, dict):
             three_digits = [
@@ -207,7 +210,18 @@ def home(request):
             # ระบบเก่าเก็บ 0-100 ระบบใหม่เก็บ 0-1
             if confidence is not None and confidence <= 1:
                 confidence = confidence * 100
-            ai_card = {'has_number': True, 'number': number, 'confidence': round(confidence) if confidence is not None else None}
+            ai_card.update({
+                'has_number': True, 'number': number,
+                'confidence': round(confidence) if confidence is not None else None,
+            })
+        if ai_source_row is not None and not isinstance(ai_source_row, dict):
+            ai_card['status'] = ai_source_row.readiness_status()
+            if isinstance(ai_source_row, EnsemblePrediction):
+                ai_card['draw_date'] = ai_source_row.session.for_draw_date
+            else:
+                ai_card['draw_date'] = ai_source_row.for_draw_date
+            if not ai_card['has_number']:
+                ai_card['status'] = 'incomplete'
 
     # ดึงผลหวยงวดล่าสุด
     latest_lottery_result = LottoResult.objects.filter(

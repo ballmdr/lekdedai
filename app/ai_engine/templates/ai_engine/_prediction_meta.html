@@ -1,0 +1,40 @@
+{# Task 20: metadata การทำนายชุดเดียว ใช้ร่วมกันทุกหน้า รับตัวแปร `meta` จาก readiness_meta() #}
+<div class="text-sm text-muted-foreground space-y-1">
+  <div>
+    งวดเป้าหมาย:
+    {% if meta.draw_date %}
+    <span class="font-semibold text-foreground">{{ meta.draw_date|date:"j F Y" }}</span>
+    {% else %}
+    <span class="text-orange-600 font-semibold">ยังไม่ระบุ</span>
+    {% endif %}
+  </div>
+  {% if meta.created %}
+  <div>สร้างเมื่อ {{ meta.created|date:"j M Y H:i" }}</div>
+  {% endif %}
+  <div>
+    ช่วงข้อมูล:
+    {% if meta.data_window %}
+    {{ meta.data_window.0|date:"j M Y" }} – {{ meta.data_window.1|date:"j M Y" }}
+    {% else %}
+    —
+    {% endif %}
+  </div>
+  <div>
+    โมเดล:
+    {% if meta.model_label %}
+    <span class="font-medium text-foreground">{{ meta.model_label }}</span>
+    {% else %}
+    <span class="text-orange-600 font-semibold">ยังไม่ระบุ</span>
+    {% endif %}
+  </div>
+  <div>ข้อมูลนำเข้า: {{ meta.input_summary }}</div>
+  <div>
+    {% if meta.status == "ready" %}
+    <span class="badge bg-primary text-primary-foreground">พร้อมใช้</span>
+    {% elif meta.status == "stale" %}
+    <span class="badge badge-outline">งวดนี้ออกผลแล้ว</span>
+    {% else %}
+    <span class="badge badge-outline">รอข้อมูลให้ครบก่อนแสดงผล</span>
+    {% endif %}
+  </div>
+</div>

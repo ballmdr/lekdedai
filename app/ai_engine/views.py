@@ -17,42 +17,60 @@ from .models import (
 from .ml_engine import LotteryAIEngine
 
 def ai_prediction_page(request):
-    """หน้าแสดงการทำนายเลขด้วย AI"""
-    # ดึงการทำนายล่าสุด
+    """หน้าแสดงการทำนายเลขด้วย AI — แสดงเฉพาะที่พร้อม (Task 20: ไม่สร้างอัตโนมัติเมื่อเปิดหน้า)."""
     today = timezone.now().date()
-    
-    # ตรวจสอบว่ามีการทำนายวันนี้แล้วหรือไม่
-    today_prediction = LuckyNumberPrediction.objects.filter(
-        prediction_date=today
-    ).first()
-    
-    if not today_prediction:
-        # สร้างการทำนายใหม่
-        today_prediction = generate_new_prediction()
-    
-    # เพิ่มยอดวิว
-    today_prediction.views += 1
-    today_prediction.save(update_fields=['views'])
-    
-    # ดึงการทำนายย้อนหลัง
-    past_predictions = LuckyNumberPrediction.objects.exclude(
-        id=today_prediction.id
-    ).order_by('-prediction_date')[:5]
-    
-    # ดึง feedback
-    feedbacks = UserFeedback.objects.filter(
-        old_prediction=today_prediction
-    ).order_by('-created_at')[:10]
-    
-    # คำนวณ rating เฉลี่ย
+
+    ready_base = LuckyNumberPrediction.objects.filter(
+        for_draw_date__isnull=False,
+        ai_model__isnull=False,
+    ).exclude(two_digit_numbers="").exclude(three_digit_numbers="")
+
+    # การทำนายวันนี้ที่พร้อมก่อน ถ้าไม่มีใช้ตัวล่าสุดที่พร้อม (ไม่สร้างใหม่ตรงนี้)
+    today_prediction = (
+        ready_base.filter(prediction_date=today)
+        .select_related("ai_model")
+        .order_by("-created_at")
+        .first()
+    )
+    if today_prediction is None:
+        today_prediction = (
+            ready_base.select_related("ai_model")
+            .order_by("-prediction_date", "-created_at")
+            .first()
+        )
+
+    feedbacks = []
+    past_predictions = []
+    factors = []
     avg_rating = 0
-    if feedbacks:
-        total_rating = sum(f.rating for f in feedbacks)
-        avg_rating = total_rating / len(feedbacks)
-    
-    # Get the factors used for the prediction
-    factors_used_codes = today_prediction.factors_used.keys()
-    factors = PredictionFactor.objects.filter(code__in=factors_used_codes, is_active=True)
+    meta = None
+
+    if today_prediction is not None:
+        # เพิ่มยอดวิว
+        today_prediction.views += 1
+        today_prediction.save(update_fields=['views'])
+
+        # ดึงการทำนายย้อนหลัง
+        past_predictions = LuckyNumberPrediction.objects.select_related(
+            "ai_model"
+        ).exclude(
+            id=today_prediction.id
+        ).order_by('-prediction_date')[:5]
+
+        # ดึง feedback
+        feedbacks = UserFeedback.objects.filter(
+            old_prediction=today_prediction
+        ).order_by('-created_at')[:10]
+
+        # คำนวณ rating เฉลี่ย
+        if feedbacks:
+            total_rating = sum(f.rating for f in feedbacks)
+            avg_rating = total_rating / len(feedbacks)
+
+        # Get the factors used for the prediction
+        factors_used_codes = (today_prediction.factors_used or {}).keys()
+        factors = PredictionFactor.objects.filter(code__in=factors_used_codes, is_active=True)
+        meta = today_prediction.readiness_meta()
 
     context = {
         'prediction': today_prediction,
@@ -60,8 +78,9 @@ def ai_prediction_page(request):
         'feedbacks': feedbacks,
         'avg_rating': avg_rating,
         'factors': factors,
+        'meta': meta,
     }
-    
+
     return render(request, 'ai_engine/prediction.html', context)
 
 def generate_new_prediction(target_date=None):
@@ -192,7 +211,9 @@ def add_feedback(request, prediction_id):
 
 def ai_history(request):
     """ประวัติการทำนายทั้งหมด"""
-    predictions = LuckyNumberPrediction.objects.all().order_by('-prediction_date')
+    predictions = LuckyNumberPrediction.objects.select_related(
+        "ai_model"
+    ).all().order_by('-prediction_date')
     
     # Filter by date range
     date_from = request.GET.get('from')
