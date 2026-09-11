@@ -33,19 +33,15 @@ cd app && python manage.py runserver
 cd app && python manage.py test
 ```
 
-### Docker Development
+### Production Deployment (no Docker)
+
 ```bash
-# Start services
-docker-compose up -d
+# Deploy to Linux server (fail-fast: pull -> migrate -> collectstatic -> restart)
+APP_DIR=/opt/lekdedai bash deploy/deploy.sh
 
-# Setup fresh database
-docker-compose exec web ./setup_new_db.sh
-
-# Access web container
-docker-compose exec web bash
-
-# View logs
-docker-compose logs -f web
+# Service unit template: deploy/lekdedai.service (gunicorn, no runserver)
+# Required env in /opt/lekdedai/.env: SECRET_KEY, ALLOWED_HOSTS,
+# DATABASE_URL (Postgres), DJANGO_SUPERUSER_PASSWORD (see .env.example)
 ```
 
 ### Management Commands
@@ -57,7 +53,8 @@ python manage.py sync_lotto_data
 python manage.py clear_and_fetch_lotto
 
 # News analysis
-python manage.py scrape_thairath
+python manage.py scrape_rss_feeds
+python manage.py scrape_category
 python manage.py analyze_existing_articles
 
 # AI prediction generation
@@ -143,9 +140,8 @@ The system focuses on four core data sources:
 
 ## External Dependencies
 
-- **PostgreSQL**: Primary database
-- **Redis**: Caching and session storage  
-- **Docker**: Development and production deployment
+- **PostgreSQL**: Primary database (production; SQLite for local dev)
+- **Redis**: Caching and session storage
 - **Thai NLP libraries**: pythainlp for text processing
 - **ML Stack**: scikit-learn, pandas, numpy for predictions
 - **Web Scraping**: beautifulsoup4, requests for news collection
@@ -153,14 +149,13 @@ The system focuses on four core data sources:
 ## Production Deployment
 
 ```bash
-# Collect static files
-python manage.py collectstatic
+# Deploy to Linux server (fail-fast via deploy/deploy.sh)
+APP_DIR=/opt/lekdedai bash deploy/deploy.sh
 
-# Run with Gunicorn
-gunicorn lekdedai.wsgi:application
-
-# Or via Docker
-docker-compose -f docker-compose.prod.yml up -d
+# Or manually: migrate -> collectstatic -> gunicorn (no runserver)
+python app/manage.py migrate --noinput
+python app/manage.py collectstatic --noinput
+gunicorn lekdedai.wsgi:application  # from app/ dir
 ```
 
 The simplified system focuses on the core lottery prediction features that Thai users need most: news analysis, historical patterns, dream interpretation, and result checking.

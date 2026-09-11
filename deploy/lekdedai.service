@@ -1,0 +1,20 @@
+[Unit]
+Description=LekdeDai Django (gunicorn, no Docker)
+After=network.target postgresql.service
+
+[Service]
+# ปรับ path ให้ตรงเครื่องจริง แล้ว copy ไฟล์นี้ไป /etc/systemd/system/lekdedai.service
+User=www-data
+WorkingDirectory=/opt/lekdedai/app
+EnvironmentFile=/opt/lekdedai/.env
+ExecStart=/opt/lekdedai/.venv/bin/gunicorn lekdedai.wsgi:application \
+  --bind 127.0.0.1:8000 \
+  --workers 3 \
+  --timeout 60 \
+  --access-logfile - \
+  --error-logfile -
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

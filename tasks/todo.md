@@ -56,8 +56,8 @@
 
 ## ระยะที่ 3: เตรียม staging และ production
 
-- [ ] Task 21 — สร้าง automated quality gate
-- [ ] Task 22 — แยก production runtime และจัดการ secrets
+- [x] Task 21 — สร้าง automated quality gate (`quality_gate`: check+deploy+migrations+migrate+tests+static+smoke ล้มทันทีเมื่อผิด; CI workflow; docs/TESTING.md; ผ่านทั้ง DEBUG True/False)
+- [x] Task 22 — แยก production runtime และจัดการ secrets (ไม่ใช้ Docker: settings ตาม env + gunicorn/systemd/deploy script + ไม่มีรหัส hard-code + check --deploy; WSGI บูตผ่าน)
 - [ ] Task 23 — ปิดช่องโหว่ endpoint และจำกัดการใช้งานเกินขอบเขต
 - [ ] Task 24 — ตั้ง schedule และ freshness control
 - [ ] Task 25 — เพิ่ม observability, backup และ rollback

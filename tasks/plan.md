@@ -30,7 +30,7 @@
 - `news` ดึงและวิเคราะห์ข่าวที่เกี่ยวข้องกับตัวเลข
 - `ai_engine` รวมผลจากหลายแหล่งและเก็บประวัติคำทำนาย
 - มีหน้าบ้านอีกสองชุด ได้แก่ Next.js ที่ root และ React/Webpack ใน `frontend/`
-- มี Docker Compose สำหรับ Django และ PostgreSQL
+- โปรเจกต์เลิกใช้ Docker แล้ว (ลบ compose/Dockerfile ออก; production ใช้ gunicorn + systemd ตาม Task 22)
 
 ### งานที่ยังเหลือจากการตรวจรอบล่าสุด
 
@@ -40,7 +40,7 @@
 4. ระบบข่าวมีทั้ง RSS และ scraper หน้า category อยู่แล้ว แต่ source registry ปัจจุบันว่าง ยังไม่มี scheduler และเส้นทาง draft-to-publish ที่พร้อมใช้งานจริง
 5. ผลวิเคราะห์ AI ล่าสุดยังขาดงวดเป้าหมายที่ชัด และพบข้อความ metadata ไม่สมบูรณ์ เช่น `วิเคราะห์โดย v`
 6. หน้าสูตรหวย ข่าวหวย และแหล่งข้อมูลยังเป็น empty state จนกว่าจะกู้ข้อมูลและต่อ ingestion สำเร็จ
-7. Docker ยังใช้ development server, `DEBUG=True`, wildcard host, secret/password ตัวอย่าง และเปิดฐานข้อมูลเกินความจำเป็น
+7. (ปิดแล้วโดยเลิกใช้ Docker) production ใช้ gunicorn + systemd ผ่าน `deploy/` ไม่มี hard-coded secret และไม่เปิดฐานข้อมูลสู่ public — ดู Task 22
 8. endpoint สาธารณะและงานดึงข้อมูลภายนอกยังต้องตรวจ authentication, authorization, CSRF, rate limit, timeout และ input validation ให้ครบ
 9. ยังต้องเพิ่ม quality gate, monitoring, backup/restore, freshness alert และ rollback rehearsal ก่อนเปิด public
 10. ต้องกำหนด privacy, retention, disclaimer และสิทธิ์การนำข่าว/ภาพ/ข้อความจากแหล่งภายนอกมาเผยแพร่
@@ -507,7 +507,7 @@ Django มี model, migration, management command และหน้าที�
 
 **การตรวจสอบ:** build/deploy staging จาก clean image และ `manage.py check --deploy`
 
-**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** `Dockerfile`, production compose/manifest, Django settings, entrypoint
+**ไฟล์ที่คาดว่าจะเกี่ยวข้อง:** Django settings, `deploy/` (service + script), `.env.example`
 
 **ขนาดงาน:** M
 **Dependencies:** Task 21

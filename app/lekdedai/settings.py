@@ -1,14 +1,39 @@
 import os
 from pathlib import Path
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-production')
-
+# Task 22: SECRET_KEY มาจาก env เท่านั้น — ห้ามใช้ค่า default ใน production
+SECRET_KEY = os.environ.get('SECRET_KEY', '')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-only-do-not-use-in-production'
+    else:
+        raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG=False')
+
+# Task 22: host/origin จาก env ตรงกับ domain จริง (default  local เท่านั้น)
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    if h.strip()
+]
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if o.strip()
+]
+
+# Task 22: security flags เปิดผ่าน env ใน production เท่านั้น
+SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False') == 'True'
+SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False') == 'True'
+CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'False') == 'True'
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False') == 'True'
+SECURE_HSTS_PRELOAD = os.environ.get('SECURE_HSTS_PRELOAD', 'False') == 'True'
 
 # Application definition - เริ่มต้นด้วย apps พื้นฐานก่อน
 INSTALLED_APPS = [
@@ -28,6 +53,7 @@ INSTALLED_APPS = [
     'ai_engine',      # AI-powered predictions
     'lottery_checker', # Online lottery result checker
     'notebook',       # สมุดเลข browser-only (Task 9)
+    'qa',             # Quality gate command (Task 21, no models/URLs)
 ]
 # เพิ่มการตั้งค่า Media files
 MEDIA_URL = '/media/'
